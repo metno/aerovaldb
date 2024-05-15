@@ -23,6 +23,7 @@ The scope of aerovaldb are:
 ## Usage
 
 ### Reader, e.g. webserver
+
 ```python
 
 import aerovaldb
@@ -37,7 +38,8 @@ with aerovaldb.JSON_Filehandle_DB('path/to/data/') as db:
 ```
 
 ### Writer
-```
+
+```python
 import aerovaldb
 with aerovaldb.JSON_Filehandle_DB('path/to/data/') as db:
     obj = db.get_model_timeseries(type=OBJ) # type=OBJ is default
