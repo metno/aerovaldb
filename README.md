@@ -14,6 +14,15 @@ The scope of aerovaldb are:
 3. At least one implementation (largely based on json files) implementing the read-interface. (needed for testing)
 4. At least one implementation (largely based on json files) implementing the write-interface.
 
+## Design principles
+
+1. As pyaerocom-programmer using aerovaldb I want to have documented functions with arguments, e.g. `put_heatmap(hm, country, component)`
+2. From a DB-implementer I want to have a resource-name (table/path) with parameters as dictionary, e.g.
+    `open(f"path/to/heatmaps/{country}/{component}.json")` or `SELECT * FROM PATH_TO_HEATMAPS where country = ? and component = ?`
+3. As Web-developer using aerovaldb, I have to map routes to function, and I have parameters for the routes.
+4. For performance, I want to avoid unnecessary json/obj transformations, so I want to put/get obj or json or filehandle
+   and the database might want to decide how to handle that fastest. obj should be the default, json is required,
+   filehandle is optional (and only for get-operations.).
 
 
 ## Installation
@@ -26,8 +35,9 @@ The scope of aerovaldb are:
 
 ```python
 
-import aerovaldb
-with aerovaldb.JSON_Filehandle_DB('path/to/data/') as db:
+from aerovaldb.jsonfiledb import AerovalJsonFileDB
+
+with AerovalJsonFileDB('path/to/data/') as db:
     try:
         fh = db.get_geojson_map(type=JSON_FILEHANDLE)
         # ... sendfile of filehandle
@@ -40,8 +50,9 @@ with aerovaldb.JSON_Filehandle_DB('path/to/data/') as db:
 ### Writer
 
 ```python
-import aerovaldb
-with aerovaldb.JSON_Filehandle_DB('path/to/data/') as db:
+from aerovaldb.jsonfiledb import AerovalJsonFileDB
+
+with AerovalJsonFileDB('path/to/data/') as db:
     obj = db.get_model_timeseries(type=OBJ) # type=OBJ is default
     obj["new_model"] = modeltimeseries
     db.put_model_timeseries(obj, type=OBJ) # type=OBJ is default
