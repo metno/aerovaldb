@@ -11,8 +11,15 @@ class TestJsonFileDB(unittest.TestCase):
         self.assertGreaterEqual(len(engines), 1)
 
     def test_get(self):
-        with aerovaldb.open("json_files:basedir") as db:
-            data = db.get_heatmap_timeseries("DE", "concno2")
-            self.assertEqual(data, "dummy")
-            obj = {"xxx": "123"}
-            data = db.put_heatmap_timeseries(obj, "XX", "concno2")
+        with aerovaldb.open("json_files:./test/testdb/json") as db:
+            data = db._get("/glob_stats", {"project": "test", "experiment": "test", "frequency": "monthly"})
+            self.assertEqual(data["path"], "gibberish")
+
+    def test_put(self):
+        with aerovaldb.open("json_files:./test/testdb/tmp") as db:
+            obj = {"data": "gibberish"}
+            data = db._put("/glob_stats", obj, {"project": "test", "experiment": "test", "frequency": "monthly"})
+
+            read_data = db._get("/glob_stats", {"project": "test", "experiment": "test", "frequency": "monthly"})
+
+            self.assertEqual(obj, read_data)

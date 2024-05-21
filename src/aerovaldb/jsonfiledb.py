@@ -26,6 +26,13 @@ class AerovalJsonFileDB(AerovalDB):
 
     @get_method("/glob_stats/{project}/{experiment}/{frequency}")
     def get_glob_stats(self, project: str, experiment: str, frequency: str):
+        # TODO: Should maybe be asynchronous.
         file_path = os.path.join(self._basedir, project, experiment, "hm", f'glob_stats_{frequency}.json')
-        with open(file_path) as f:
+        with open(file_path, "r") as f:
             return json.load(f)
+        
+    @put_method("/glob_stats/{project}/{experiment}/{frequency}")
+    def put_glob_stats(self, obj, project: str, experiment: str, frequency: str):
+        file_path = os.path.join(self._basedir, project, experiment, "hm", f'glob_stats_{frequency}.json')
+        with open(file_path, "w") as f:
+            json.dump(obj, f)
