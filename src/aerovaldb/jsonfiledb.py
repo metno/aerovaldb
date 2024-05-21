@@ -4,7 +4,9 @@ import logging
 from aerovaldb.aerovaldb import get_method, put_method
 import os
 import json
-
+import aiofile
+import async_lru
+import orjson
 logger = logging.getLogger(__name__)
 
 
@@ -25,14 +27,19 @@ class AerovalJsonFileDB(AerovalDB):
         return "dummyPut"
 
     @get_method("/glob_stats/{project}/{experiment}/{frequency}")
-    def get_glob_stats(self, project: str, experiment: str, frequency: str):
-        # TODO: Should maybe be asynchronous.
+    @async_lru.alru_cache(maxsize=64)
+    async def get_glob_stats(self, project: str, experiment: str, frequency: str):
         file_path = os.path.join(self._basedir, project, experiment, "hm", f'glob_stats_{frequency}.json')
-        with open(file_path, "r") as f:
-            return json.load(f)
+        async with aiofile.async_open(file_path, "rb") as f:
+            raw = await f.read()
+        
+        return orjson.loads(raw)
+    
         
     @put_method("/glob_stats/{project}/{experiment}/{frequency}")
     def put_glob_stats(self, obj, project: str, experiment: str, frequency: str):
+        self.get_glob_stats.cache_invalidate(project=project, experiment=experiment, frequency=frequency)
+
         file_path = os.path.join(self._basedir, project, experiment, "hm", f'glob_stats_{frequency}.json')
         with open(file_path, "w") as f:
-            json.dump(obj, f)
+            json.dumps(obj, f)
