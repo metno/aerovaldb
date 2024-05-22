@@ -173,3 +173,53 @@ class AerovalDB(abc.ABC):
         :param experiment: _description_
         """
         raise NotImplementedError
+
+    @get_method("/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
+    def get_ts(
+        self,
+        project: str,
+        experiment: str,
+        region: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param region: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
+    def put_ts(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        region: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        :param region: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        """
+        raise NotImplementedError

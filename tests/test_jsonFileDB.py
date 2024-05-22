@@ -48,3 +48,20 @@ class TestJsonFileDB(unittest.TestCase):
             read_data = db.get_contour("test1", "test2")
 
             self.assertEqual(obj["data"], read_data["data"])
+
+    def test_get_ts(self):
+        with aerovaldb.open(f"json_files:./tests/test-db/json") as db:
+            data = db.get_ts(
+                "project", "experiment", "region", "network", "obsvar", "layer"
+            )
+
+            self.assertEqual(data["path"], "./project/experiment/ts/")
+
+    def test_put_ts(self):
+        with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
+            obj = {"data": "gibberish"}
+            db.put_ts(obj, "test1", "test2", "test3", "test4", "test5", "test6")
+
+            read_data = db.get_ts("test1", "test2", "test3", "test4", "test5", "test6")
+
+            self.assertEqual(obj["data"], read_data["data"])
