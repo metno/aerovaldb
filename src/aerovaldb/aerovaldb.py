@@ -29,7 +29,6 @@ def get_method(route):
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
 
-            print(route, route_args, *args, **kwargs)
             return self._get(route, route_args, *args, **kwargs)
 
         return wrapper
@@ -136,6 +135,10 @@ class AerovalDB(abc.ABC):
         :param project: The project ID.
         :param experiment: The experiment ID.
         :param frequency: The frequency (eg. 'monthly')
+        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
+            "OBJ" (Default) a python object with the data is returned.
+            "JSON_STR" the raw json string is returned.
+            "FILE_PATH" the path to the file where the data is stored is returned.
         """
         raise NotImplementedError
 
