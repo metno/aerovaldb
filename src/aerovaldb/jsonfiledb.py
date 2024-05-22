@@ -47,15 +47,3 @@ class AerovalJsonFileDB(AerovalDB):
         json = orjson.dumps(obj)
         with open(file_path, "wb") as f:
             f.write(json)
-
-    @get_method("/glob_stats/{project}/{experiment}/{frequency}")
-    def get_glob_stats(
-        self, project: str, experiment: str, frequency: str, /, *args, **kwargs
-    ):
-        pass
-
-    @put_method("/glob_stats/{project}/{experiment}/{frequency}")
-    def put_glob_stats(
-        self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs
-    ):
-        pass
