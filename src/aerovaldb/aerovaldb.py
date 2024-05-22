@@ -185,7 +185,7 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """TODO
 
@@ -210,7 +210,7 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """TODO
 
