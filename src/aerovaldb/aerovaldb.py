@@ -128,10 +128,13 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/glob_stats/{project}/{experiment}/{frequency}")
-    def put_glob_stats(self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs):
+    def put_glob_stats(
+        self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs
+    ):
         raise NotImplementedError
-    
+
     @put_method("/glob_stats/{project}/{experiment}/{frequency}")
-    def get_glob_stats(self, project: str, experiment: str, frequency: str, /, *args, **kwargs):
+    def get_glob_stats(
+        self, project: str, experiment: str, frequency: str, /, *args, **kwargs
+    ):
         raise NotImplementedError
-    
