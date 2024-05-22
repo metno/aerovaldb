@@ -154,3 +154,22 @@ class AerovalDB(abc.ABC):
         :param frequency: The frequency (eg. 'monthly')
         """
         raise NotImplementedError
+
+    @get_method("/contour/{project}/{experiment}")
+    def get_contour(self, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/contour/{project}/{experiment}")
+    def put_contour(self, obj, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
