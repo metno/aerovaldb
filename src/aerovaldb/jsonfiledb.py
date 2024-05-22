@@ -19,7 +19,8 @@ class AerovalJsonFileDB(AerovalDB):
             self._basedir = Path(self._basedir)
 
         self.PATH_LOOKUP = {
-            "/glob_stats/{project}/{experiment}/{frequency}": "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
+            "/glob_stats/{project}/{experiment}/{frequency}": "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+            "/contour/{project}/{experiment}": "./{project}/{experiment}/contour/modvar_model.geojson",
         }
 
     def _normalize_access_type(
