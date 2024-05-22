@@ -157,20 +157,24 @@ class AerovalDB(abc.ABC):
 
     @get_method("/contour/{project}/{experiment}")
     def get_contour(self, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Fetch a contour object from the db.
 
-        :param project: _description_
-        :param experiment: _description_
+        :param project: Project ID-
+        :param experiment: Experiment ID.
+        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
+            "OBJ" (Default) a python object with the data is returned.
+            "JSON_STR" the raw json string is returned.
+            "FILE_PATH" the path to the file where the data is stored is returned.
         """
         raise NotImplementedError
 
     @put_method("/contour/{project}/{experiment}")
     def put_contour(self, obj, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Put a contour object in the db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
@@ -187,14 +191,18 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Fetches a timeseries from the db.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param region: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
+        :param project: Project id.
+        :param experiment: Experiment ID.
+        :param region: Region.
+        :param network: Observation network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
+        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
+            "OBJ" (Default) a python object with the data is returned.
+            "JSON_STR" the raw json string is returned.
+            "FILE_PATH" the path to the file where the data is stored is returned.
         """
         raise NotImplementedError
 
@@ -212,14 +220,18 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Places a timeseries in the db
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param region: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
+        :param obj: The object to write into the db.
+        :param project: Project ID
+        :param experiment: Experiment ID.
+        :param region: Region
+        :param network: Observation network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
+        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
+            "OBJ" (Default) a python object with the data is returned.
+            "JSON_STR" the raw json string is returned.
+            "FILE_PATH" the path to the file where the data is stored is returned.
         """
         raise NotImplementedError
