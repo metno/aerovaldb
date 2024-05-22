@@ -131,11 +131,23 @@ class AerovalDB(abc.ABC):
     def get_glob_stats(
         self, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
+        """Fetches a glob_stats object from the database.
+
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+        :param frequency: The frequency (eg. 'monthly')
+        """
         raise NotImplementedError
 
     @put_method("/glob_stats/{project}/{experiment}/{frequency}")
     def put_glob_stats(
         self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
-        raise NotImplementedError
+        """Saves a glob_stats object to the database.
 
+        :param obj: The object to be stored.
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+        :param frequency: The frequency (eg. 'monthly')
+        """
+        raise NotImplementedError
