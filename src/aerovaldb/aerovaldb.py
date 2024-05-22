@@ -29,6 +29,7 @@ def get_method(route):
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
 
+            print(route, route_args, *args, **kwargs)
             return self._get(route, route_args, *args, **kwargs)
 
         return wrapper
@@ -125,3 +126,12 @@ class AerovalDB(abc.ABC):
         :raises NotImplementedError
         """
         raise NotImplementedError
+
+    @get_method("/glob_stats/{project}/{experiment}/{frequency}")
+    def put_glob_stats(self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs):
+        raise NotImplementedError
+    
+    @put_method("/glob_stats/{project}/{experiment}/{frequency}")
+    def get_glob_stats(self, project: str, experiment: str, frequency: str, /, *args, **kwargs):
+        raise NotImplementedError
+    
