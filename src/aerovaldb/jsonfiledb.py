@@ -22,6 +22,33 @@ class AerovalJsonFileDB(AerovalDB):
             "/glob_stats/{project}/{experiment}/{frequency}": "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
         }
 
+    def _normalize_access_type(
+        self, access_type: AccessType | str | None, default: AccessType = AccessType.OBJ
+    ) -> AccessType:
+        """Normalizes the access_type to an instance of AccessType enum.
+
+        :param access_type: AccessType instance or string convertible to AccessType
+        :param default: The type to return if access_type is None. Defaults to AccessType.OBJ
+        :raises ValueError: If str access_type can't be converted to AccessType.
+        :raises ValueError: If access_type is not str or AccessType
+        :return: The normalized AccessType.
+        """
+        if isinstance(access_type, AccessType):
+            return access_type
+        if isinstance(access_type, str):
+            try:
+                return AccessType[access_type]
+            except:
+                raise ValueError(
+                    f"String '{access_type}' can not be converted to AccessType."
+                )
+        if access_type is None:
+            return default
+
+        raise ValueError(
+            f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
+        )
+
     def _get_file_path_from_route(self, route, route_args):
         file_path_template = self.PATH_LOOKUP.get(route, None)
         if file_path_template is None:
@@ -32,14 +59,15 @@ class AerovalJsonFileDB(AerovalDB):
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
     def _get(self, route, route_args, *args, **kwargs):
-        access_type = kwargs.get("type", AccessType.JSON_STR)
+        access_type = self._normalize_access_type(kwargs.get("access_type", None))
 
         file_path = self._get_file_path_from_route(route, route_args)
+        logger.debug(
+            f"Mapped route {route} / { route_args} to file {file_path} with type {access_type}."
+        )
 
         if access_type == AccessType.FILE_PATH:
             return str(file_path)
-
-        logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         if access_type == AccessType.JSON_STR:
             with open(file_path, "rb") as f:
