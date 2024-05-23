@@ -230,15 +230,14 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Fetches a weekly time series from the db.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
-        :raises NotImplementedError: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
@@ -258,129 +257,128 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Stores a weekly time series in the db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
     @get_method("/v0/experiments/{project}")
     def get_experiments(self, project: str, /, *args, **kwargs):
-        """TODO
+        """Fetches a list of experiments for a project from the db.
 
-        :param project: _description_
-        :raises NotImplementedError: _description_
+        :param project: Project ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/experiments/{project}")
     def put_experiments(self, obj, project: str, /, *args, **kwargs):
-        """TODO
+        """Stores a list of experiments for a project to the db.
 
-        :param project: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
         """
         raise NotImplementedError
 
     @get_method("/v0/config/{project}/{experiment}")
     def get_config(self, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Fetches a configuration from the db.
 
-        :param project: _description_
-        :param experiment: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/config/{project}/{experiment}")
     def put_config(self, obj, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Stores a configuration to the db.
 
-        :param project: _description_
-        :param experiment: _description_
-        :raises NotImplementedError: _description_
+        :paran obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
 
         raise NotImplementedError
 
     @get_method("/v0/menu/{project}/{experiment}")
     def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Fetches a menu configuartion from the db.
 
-        :param project: _description_
-        :param experiment: _description_
-        :raises NotImplementedError: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/menu/{project}/{experiment}")
     def put_menu(self, obj, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Stores a menu configuration in the db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @get_method("/v0/statistics/{project}/{experiment}")
     def get_statistics(self, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Fetches statistics for an experiment.
 
-        :param project: _description_
-        :param experiment: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/statistics/{project}/{experiment}")
     def put_statistics(self, obj, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Stores statistics to the db.
 
-        :param project: _description_
-        :param experiment: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @get_method("/v0/ranges/{project}/{experiment}")
     def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Fetches ranges from the db.
 
-        :param project: _description_
-        :param experiment: _description_
-        :raises NotImplementedError: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/ranges/{project}/{experiment}")
     def put_ranges(self, obj, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Stores ranges in db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @get_method("/v0/regions/{project}/{experiment}")
     def get_regions(self, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Fetches regions from db.
 
-        :param project: _description_
-        :param experiment: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/regions/{project}/{experiment}")
     def put_regions(self, obj, project: str, experiment: str, /, *args, **kwargs):
-        """TODO
+        """Stores regions in db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
+        :param obj: Object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
@@ -388,10 +386,10 @@ class AerovalDB(abc.ABC):
     def get_models_style(
         self, project: str, experiment: str | None, /, *args, **kwargs
     ):
-        """TODO
+        """Fetches model styles from db.
 
-        :param project: _description_
-        :param experiment: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
@@ -399,13 +397,13 @@ class AerovalDB(abc.ABC):
     def put_models_style(
         self, obj, project: str, experiment: str | None, /, *args, **kwargs
     ):
-        """TODO
+        """Stores model styles config in db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
+        :param obj: Object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
         """
-        # TODO: Rethink this so experiment can be passed as an optiona kwarg since it is optional.
+        # TODO: Rethink this so experiment can be passed as an optional kwarg since it is optional.
         raise NotImplementedError
 
     @get_method(
@@ -424,15 +422,15 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Get scat.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
-        :param model: _description_
-        :param modvar: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param network: Observation network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
+        :param model: Model ID.
+        :param modvar: Model variable.
         """
         raise NotImplementedError
 
@@ -453,16 +451,16 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Stores scat in db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
-        :param model: _description_
-        :param modvar: _description_
+        :param obj: Object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param network: Observation network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
+        :param model: Model ID.
+        :param modvar: Model variable.
         """
         raise NotImplementedError
 
@@ -477,12 +475,12 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Fetches profiles from db.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
+        :param project: Project ID._
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation network.
         """
         raise NotImplementedError
 
@@ -498,13 +496,13 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Stores profiles in db.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
+        :param obj: Object to be stored.
+        :param project: Project ID._
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation network.
         """
         raise NotImplementedError
 
@@ -521,15 +519,14 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Fetches heatmap timeseries.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
-        :raises NotImplementedError: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
@@ -547,15 +544,15 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Stores heatmap timeseries.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
@@ -574,14 +571,14 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Fetch forecast.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
@@ -601,15 +598,15 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Store forecast.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param station: _description_
-        :param network: _description_
-        :param obsvar: _description_
-        :param layer: _description_
+        :param obj: The Object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param station: Station ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
@@ -617,12 +614,12 @@ class AerovalDB(abc.ABC):
     def get_gridded_map(
         self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
     ):
-        """TODO
+        """Fetches gridded map.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param obsvar: _description_
-        :param model: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param obsvar: Observation variable.
+        :param model: Model ID.
         """
         raise NotImplementedError
 
@@ -638,22 +635,23 @@ class AerovalDB(abc.ABC):
         *args,
         **kwargs,
     ):
-        """TODO
+        """Store gridded map.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param obsvar: _description_
-        :param model: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param obsvar: Observation variable.
+        :param model: Model ID.
         """
         raise NotImplementedError
 
     @get_method("/v0/report/{project}/{experiment}/{title}")
     def get_report(self, project: str, experiment: str, title: str, /, *args, **kwargs):
-        """TODO
+        """Fetch report.
 
-        :param project: _description_
-        :param experiment: _description_
-        :param title: _description_
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param title: Report title (ie. filename without extension).
         """
         raise NotImplementedError
 
@@ -661,11 +659,11 @@ class AerovalDB(abc.ABC):
     def put_report(
         self, obj, project: str, experiment: str, title: str, /, *args, **kwargs
     ):
-        """TODO
+        """Store report.
 
-        :param obj: _description_
-        :param project: _description_
-        :param experiment: _description_
-        :param title: _description_
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param title: Report title (ie. filename without extension).
         """
         raise NotImplementedError
