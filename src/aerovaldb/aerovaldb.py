@@ -646,3 +646,26 @@ class AerovalDB(abc.ABC):
         :param model: _description_
         """
         raise NotImplementedError
+
+    @get_method("/v0/report/{project}/{experiment}/{title}")
+    def get_report(self, project: str, experiment: str, title: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param title: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/report/{project}/{experiment}/{title}")
+    def put_report(
+        self, obj, project: str, experiment: str, title: str, /, *args, **kwargs
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        :param title: _description_
+        """
+        raise NotImplementedError
