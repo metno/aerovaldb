@@ -134,8 +134,8 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("/v0/contour/{project}/{experiment}")
-    def get_contour(self, project: str, experiment: str, /, *args, **kwargs):
+    @get_method("/v0/contour/{project}/{experiment}/{modvar}/{model}")
+    def get_contour(self, project: str, experiment: str, modvar: str, model: str, /, *args, **kwargs):
         """Fetch a contour object from the db.
 
         :param project: Project ID-
@@ -148,7 +148,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/contour/{project}/{experiment}")
-    def put_contour(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    def put_contour(self, obj, project: str, experiment: str, modvar: str, model: str, /, *args, **kwargs):
         """Put a contour object in the db.
 
         :param obj: The object to be stored.
