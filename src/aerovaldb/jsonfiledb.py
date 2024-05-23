@@ -28,6 +28,10 @@ class AerovalJsonFileDB(AerovalDB):
             "/v0/statistics/{project}/{experiment}": "./{project}/{experiment}/statistics.json",
             "/v0/ranges/{project}/{experiment}": "./{project}/{experiment}/ranges.json",
             "/v0/regions/{project}/{experiment}": "./{project}/{experiment}/regions.json",
+            "/v0/model_style/{project}/{experiment}": [
+                "./{project}/{experiment}/models-style.json",
+                "./{project}/models-style.json",
+            ],
         }
 
     def _normalize_access_type(
@@ -58,11 +62,20 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     def _get_file_path_from_route(self, route, route_args):
-        file_path_template = self.PATH_LOOKUP.get(route, None)
-        if file_path_template is None:
+        file_path_templates: list[str] = self.PATH_LOOKUP.get(route, None)
+        if file_path_templates is None:
             raise KeyError(f"No file path template found for route {route}.")
 
-        relative_path = file_path_template.format(**route_args)
+        if not isinstance(file_path_templates, list):
+            file_path_templates = [file_path_templates]
+
+        for t in file_path_templates:
+            try:
+                relative_path = t.format(**route_args)
+            except TypeError:
+                continue
+
+            break
 
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
