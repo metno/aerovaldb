@@ -214,3 +214,40 @@ class AerovalDB(abc.ABC):
             "FILE_PATH" the path to the file where the data is stored is returned.
         """
         raise NotImplementedError
+
+    @get_method("/v0/experiments/{project}")
+    def get_experiments(self, project: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :raises NotImplementedError: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/experiments/{project}")
+    def put_experiments(self, project: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        """
+        raise NotImplementedError
+
+    @get_method("/v0/config/{project}/{experiment}")
+    def get_config(self, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/config/{project}/{experiment}")
+    def put_config(self, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :raises NotImplementedError: _description_
+        """
+
+        raise NotImplementedError
