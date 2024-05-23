@@ -22,6 +22,8 @@ class AerovalJsonFileDB(AerovalDB):
             "/v0/glob_stats/{project}/{experiment}/{frequency}": "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
             "/v0/contour/{project}/{experiment}": "./{project}/{experiment}/contour/modvar_model.geojson",
             "/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/ts/{region}_{network}-{obsvar}_{layer}.json",
+            "/v0/experiments/{project}": "./{project}/experiments.json",
+            "/v0/config/{project}/{experiment}": "./{project}/{experiment}/cfg_{project}_{experiment}.json",
         }
 
     def _normalize_access_type(
