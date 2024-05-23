@@ -149,7 +149,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/v0/contour/{project}/{experiment}")
+    @put_method("/v0/contour/{project}/{experiment}/{modvar}/{model}")
     def put_contour(
         self,
         obj,
