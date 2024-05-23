@@ -465,3 +465,44 @@ class AerovalDB(abc.ABC):
         :param modvar: _description_
         """
         raise NotImplementedError
+
+    @get_method("/v0/profiles/{project}/{experiment}/ {station}_{network}_{obsvar}")
+    def get_profiles(
+        self,
+        project: str,
+        experiment: str,
+        station: str,
+        network: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param station: _description_
+        :param network: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/profiles/{project}/{experiment}/ {station}_{network}_{obsvar}")
+    def put_profiles(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        station: str,
+        network: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        :param station: _description_
+        :param network: _description_
+        """
