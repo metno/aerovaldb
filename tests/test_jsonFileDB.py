@@ -36,14 +36,14 @@ class TestJsonFileDB(unittest.TestCase):
 
     def test_get_contour(self):
         with aerovaldb.open(f"json_files:./tests/test-db/json") as db:
-            data = db.get_contour("project", "experiment")
+            data = db.get_contour("project", "experiment", "modvar", "model")
 
             self.assertEqual(data["path"], "./project/experiment/contour/")
 
     def test_put_contour(self):
         with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
             obj = {"data": "gibberish"}
-            db.put_contour(obj, "test1", "test2")
+            db.put_contour(obj, "test1", "test2", "test3", "test4")
 
             read_data = db.get_contour("test1", "test2")
 
