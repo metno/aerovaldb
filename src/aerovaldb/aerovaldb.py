@@ -407,3 +407,61 @@ class AerovalDB(abc.ABC):
         """
         # TODO: Rethink this so experiment can be passed as an optiona kwarg since it is optional.
         raise NotImplementedError
+
+    @get_method(
+        "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
+    )
+    def get_scat(
+        self,
+        project: str,
+        experiment: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        model: str,
+        modvar: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        :param model: _description_
+        :param modvar: _description_
+        """
+        raise NotImplementedError
+
+    @put_method(
+        "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
+    )
+    def put_scat(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        model: str,
+        modvar: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        :param model: _description_
+        :param modvar: _description_
+        """
+        raise NotImplementedError
