@@ -611,3 +611,38 @@ class AerovalDB(abc.ABC):
         :param obsvar: _description_
         :param layer: _description_
         """
+        raise NotImplementedError
+
+    @get_method("/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}")
+    def get_gridded_map(
+        self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param obsvar: _description_
+        :param model: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}")
+    def put_gridded_map(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param obsvar: _description_
+        :param model: _description_
+        """
+        raise NotImplementedError
