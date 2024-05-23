@@ -486,7 +486,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/v0/profiles/{project}/{experiment}/ {station}_{network}_{obsvar}")
+    @put_method("/v0/profiles/{project}/{experiment}/{station}_{network}_{obsvar}")
     def put_profiles(
         self,
         obj,
@@ -506,3 +506,55 @@ class AerovalDB(abc.ABC):
         :param station: _description_
         :param network: _description_
         """
+        raise NotImplementedError
+
+    @get_method("/v0/hm_ts/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}")
+    def get_hm_ts(
+        self,
+        project: str,
+        experiment: str,
+        station: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param station: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        :raises NotImplementedError: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/hm_ts/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}")
+    def put_hm_ts(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        station: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        :param station: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        """
+        raise NotImplementedError
