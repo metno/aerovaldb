@@ -27,6 +27,7 @@ class AerovalJsonFileDB(AerovalDB):
             "/v0/menu/{project}/{experiment}": "./{project}/{experiment}/menu.json",
             "/v0/statistics/{project}/{experiment}": "./{project}/{experiment}/statistics.json",
             "/v0/ranges/{project}/{experiment}": "./{project}/{experiment}/ranges.json",
+            "/v0/regions/{project}/{experiment}": "./{project}/{experiment}/regions.json",
         }
 
     def _normalize_access_type(

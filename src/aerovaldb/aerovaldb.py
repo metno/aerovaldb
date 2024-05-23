@@ -309,3 +309,22 @@ class AerovalDB(abc.ABC):
         :param experiment: _description_
         """
         raise NotImplementedError
+
+    @get_method("/v0/regions/{project}/{experiment}")
+    def get_regions(self, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/regions/{project}/{experiment}")
+    def put_regions(self, obj, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
