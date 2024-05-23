@@ -282,9 +282,29 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/statistics/{project}/{experiment}")
-    def put_statistics(self, project: str, experiment: str, /, *args, **kwargs):
+    def put_statistics(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """TODO
 
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
+
+    @get_method("/v0/ranges/{project}/{experiment}")
+    def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :raises NotImplementedError: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/ranges/{project}/{experiment}")
+    def put_ranges(self, obj, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param obj: _description_
         :param project: _description_
         :param experiment: _description_
         """
