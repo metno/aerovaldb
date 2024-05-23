@@ -558,3 +558,56 @@ class AerovalDB(abc.ABC):
         :param layer: _description_
         """
         raise NotImplementedError
+
+    @get_method(
+        "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
+    )
+    def get_forecast(
+        self,
+        project: str,
+        experiment: str,
+        station: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :param station: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        """
+        raise NotImplementedError
+
+    @put_method(
+        "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
+    )
+    def get_forecast(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        station: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        :param station: _description_
+        :param network: _description_
+        :param obsvar: _description_
+        :param layer: _description_
+        """
