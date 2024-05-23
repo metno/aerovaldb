@@ -328,3 +328,27 @@ class AerovalDB(abc.ABC):
         :param experiment: _description_
         """
         raise NotImplementedError
+
+    @get_method("/v0/model_style/{project}/{experiment}")
+    def get_models_style(
+        self, project: str, experiment: str | None, /, *args, **kwargs
+    ):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        """
+        raise NotImplementedError
+
+    @put_method("/v0/model_style/{project}/{experiment}")
+    def put_models_style(
+        self, obj, project: str, experiment: str | None, /, *args, **kwargs
+    ):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        """
+        # TODO: Rethink this so experiment can be passed as a kwarg since it is optional.
+        raise NotImplementedError
