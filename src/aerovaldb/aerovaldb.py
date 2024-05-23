@@ -350,5 +350,5 @@ class AerovalDB(abc.ABC):
         :param project: _description_
         :param experiment: _description_
         """
-        # TODO: Rethink this so experiment can be passed as a kwarg since it is optional.
+        # TODO: Rethink this so experiment can be passed as an optiona kwarg since it is optional.
         raise NotImplementedError
