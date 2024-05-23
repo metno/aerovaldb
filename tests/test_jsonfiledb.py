@@ -11,7 +11,7 @@ import aerovaldb
             ["project", "experiment", "frequency"],
             "./project/experiment/hm/",
         ),
-        ("get_contour", ["project", "experiment"], "./project/experiment/contour/"),
+        ("get_contour", ["project", "experiment", "modvar", "model"], "./project/experiment/contour/"),
         (
             "get_ts",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
