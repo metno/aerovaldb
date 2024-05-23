@@ -105,28 +105,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("hm/ts/{place}_{component}")
-    def get_heatmap_timeseries(self, place, component, /, *args, **kwargs):
-        """Get a timeseries for a headmap and a place/region
-
-        :param place: region for the timeseries
-        :param component: timeseries component
-        :raises NotImplementedError
-        """
-        raise NotImplementedError
-
-    @put_method("hm/ts/{place}_{component}")
-    def put_heatmap_timeseries(self, obj, place, component, /, *args, **kwargs):
-        """Get a timeseries for a headmap and a place/region
-
-        :param obj: the object to put
-        :param place: region for the timeseries
-        :param component: timeseries component
-        :raises NotImplementedError
-        """
-        raise NotImplementedError
-
-    @get_method("/glob_stats/{project}/{experiment}/{frequency}")
+    @get_method("/v0/glob_stats/{project}/{experiment}/{frequency}")
     def get_glob_stats(
         self, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
@@ -142,7 +121,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/glob_stats/{project}/{experiment}/{frequency}")
+    @put_method("/v0/glob_stats/{project}/{experiment}/{frequency}")
     def put_glob_stats(
         self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
@@ -155,7 +134,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("/contour/{project}/{experiment}")
+    @get_method("/v0/contour/{project}/{experiment}")
     def get_contour(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetch a contour object from the db.
 
@@ -168,7 +147,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/contour/{project}/{experiment}")
+    @put_method("/v0/contour/{project}/{experiment}")
     def put_contour(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Put a contour object in the db.
 
@@ -178,7 +157,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
+    @get_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
     def get_ts(
         self,
         project: str,
@@ -206,7 +185,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
+    @put_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
     def put_ts(
         self,
         obj,
