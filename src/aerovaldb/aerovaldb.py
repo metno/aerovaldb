@@ -225,7 +225,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/experiments/{project}")
-    def put_experiments(self, project: str, /, *args, **kwargs):
+    def put_experiments(self, obj, project: str, /, *args, **kwargs):
         """TODO
 
         :param project: _description_
@@ -242,7 +242,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/config/{project}/{experiment}")
-    def put_config(self, project: str, experiment: str, /, *args, **kwargs):
+    def put_config(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """TODO
 
         :param project: _description_
@@ -250,4 +250,24 @@ class AerovalDB(abc.ABC):
         :raises NotImplementedError: _description_
         """
 
+        raise NotImplementedError
+
+    @get_method("/v0/menu/{project}/{experiment}")
+    def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param project: _description_
+        :param experiment: _description_
+        :raises NotImplementedError: _description_
+        """
+        raise NotImplementedError
+    
+    @put_method("/v0/menu/{project}/{experiment}")
+    def put_menu(self, obj, project: str, experiment: str, /, *args, **kwargs):
+        """TODO
+
+        :param obj: _description_
+        :param project: _description_
+        :param experiment: _description_
+        """
         raise NotImplementedError
