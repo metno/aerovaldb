@@ -42,7 +42,11 @@ class AerovalJsonFileDB(AerovalDB):
                 "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
             ],
             "/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}": "./{project}/{experiment}/profiles/{station}_{network}-{obsvar}.json",
-            "/v0/hm_ts/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/hm/ts/{station}-{network}-{obsvar}-{layer}.json",
+            "/v0/hm_ts/{project}/{experiment}": [
+                "./{project}/{experiment}/hm/ts/{station}-{network}-{obsvar}-{layer}.json",
+                "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
+                "./{project}/{experiment}/hm/ts/stats_ts.json",
+            ],
             "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/forecast/{station}_{network}-{obsvar}_{layer}.json",
             "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": "./{project}/{experiment}/contour/{obsvar}_{model}.json",
             "/v0/report/{project}/{experiment}/{title}": "./reports/{project}/{experiment}/{title}.json",

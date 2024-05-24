@@ -577,15 +577,11 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("/v0/hm_ts/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}")
+    @get_method("/v0/hm_ts/{project}/{experiment}")
     def get_hm_ts(
         self,
         project: str,
         experiment: str,
-        station: str,
-        network: str,
-        obsvar: str,
-        layer: str,
         /,
         *args,
         **kwargs,
@@ -594,23 +590,19 @@ class AerovalDB(abc.ABC):
 
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
-        :param network: Observation Network.
-        :param obsvar: Observation variable.
-        :param layer: Layer.
+        :param station: (Optional kwarg) Station ID.
+        :param network: (Optional kwarg) Observation Network.
+        :param obsvar: (Optional kwarg) Observation variable.
+        :param layer: (Optional kwarg) Layer.
         """
         raise NotImplementedError
 
-    @put_method("/v0/hm_ts/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}")
+    @put_method("/v0/hm_ts/{project}/{experiment}")
     def put_hm_ts(
         self,
         obj,
         project: str,
         experiment: str,
-        station: str,
-        network: str,
-        obsvar: str,
-        layer: str,
         /,
         *args,
         **kwargs,

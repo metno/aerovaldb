@@ -81,9 +81,30 @@ import aerovaldb
         ),
         (
             "get_hm_ts",
-            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            ["project", "experiment"],
             None,
-            "./project/experiment/hm/ts/",
+            "project/experiment/hm/ts/stats_ts.json",
+        ),
+        (
+            "get_hm_ts",
+            ["project", "experiment"],
+            {
+                "network": "network",
+                "obsvar": "obsvar",
+                "layer": "layer",
+            },
+            "./project/experiment/hm/ts/network-obsvar-layer"
+        ),
+        (
+            "get_hm_ts",
+            ["project", "experiment"],
+            {
+                "network": "network",
+                "obsvar": "obsvar",
+                "layer": "layer",
+                "station": "region",
+            },
+            "./project/experiment/hm/ts/"
         ),
         (
             "get_forecast",
@@ -101,7 +122,7 @@ import aerovaldb
             "get_report",
             ["project", "experiment", "title"],
             None,
-            "./reports/project/experiment/contour/",
+            "./reports/project/experiment/",
         ),
     ),
 )
