@@ -394,10 +394,8 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("/v0/model_style/{project}/{experiment}")
-    def get_models_style(
-        self, project: str, experiment: str | None, /, *args, **kwargs
-    ):
+    @get_method("/v0/model_style/{project}")
+    def get_models_style(self, project: str, /, *args, **kwargs):
         """Fetches model styles from db.
 
         :param project: Project ID.
@@ -405,10 +403,8 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/v0/model_style/{project}/{experiment}")
-    def put_models_style(
-        self, obj, project: str, experiment: str | None, /, *args, **kwargs
-    ):
+    @put_method("/v0/model_style/{project}")
+    def put_models_style(self, obj, project: str, /, *args, **kwargs):
         """Stores model styles config in db.
 
         :param obj: Object to be stored.
