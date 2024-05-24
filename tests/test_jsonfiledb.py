@@ -58,6 +58,11 @@ import aerovaldb
             ["project", "experiment", "region", "network", "obsvar", "layer"],
             "./project/experiment/forecast/",
         ),
+        (
+            "get_gridded_map",
+            ["project", "experiment", "obsvar", "model"],
+            "./project/experiment/contour/",
+        ),
     ),
 )
 def test_getter(resource: str, fun: str, args: list, expected):
