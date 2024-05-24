@@ -28,7 +28,7 @@ class AerovalJsonFileDB(AerovalDB):
             "/v0/statistics/{project}/{experiment}": "./{project}/{experiment}/statistics.json",
             "/v0/ranges/{project}/{experiment}": "./{project}/{experiment}/ranges.json",
             "/v0/regions/{project}/{experiment}": "./{project}/{experiment}/regions.json",
-            "/v0/model_style/{project}/{experiment}": [
+            "/v0/model_style/{project}": [
                 "./{project}/{experiment}/models-style.json",
                 "./{project}/models-style.json",
             ],
@@ -68,28 +68,30 @@ class AerovalJsonFileDB(AerovalDB):
             f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
         )
 
-    def _get_file_path_from_route(self, route, route_args):
+    def _get_file_path_from_route(self, route, route_args, /, *args, **kwargs):
         file_path_templates: list[str] = self.PATH_LOOKUP.get(route, None)
         if file_path_templates is None:
             raise KeyError(f"No file path template found for route {route}.")
+
+        substitutions = route_args | kwargs
 
         if not isinstance(file_path_templates, list):
             file_path_templates = [file_path_templates]
 
         for t in file_path_templates:
             try:
-                relative_path = t.format(**route_args)
+                relative_path = t.format(**substitutions)
             except KeyError:
-                continue
-
-            break
+                pass
+            else:
+                break
 
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
     def _get(self, route, route_args, *args, **kwargs):
         access_type = self._normalize_access_type(kwargs.get("access_type", None))
 
-        file_path = self._get_file_path_from_route(route, route_args)
+        file_path = self._get_file_path_from_route(route, route_args, **kwargs)
         logger.debug(
             f"Mapped route {route} / { route_args} to file {file_path} with type {access_type}."
         )
