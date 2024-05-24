@@ -11,7 +11,11 @@ import aerovaldb
             ["project", "experiment", "frequency"],
             "./project/experiment/hm/",
         ),
-        ("get_contour", ["project", "experiment", "modvar", "model"], "./project/experiment/contour/"),
+        (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            "./project/experiment/contour/",
+        ),
         (
             "get_ts",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
@@ -22,13 +26,35 @@ import aerovaldb
             ["project", "experiment", "region", "network", "obsvar", "layer"],
             "./project/experiment/ts/dirunal/",
         ),
+        ("get_experiments", ["project"], "./project/"),
+        ("get_config", ["project", "experiment"], "./project/experiment/"),
+        ("get_menu", ["project", "experiment"], "./project/experiment/"),
+        ("get_statistics", ["project", "experiment"], "./project/experiment/"),
+        ("get_ranges", ["project", "experiment"], "./project/experiment/"),
+        ("get_regions", ["project", "experiment"], "./project/experiment/"),
+        # TODO: /model_style and /map when optional parameter handling is decided / implemented.
+        (
+            "get_ts_weekly",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            "./project/experiment/ts/dirunal/",
+        ),
+        (
+            "get_scat",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            "./project/experiment/profiles/",
+        ),
+        (
+            "get_profiles",
+            ["project", "experiment", "region", "network", "obsvar"],
+            "./project/experiment/profiles/",
+        ),
     ),
 )
 def test_getter(resource: str, fun: str, args: list, expected):
     with aerovaldb.open(resource) as db:
-        fun = getattr(db, fun)
+        f = getattr(db, fun)
 
-        data = fun(*args)
+        data = f(*args)
 
         assert data["path"] == expected
 
