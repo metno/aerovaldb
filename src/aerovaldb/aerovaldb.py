@@ -431,14 +431,14 @@ class AerovalDB(abc.ABC):
     ):
         """Fetches map data from db.
 
-        :param project _description__
-        :param experiment _description__
-        :param network _description__
-        :param obsvar _description__
-        :param layer _description__
-        :param model _description__
-        :param modvar _description__
-        :param time _description__
+        :param project: Project Id
+        :param experiment: Experiment ID.
+        :param network: Observation network
+        :param obsvar: Observation variable.
+        :param layer: Layer
+        :param model: Model ID
+        :param modvar: Model variable.
+        :param time: (Optional) Time parameter as kwarg.
         """
         raise NotImplementedError
 
@@ -461,15 +461,15 @@ class AerovalDB(abc.ABC):
     ):
         """Stores map data in db.
 
-        :param obj _description
-        :param project _description__
-        :param experiment _description__
-        :param network _description__
-        :param obsvar _description__
-        :param layer _description__
-        :param model _description__
-        :param modvar _description__
-        :param time _description__
+        :param obj: The Object to be stored.
+        :param project: Project Id
+        :param experiment: Experiment ID.
+        :param network: Observation network
+        :param obsvar: Observation variable.
+        :param layer: Layer
+        :param model: Model ID
+        :param modvar: Model variable.
+        :param time: (Optional) Time parameter as kwarg.
         """
         raise NotImplementedError
 
@@ -498,6 +498,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         :param model: Model ID.
         :param modvar: Model variable.
+        :param time: (Optional) Optional time parameter as kwarg.
         """
         raise NotImplementedError
 
@@ -528,6 +529,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         :param model: Model ID.
         :param modvar: Model variable.
+        :param time: (Optional) Optional time parameter as kwarg.
         """
         raise NotImplementedError
 
