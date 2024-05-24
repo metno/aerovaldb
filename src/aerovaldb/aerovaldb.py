@@ -476,13 +476,14 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @get_method("/v0/profiles/{project}/{experiment}/ {station}_{network}_{obsvar}")
+    @get_method("/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}")
     def get_profiles(
         self,
         project: str,
         experiment: str,
         station: str,
         network: str,
+        obsvar: str,
         /,
         *args,
         **kwargs,
@@ -496,7 +497,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/v0/profiles/{project}/{experiment}/{station}_{network}_{obsvar}")
+    @put_method("/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}")
     def put_profiles(
         self,
         obj,
@@ -504,6 +505,7 @@ class AerovalDB(abc.ABC):
         experiment: str,
         station: str,
         network: str,
+        obsvar: str,
         /,
         *args,
         **kwargs,
