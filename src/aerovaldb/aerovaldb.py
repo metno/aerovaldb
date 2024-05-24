@@ -399,7 +399,7 @@ class AerovalDB(abc.ABC):
         """Fetches model styles from db.
 
         :param project: Project ID.
-        :param experiment: Experiment ID.
+        :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.       
         """
         raise NotImplementedError
 
@@ -409,9 +409,8 @@ class AerovalDB(abc.ABC):
 
         :param obj: Object to be stored.
         :param project: Project ID.
-        :param experiment: Experiment ID.
+        :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.
         """
-        # TODO: Rethink this so experiment can be passed as an optional kwarg since it is optional.
         raise NotImplementedError
 
     @get_method(
