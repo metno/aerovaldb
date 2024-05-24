@@ -599,7 +599,7 @@ class AerovalDB(abc.ABC):
     @put_method(
         "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
     )
-    def get_forecast(
+    def put_forecast(
         self,
         obj,
         project: str,
