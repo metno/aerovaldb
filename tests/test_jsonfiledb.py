@@ -63,6 +63,11 @@ import aerovaldb
             ["project", "experiment", "obsvar", "model"],
             "./project/experiment/contour/",
         ),
+        (
+            "get_report",
+            ["project", "experiment", "title"],
+            "./reports/project/experiment/contour/",
+        ),
     ),
 )
 def test_getter(resource: str, fun: str, args: list, expected):
