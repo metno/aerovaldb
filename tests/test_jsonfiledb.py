@@ -65,7 +65,13 @@ import aerovaldb
             "get_scat",
             ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
             None,
-            "./project/experiment/profiles/",
+            "./project/experiment/scat/",
+        ),
+        (
+            "get_scat",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            {"time": "time"},
+            "./project/experiment/scat/time",
         ),
         (
             "get_profiles",
