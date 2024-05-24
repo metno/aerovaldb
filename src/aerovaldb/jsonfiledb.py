@@ -37,7 +37,10 @@ class AerovalJsonFileDB(AerovalDB):
                 "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
             ],
             "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}": "./{project}/{experiment}/ts/diurnal/{station}_{network}-{obsvar}_{layer}.json",
-            "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+            "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": [
+                "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+            ],
             "/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}": "./{project}/{experiment}/profiles/{station}_{network}-{obsvar}.json",
             "/v0/hm_ts/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/hm/ts/{station}_{network}-{obsvar}-{layer}.json",
             "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/forecast/{station}_{network}-{obsvar}_{layer}.json",
