@@ -45,7 +45,7 @@ class TestJsonFileDB(unittest.TestCase):
             obj = {"data": "gibberish"}
             db.put_contour(obj, "test1", "test2", "test3", "test4")
 
-            read_data = db.get_contour("test1", "test2", "test1", "test2", "test3")
+            read_data = db.get_contour("test1", "test2", "test3", "test4")
 
             self.assertEqual(obj["data"], read_data["data"])
 
