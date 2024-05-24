@@ -399,7 +399,7 @@ class AerovalDB(abc.ABC):
         """Fetches model styles from db.
 
         :param project: Project ID.
-        :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.       
+        :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.
         """
         raise NotImplementedError
 
@@ -410,6 +410,66 @@ class AerovalDB(abc.ABC):
         :param obj: Object to be stored.
         :param project: Project ID.
         :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.
+        """
+        raise NotImplementedError
+
+    @get_method(
+        "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
+    )
+    def get_map(
+        self,
+        project: str,
+        experiment: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        model: str,
+        modvar: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """Fetches map data from db.
+
+        :param project _description__
+        :param experiment _description__
+        :param network _description__
+        :param obsvar _description__
+        :param layer _description__
+        :param model _description__
+        :param modvar _description__
+        :param time _description__
+        """
+        raise NotImplementedError
+
+    @put_method(
+        "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
+    )
+    def put_map(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        model: str,
+        modvar: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """Stores map data in db.
+
+        :param obj _description
+        :param project _description__
+        :param experiment _description__
+        :param network _description__
+        :param obsvar _description__
+        :param layer _description__
+        :param model _description__
+        :param modvar _description__
+        :param time _description__
         """
         raise NotImplementedError
 

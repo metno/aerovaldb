@@ -32,6 +32,10 @@ class AerovalJsonFileDB(AerovalDB):
                 "./{project}/{experiment}/models-style.json",
                 "./{project}/models-style.json",
             ],
+            "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}": [
+                "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+            ],
             "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}": "./{project}/{experiment}/ts/diurnal/{station}_{network}-{obsvar}_{layer}.json",
             "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
             "/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}": "./{project}/{experiment}/profiles/{station}_{network}-{obsvar}.json",
@@ -78,14 +82,17 @@ class AerovalJsonFileDB(AerovalDB):
         if not isinstance(file_path_templates, list):
             file_path_templates = [file_path_templates]
 
+        relative_path = None
         for t in file_path_templates:
             try:
                 relative_path = t.format(**substitutions)
             except KeyError:
-                pass
-            else:
-                break
+                continue
 
+            break
+
+        if relative_path is None:
+            raise ValueError("Error in relative path resolution.")
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
     def _get(self, route, route_args, *args, **kwargs):

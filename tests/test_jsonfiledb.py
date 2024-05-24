@@ -43,7 +43,18 @@ import aerovaldb
             {"experiment": "experiment"},
             "./project/experiment/",
         ),
-        # TODO: /model_style and /map when optional parameter handling is decided / implemented.
+        (
+            "get_map",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            None,
+            "./project/experiment/map/",
+        ),
+        (
+            "get_map",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            {"time": "time"},
+            "./project/experiment/map/with_time",
+        ),
         (
             "get_ts_weekly",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
