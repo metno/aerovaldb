@@ -48,6 +48,16 @@ import aerovaldb
             ["project", "experiment", "region", "network", "obsvar"],
             "./project/experiment/profiles/",
         ),
+        (
+            "get_hm_ts",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            "./project/experiment/hm/ts/",
+        ),
+        (
+            "get_forecast",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            "./project/experiment/forecast/",
+        ),
     ),
 )
 def test_getter(resource: str, fun: str, args: list, expected):
