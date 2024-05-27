@@ -142,6 +142,143 @@ async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expecte
         assert data["path"] == expected
 
 
+@pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
+@pytest.mark.parametrize(
+    "fun,args,kwargs,expected",
+    (
+        (
+            "get_glob_stats",
+            ["project", "experiment", "frequency"],
+            None,
+            "./project/experiment/hm/",
+        ),
+        (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            None,
+            "./project/experiment/contour/",
+        ),
+        (
+            "get_ts",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+            "./project/experiment/ts/",
+        ),
+        (
+            "get_ts_weekly",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+            "./project/experiment/ts/dirunal/",
+        ),
+        ("get_experiments", ["project"], None, "./project/"),
+        ("get_config", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_menu", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_statistics", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_regions", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_models_style", ["project"], None, "./project/"),
+        (
+            "get_models_style",
+            ["project"],
+            {"experiment": "experiment"},
+            "./project/experiment/",
+        ),
+        (
+            "get_map",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            None,
+            "./project/experiment/map/",
+        ),
+        (
+            "get_map",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            {"time": "time"},
+            "./project/experiment/map/with_time",
+        ),
+        (
+            "get_ts_weekly",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+            "./project/experiment/ts/dirunal/",
+        ),
+        (
+            "get_scat",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            None,
+            "./project/experiment/scat/",
+        ),
+        (
+            "get_scat",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            {"time": "time"},
+            "./project/experiment/scat/time",
+        ),
+        (
+            "get_profiles",
+            ["project", "experiment", "region", "network", "obsvar"],
+            None,
+            "./project/experiment/profiles/",
+        ),
+        (
+            "get_hm_ts",
+            ["project", "experiment"],
+            None,
+            "project/experiment/hm/ts/stats_ts.json",
+        ),
+        (
+            "get_hm_ts",
+            ["project", "experiment"],
+            {
+                "network": "network",
+                "obsvar": "obsvar",
+                "layer": "layer",
+            },
+            "./project/experiment/hm/ts/network-obsvar-layer",
+        ),
+        (
+            "get_hm_ts",
+            ["project", "experiment"],
+            {
+                "network": "network",
+                "obsvar": "obsvar",
+                "layer": "layer",
+                "station": "region",
+            },
+            "./project/experiment/hm/ts/",
+        ),
+        (
+            "get_forecast",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+            "./project/experiment/forecast/",
+        ),
+        (
+            "get_gridded_map",
+            ["project", "experiment", "obsvar", "model"],
+            None,
+            "./project/experiment/contour/",
+        ),
+        (
+            "get_report",
+            ["project", "experiment", "title"],
+            None,
+            "./reports/project/experiment/",
+        ),
+    ),
+)
+def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected):
+    with aerovaldb.open(resource) as db:
+        f = getattr(db, fun)
+
+        if kwargs is not None:
+            data = f(*args, **kwargs)
+        else:
+            data = f(*args)
+
+        assert data["path"] == expected
+
+
+
 @pytest.mark.asyncio
 async def test_put_glob_stats():
     # TODO: These tests should ideally cleanup after themselves. For now
