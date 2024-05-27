@@ -23,6 +23,7 @@ def async_and_sync(function: Callable) -> Callable:
     :args function: function/property to wrap
     :return: modified function
     """
+
     @functools.wraps(function)
     def async_and_sync_wrap(*args, **kwargs):
         if _has_async_loop():
@@ -31,7 +32,3 @@ def async_and_sync(function: Callable) -> Callable:
             return asyncio.run(function(*args, **kwargs))
 
     return async_and_sync_wrap
-
-
-
-
