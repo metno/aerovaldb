@@ -1,7 +1,11 @@
 import pytest
 import aerovaldb
+import asyncio
+
+pytest_plugins = ("pytest_asyncio",)
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
 @pytest.mark.parametrize(
     "fun,args,kwargs,expected",
@@ -93,7 +97,7 @@ import aerovaldb
                 "obsvar": "obsvar",
                 "layer": "layer",
             },
-            "./project/experiment/hm/ts/network-obsvar-layer"
+            "./project/experiment/hm/ts/network-obsvar-layer",
         ),
         (
             "get_hm_ts",
@@ -104,7 +108,7 @@ import aerovaldb
                 "layer": "layer",
                 "station": "region",
             },
-            "./project/experiment/hm/ts/"
+            "./project/experiment/hm/ts/",
         ),
         (
             "get_forecast",
@@ -126,43 +130,48 @@ import aerovaldb
         ),
     ),
 )
-def test_getter(resource: str, fun: str, args: list, kwargs: dict, expected):
+async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expected):
     with aerovaldb.open(resource) as db:
         f = getattr(db, fun)
 
         if kwargs is not None:
-            data = f(*args, **kwargs)
+            data = await f(*args, **kwargs)
         else:
-            data = f(*args)
+            data = await f(*args)
 
         assert data["path"] == expected
 
 
-def test_put_glob_stats():
+@pytest.mark.asyncio
+async def test_put_glob_stats():
     # TODO: These tests should ideally cleanup after themselves. For now
     # it is best to delete ./tests/test-db/tmp before running to verify
     # that they run as intended.
     with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
         obj = {"data": "gibberish"}
         db.put_glob_stats(obj, "test1", "test2", "test3")
-        read_data = db.get_glob_stats("test1", "test2", "test3")
+        read_data = await db.get_glob_stats("test1", "test2", "test3")
 
         assert obj["data"] == read_data["data"]
 
 
-def test_put_contour():
+@pytest.mark.asyncio
+async def test_put_contour():
     with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
         obj = {"data": "gibberish"}
         db.put_contour(obj, "test1", "test2", "test3", "test4")
-        read_data = db.get_contour("test1", "test2", "test3", "test4")
+        read_data = await db.get_contour("test1", "test2", "test3", "test4")
         assert obj["data"] == read_data["data"]
 
 
-def test_put_ts():
+@pytest.mark.asyncio
+async def test_put_ts():
     with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
         obj = {"data": "gibberish"}
         db.put_ts(obj, "test1", "test2", "test3", "test4", "test5", "test6")
 
-        read_data = db.get_ts("test1", "test2", "test3", "test4", "test5", "test6")
+        read_data = await db.get_ts(
+            "test1", "test2", "test3", "test4", "test5", "test6"
+        )
 
         assert obj["data"] == read_data["data"]
