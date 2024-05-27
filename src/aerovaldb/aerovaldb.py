@@ -171,7 +171,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
-    async def get_ts(
+    async def get_timeseries(
         self,
         project: str,
         experiment: str,
@@ -199,7 +199,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
-    def put_ts(
+    def put_timeseries(
         self,
         obj,
         project: str,
@@ -231,7 +231,7 @@ class AerovalDB(abc.ABC):
     @get_method(
         "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}"
     )
-    async def get_ts_weekly(
+    async def get_timeseries_weekly(
         self,
         project: str,
         experiment: str,
@@ -257,7 +257,7 @@ class AerovalDB(abc.ABC):
     @put_method(
         "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}"
     )
-    def put_ts_weekly(
+    def put_timeseries_weekly(
         self,
         obj,
         project: str,
@@ -477,7 +477,7 @@ class AerovalDB(abc.ABC):
     @get_method(
         "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
     )
-    async def get_scat(
+    async def get_scatter(
         self,
         project: str,
         experiment: str,
@@ -506,7 +506,7 @@ class AerovalDB(abc.ABC):
     @put_method(
         "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
     )
-    def put_scat(
+    def put_scatter(
         self,
         obj,
         project: str,
@@ -579,7 +579,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/hm_ts/{project}/{experiment}")
-    async def get_hm_ts(
+    async def get_heatmap_timeseries(
         self,
         project: str,
         experiment: str,
@@ -599,7 +599,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/hm_ts/{project}/{experiment}")
-    def put_hm_ts(
+    def put_heatmap_timeseries(
         self,
         obj,
         project: str,
