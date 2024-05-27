@@ -278,7 +278,6 @@ def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected
         assert data["path"] == expected
 
 
-
 @pytest.mark.asyncio
 async def test_put_glob_stats():
     # TODO: These tests should ideally cleanup after themselves. For now
