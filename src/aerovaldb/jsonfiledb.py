@@ -5,6 +5,7 @@ from aerovaldb.aerovaldb import get_method, put_method
 import os
 import json
 import orjson
+import aiofile
 from enum import Enum
 
 AccessType = Enum("AccessType", ["JSON_STR", "FILE_PATH", "OBJ"])
@@ -102,7 +103,7 @@ class AerovalJsonFileDB(AerovalDB):
             raise ValueError("Error in relative path resolution.")
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
-    def _get(self, route, route_args, *args, **kwargs):
+    async def _get(self, route, route_args, *args, **kwargs):
         access_type = self._normalize_access_type(kwargs.get("access_type", None))
 
         file_path = self._get_file_path_from_route(route, route_args, **kwargs)
@@ -114,13 +115,15 @@ class AerovalJsonFileDB(AerovalDB):
             return str(file_path)
 
         if access_type == AccessType.JSON_STR:
-            with open(file_path, "rb") as f:
-                json = str(f.read())
+            async with aiofile.async_open(file_path, "rb") as f:
+                raw = await f.read()
+
+            json = str(raw)
 
             return json
 
-        with open(file_path, "rb") as f:
-            raw = f.read()
+        async with aiofile.async_open(file_path, "rb") as f:
+            raw = await f.read()
 
         return orjson.loads(raw)
 

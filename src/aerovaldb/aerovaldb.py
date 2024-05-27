@@ -1,6 +1,7 @@
 import abc
 import functools
 import inspect
+import aiofile
 
 
 def get_method(route):
@@ -13,7 +14,7 @@ def get_method(route):
 
     def wrap(wrapped):
         @functools.wraps(wrapped)
-        def wrapper(self, *args, **kwargs):
+        async def wrapper(self, *args, **kwargs):
             sig = inspect.signature(wrapped)
             route_args = {}
             for pos, par in enumerate(sig.parameters):
@@ -29,7 +30,7 @@ def get_method(route):
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
 
-            return self._get(route, route_args, *args, **kwargs)
+            return await self._get(route, route_args, *args, **kwargs)
 
         return wrapper
 
@@ -84,7 +85,7 @@ class AerovalDB(abc.ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    def _get(self, route: str, route_args: dict[str, str], *args, **kwargs):
+    async def _get(self, route: str, route_args: dict[str, str], *args, **kwargs):
         """Abstract implementation of the main getter functions. All get and put
         functions map to this function, with a corresponding route as key
         to enable key/value pair put and get functionality.
@@ -106,7 +107,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/glob_stats/{project}/{experiment}/{frequency}")
-    def get_glob_stats(
+    async def get_glob_stats(
         self, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
         """Fetches a glob_stats object from the database.
@@ -135,7 +136,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/contour/{project}/{experiment}/{obsvar}/{model}")
-    def get_contour(
+    async def get_contour(
         self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
     ):
         """Fetch a contour object from the db.
@@ -170,7 +171,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
-    def get_ts(
+    async def get_ts(
         self,
         project: str,
         experiment: str,
@@ -230,7 +231,7 @@ class AerovalDB(abc.ABC):
     @get_method(
         "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}"
     )
-    def get_ts_weekly(
+    async def get_ts_weekly(
         self,
         project: str,
         experiment: str,
@@ -282,7 +283,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/experiments/{project}")
-    def get_experiments(self, project: str, /, *args, **kwargs):
+    async def get_experiments(self, project: str, /, *args, **kwargs):
         """Fetches a list of experiments for a project from the db.
 
         :param project: Project ID.
@@ -299,7 +300,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/config/{project}/{experiment}")
-    def get_config(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_config(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches a configuration from the db.
 
         :param project: Project ID.
@@ -319,7 +320,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/menu/{project}/{experiment}")
-    def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches a menu configuartion from the db.
 
         :param project: Project ID.
@@ -338,7 +339,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/statistics/{project}/{experiment}")
-    def get_statistics(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_statistics(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches statistics for an experiment.
 
         :param project: Project ID.
@@ -357,7 +358,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/ranges/{project}/{experiment}")
-    def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches ranges from the db.
 
         :param project: Project ID.
@@ -376,7 +377,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/regions/{project}/{experiment}")
-    def get_regions(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_regions(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches regions from db.
 
         :param project: Project ID.
@@ -395,7 +396,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/model_style/{project}")
-    def get_models_style(self, project: str, /, *args, **kwargs):
+    async def get_models_style(self, project: str, /, *args, **kwargs):
         """Fetches model styles from db.
 
         :param project: Project ID.
@@ -416,7 +417,7 @@ class AerovalDB(abc.ABC):
     @get_method(
         "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
     )
-    def get_map(
+    async def get_map(
         self,
         project: str,
         experiment: str,
@@ -476,7 +477,7 @@ class AerovalDB(abc.ABC):
     @get_method(
         "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
     )
-    def get_scat(
+    async def get_scat(
         self,
         project: str,
         experiment: str,
@@ -534,7 +535,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}")
-    def get_profiles(
+    async def get_profiles(
         self,
         project: str,
         experiment: str,
@@ -578,7 +579,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/hm_ts/{project}/{experiment}")
-    def get_hm_ts(
+    async def get_hm_ts(
         self,
         project: str,
         experiment: str,
@@ -622,7 +623,7 @@ class AerovalDB(abc.ABC):
     @get_method(
         "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
     )
-    def get_forecast(
+    async def get_forecast(
         self,
         project: str,
         experiment: str,
@@ -674,7 +675,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}")
-    def get_gridded_map(
+    async def get_gridded_map(
         self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
     ):
         """Fetches gridded map.
@@ -709,7 +710,9 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @get_method("/v0/report/{project}/{experiment}/{title}")
-    def get_report(self, project: str, experiment: str, title: str, /, *args, **kwargs):
+    async def get_report(
+        self, project: str, experiment: str, title: str, /, *args, **kwargs
+    ):
         """Fetch report.
 
         :param project: Project ID.
