@@ -1,7 +1,7 @@
 import abc
 import functools
 import inspect
-import aiofile
+from .utils import async_and_sync
 
 
 def get_method(route):
@@ -106,6 +106,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/glob_stats/{project}/{experiment}/{frequency}")
     async def get_glob_stats(
         self, project: str, experiment: str, frequency: str, /, *args, **kwargs
@@ -135,6 +136,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/contour/{project}/{experiment}/{obsvar}/{model}")
     async def get_contour(
         self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
@@ -170,6 +172,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
     async def get_timeseries(
         self,
@@ -228,6 +231,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method(
         "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}"
     )
@@ -282,6 +286,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/experiments/{project}")
     async def get_experiments(self, project: str, /, *args, **kwargs):
         """Fetches a list of experiments for a project from the db.
@@ -299,6 +304,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/config/{project}/{experiment}")
     async def get_config(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches a configuration from the db.
@@ -319,6 +325,7 @@ class AerovalDB(abc.ABC):
 
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/menu/{project}/{experiment}")
     async def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches a menu configuartion from the db.
@@ -338,6 +345,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/statistics/{project}/{experiment}")
     async def get_statistics(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches statistics for an experiment.
@@ -357,6 +365,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/ranges/{project}/{experiment}")
     async def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches ranges from the db.
@@ -376,6 +385,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/regions/{project}/{experiment}")
     async def get_regions(self, project: str, experiment: str, /, *args, **kwargs):
         """Fetches regions from db.
@@ -395,6 +405,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/model_style/{project}")
     async def get_models_style(self, project: str, /, *args, **kwargs):
         """Fetches model styles from db.
@@ -414,6 +425,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method(
         "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
     )
@@ -474,6 +486,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method(
         "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
     )
@@ -534,6 +547,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}")
     async def get_profiles(
         self,
@@ -578,6 +592,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/hm_ts/{project}/{experiment}")
     async def get_heatmap_timeseries(
         self,
@@ -620,6 +635,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method(
         "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
     )
@@ -674,6 +690,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}")
     async def get_gridded_map(
         self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
@@ -709,6 +726,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @get_method("/v0/report/{project}/{experiment}/{title}")
     async def get_report(
         self, project: str, experiment: str, title: str, /, *args, **kwargs
