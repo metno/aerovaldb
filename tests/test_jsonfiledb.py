@@ -23,13 +23,13 @@ pytest_plugins = ("pytest_asyncio",)
             "./project/experiment/contour/",
         ),
         (
-            "get_ts",
+            "get_timeseries",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
             None,
             "./project/experiment/ts/",
         ),
         (
-            "get_ts_weekly",
+            "get_timeseries_weekly",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
             None,
             "./project/experiment/ts/dirunal/",
@@ -60,19 +60,19 @@ pytest_plugins = ("pytest_asyncio",)
             "./project/experiment/map/with_time",
         ),
         (
-            "get_ts_weekly",
+            "get_timeseries_weekly",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
             None,
             "./project/experiment/ts/dirunal/",
         ),
         (
-            "get_scat",
+            "get_scatter",
             ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
             None,
             "./project/experiment/scat/",
         ),
         (
-            "get_scat",
+            "get_scatter",
             ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
             {"time": "time"},
             "./project/experiment/scat/time",
@@ -84,13 +84,13 @@ pytest_plugins = ("pytest_asyncio",)
             "./project/experiment/profiles/",
         ),
         (
-            "get_hm_ts",
+            "get_heatmap_timeseries",
             ["project", "experiment"],
             None,
             "project/experiment/hm/ts/stats_ts.json",
         ),
         (
-            "get_hm_ts",
+            "get_heatmap_timeseries",
             ["project", "experiment"],
             {
                 "network": "network",
@@ -100,7 +100,7 @@ pytest_plugins = ("pytest_asyncio",)
             "./project/experiment/hm/ts/network-obsvar-layer",
         ),
         (
-            "get_hm_ts",
+            "get_heatmap_timeseries",
             ["project", "experiment"],
             {
                 "network": "network",
@@ -301,12 +301,12 @@ async def test_put_contour():
 
 
 @pytest.mark.asyncio
-async def test_put_ts():
+async def test_put_timeseries():
     with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
         obj = {"data": "gibberish"}
-        db.put_ts(obj, "test1", "test2", "test3", "test4", "test5", "test6")
+        db.put_timeseries(obj, "test1", "test2", "test3", "test4", "test5", "test6")
 
-        read_data = await db.get_ts(
+        read_data = await db.get_timeseries(
             "test1", "test2", "test3", "test4", "test5", "test6"
         )
 
