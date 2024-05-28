@@ -1,0 +1,8 @@
+# Defining the exact version will make sure things don't break
+sphinx>=7.2.6
+sphinxcontrib-napoleon
+sphinx_rtd_theme
+sphinx-argparse
+nbsphinx
+pandas
+aerovaldb @ git+https://github.com/metno/aerovaldb@main
