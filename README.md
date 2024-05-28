@@ -30,7 +30,7 @@ The scope of aerovaldb are:
 9. To be discussed: do we want to allow the programmer to set open-modes, e.g. 'r', 'rw', 'w'?
 
 ## Installation
-`python -m pip install 'pyaro@git+https://github.com/metno/aerovaldb.git'`
+`python -m pip install 'aerovaldb@git+https://github.com/metno/aerovaldb.git'`
 
 
 ## Usage
@@ -38,15 +38,14 @@ The scope of aerovaldb are:
 ### Reader, e.g. webserver
 
 ```python
+import aerovaldb
 
-from aerovaldb import AerovalDB
-
-with aerovaldb.open('path/to/data/') as db:
+with aerovaldb.open('json_files:path/to/data/') as db:
     try:
-        fh = db.get_geojson_map(type=JSON_FILEHANDLE)
+        fh = db.get_map(*args, access_type=aerovaldb.AccessType.FILE_PATH)
         # ... sendfile of filehandle
-    catch FileHandleNotAvailableException ex:
-        json = db.get_geosjon_map(type=JSON)
+    except aerovaldb.FileDoesNotExist as e:
+        json = db.get_map(*args, access_type=aerovaldb.AccessType.JSON_STR)
         # ... send json string to client
 
 ```
@@ -54,14 +53,42 @@ with aerovaldb.open('path/to/data/') as db:
 ### Writer
 
 ```python
-from aerovaldb import AerovalDB
+import aerovaldb
+import json
 
-with aerovaldb.open('aerovaldb.json_files:path/to/data/') as db:
-    obj = db.get_model_timeseries(type=OBJ) # type=OBJ is default
-    obj["new_model"] = modeltimeseries
-    db.put_model_timeseries(obj, type=OBJ) # type=OBJ is default
+with aerovaldb.open('json_files:path/to/data/') as db:
+    db.put
+    obj = {"data": "Some test data"}
+    json_str = "{ 'data': 'Some test data' }"
+    db.put_map(json_str) # String is assumed to be json string and stored directly.
 
+    db.put_map(obj) # Otherwise serialized object is stored.
 ```
+
+### API (version 0)
+
+| Data               | Getter                      | Setter                      |
+|--------------------|-----------------------------|-----------------------------|
+| glob_stats         | db.get_glob_stats()         | db.put_glob_stats()         |
+| experiments        | db.get_experiments()        | db.get_experiments()        |
+| config             | db.get_config()             | db.get_config()             |
+| menu               | db.get_menu()               | db.put_menu()               |
+| statistics         | db.get_statistics()         | db.put_statistics()         |
+| ranges             | db.get_ranges()             | db.put_ranges()             |
+| regions            | db.get_regions()            | db.put_regions()            |
+| models_style       | db.get_models_style()       | db.put_models_style()       |
+| map                | db.get_map()                | db.put_map()                |
+| time series        | db.get_timeseries()         | db.put_timeseries()         |
+| time series weekly | db.get_timeseries_weekly()  | db.put_timeseries_weekly()  |
+| scatter            | db.get_scatter()            | db.put_scatter()            |
+| profiles           | db.get_profiles()           | db.put_profiles()           |
+| heatmap timeseries | db.get_heatmap_timeseries() | db.put_heatmap_timeseries() |
+| forecast           | db.get_forecast()           | db.put_forecast()           |
+| contour            | db.get_contour()            | db.put_contour()            |
+| gridded map        | db.get_gridded_map()        | db.put_gridded_map()        |
+| report             | db.get_report()             | db.put_report()             |
+
+
 
 
 
