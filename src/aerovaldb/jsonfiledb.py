@@ -133,12 +133,20 @@ class AerovalJsonFileDB(AerovalDB):
         return orjson.loads(raw)
 
     def _put(self, obj, route, route_args, *args, **kwargs):
+        """Jsondb implemention of database put operation.
+
+        If obj is string, it is assumed to be a wellformatted json string.
+        Otherwise it is assumed to be a serializable python object.
+        """
         file_path = self._get_file_path_from_route(route, route_args)
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         if not os.path.exists(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
 
-        json = orjson.dumps(obj)
+        if isinstance(obj, str):
+            json = obj
+        else:
+            json = orjson.dumps(obj)
         with open(file_path, "wb") as f:
             f.write(json)
