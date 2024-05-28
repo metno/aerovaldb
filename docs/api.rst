@@ -9,6 +9,7 @@ aerovaldb
 
 .. autofunction:: aerovaldb.open
 
+.. autoclass:: aerovaldb.types.AccessType
 
 aerovaldb.AerovalDB - User API
 ^^^^^^^^^^^^
