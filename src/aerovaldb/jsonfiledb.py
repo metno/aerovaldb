@@ -7,7 +7,8 @@ import json
 import orjson
 import aiofile
 from enum import Enum
-AccessType = Enum("AccessType", ["JSON_STR", "FILE_PATH", "OBJ"])
+from .exceptions import FileDoesNotExist
+from .types import AccessType
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,8 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
         if access_type == AccessType.FILE_PATH:
-            logger.debug(file_path)
+            if not os.path.exists(file_path):
+                raise FileDoesNotExist(f"File {file_path} does not exist.")
             return file_path
 
         if access_type == AccessType.JSON_STR:
