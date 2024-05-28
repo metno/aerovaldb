@@ -138,7 +138,7 @@ class AerovalJsonFileDB(AerovalDB):
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        file_path = self._get_file_path_from_route(route, route_args)
+        file_path = self._get_file_path_from_route(route, route_args, **kwargs)
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         if not os.path.exists(os.path.dirname(file_path)):
