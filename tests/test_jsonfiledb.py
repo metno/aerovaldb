@@ -135,6 +135,9 @@ get_parameters = [
 @pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
 @pytest.mark.parametrize(*get_parameters)
 async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expected):
+    """
+    This test tests that data is read as expected from a static, fixed database.
+    """
     with aerovaldb.open(resource) as db:
         f = getattr(db, fun)
 
@@ -239,6 +242,10 @@ async def test_file_does_not_exist():
     ),
 )
 def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
+    """
+    This test tests that you read back the expected data, once you have written
+    to a fresh db, assuming the same arguments.
+    """
     with aerovaldb.open(f"json_files:{os.path.join(tmp_path, fun)}") as db:
         get = getattr(db, f"get_{fun}")
         put = getattr(db, f"put_{fun}")
