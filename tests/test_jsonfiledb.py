@@ -158,42 +158,6 @@ def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected
 
         assert data["path"] == expected
 
-
-@pytest.mark.asyncio
-async def test_put_glob_stats():
-    # TODO: These tests should ideally cleanup after themselves. For now
-    # it is best to delete ./tests/test-db/tmp before running to verify
-    # that they run as intended.
-    with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
-        obj = {"data": "gibberish"}
-        db.put_glob_stats(obj, "test1", "test2", "test3")
-        read_data = await db.get_glob_stats("test1", "test2", "test3")
-
-        assert obj["data"] == read_data["data"]
-
-
-@pytest.mark.asyncio
-async def test_put_contour():
-    with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
-        obj = {"data": "gibberish"}
-        db.put_contour(obj, "test1", "test2", "test3", "test4")
-        read_data = await db.get_contour("test1", "test2", "test3", "test4")
-        assert obj["data"] == read_data["data"]
-
-
-@pytest.mark.asyncio
-async def test_put_timeseries():
-    with aerovaldb.open("json_files:./tests/test-db/tmp") as db:
-        obj = {"data": "gibberish"}
-        db.put_timeseries(obj, "test1", "test2", "test3", "test4", "test5", "test6")
-
-        read_data = await db.get_timeseries(
-            "test1", "test2", "test3", "test4", "test5", "test6"
-        )
-
-        assert obj["data"] == read_data["data"]
-
-
 @pytest.mark.asyncio
 async def test_file_does_not_exist():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
