@@ -7,7 +7,6 @@ import json
 import orjson
 import aiofile
 from enum import Enum
-
 AccessType = Enum("AccessType", ["JSON_STR", "FILE_PATH", "OBJ"])
 
 logger = logging.getLogger(__name__)
@@ -64,9 +63,14 @@ class AerovalJsonFileDB(AerovalDB):
         :raises ValueError: If access_type is not str or AccessType
         :return: The normalized AccessType.
         """
+        logger.info(f"Test 1 - {access_type}")
         if isinstance(access_type, AccessType):
+            logger.info("Test 2")
+
             return access_type
         if isinstance(access_type, str):
+            logger.info("Test 3")
+
             try:
                 return AccessType[access_type]
             except:
@@ -112,17 +116,16 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
         if access_type == AccessType.FILE_PATH:
-            return str(file_path)
+            logger.debug(file_path)
+            return file_path
 
         if access_type == AccessType.JSON_STR:
-            async with aiofile.async_open(file_path, "rb") as f:
+            async with aiofile.async_open(file_path, "r") as f:
                 raw = await f.read()
 
-            json = str(raw)
+            return raw
 
-            return json
-
-        async with aiofile.async_open(file_path, "rb") as f:
+        async with aiofile.async_open(file_path, "r") as f:
             raw = await f.read()
 
         return orjson.loads(raw)
