@@ -1,6 +1,8 @@
 import pytest
 import aerovaldb
 import asyncio
+import os
+import random
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -197,3 +199,89 @@ async def test_file_does_not_exist():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(aerovaldb.FileDoesNotExist):
             await db.get_experiments("non-existent-project", access_type = aerovaldb.AccessType.FILE_PATH)
+
+@pytest.mark.parametrize(
+    "fun,args,kwargs",
+    (
+        ("glob_stats", ["project", "experiment", "frequency"], None),
+        ("contour", ["project", "experiment", "obsvar", "model"], None),
+        (
+            "timeseries",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+        ),
+        (
+            "timeseries_weekly",
+            ["project", "experiment", "station", "network", "obsvar", "layer"],
+            None,
+        ),
+        ("experiments", ["project"], None),
+        ("config", ["project", "experiment"], None),
+        ("menu", ["project", "experiment"], None),
+        ("statistics", ["project", "experiment"], None),
+        ("ranges", ["project", "experiment"], None),
+        ("regions", ["project", "experiment"], None),
+        ("models_style", ["project"], None),
+        ("models_style", ["project"], {"experiment": "experiment"}),
+        (
+            "map",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            None,
+        ),
+        (
+            "map",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            {"time": "time"},
+        ),
+        (
+            "scatter",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            None,
+        ),
+        (
+            "scatter",
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            {"time": "time"},
+        ),
+        ("profiles", ["project", "experiment", "station", "network", "obsvar"], None),
+        ("heatmap_timeseries", ["project", "experiment"], None),
+        (
+            "heatmap_timeseries",
+            ["project", "experiment"],
+            {"network": "network", "obsvar": "obsvar", "layer": "layer"},
+        ),
+        (
+            "heatmap_timeseries",
+            ["project", "experiment"],
+            {
+                "station": "station",
+                "network": "network",
+                "obsvar": "obsvar",
+                "layer": "layer",
+            },
+        ),
+        (
+            "forecast",
+            ["project", "experiment", "station", "network", "obsvar", "layer"],
+            None,
+        ),
+        ("gridded_map", ["project", "experiment", "obsvar", "model"], None),
+        ("report", ["project", "experiment", "title"], None),
+    ),
+)
+def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
+    with aerovaldb.open(f"json_files:{os.path.join(tmp_path, fun)}") as db:
+        get = getattr(db, f"get_{fun}")
+        put = getattr(db, f"put_{fun}")
+
+        expected = fun + str(random.randint(0, 100000))
+        if kwargs is not None:
+            put({"data": expected}, *args, **kwargs)
+
+            data = get(*args, **kwargs)
+        else:
+            put({"data": expected}, *args)
+
+            data = get(*args)
+
+        assert data["data"] == expected
