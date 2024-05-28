@@ -407,21 +407,25 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method("/v0/model_style/{project}")
-    async def get_models_style(self, project: str, /, *args, **kwargs):
+    async def get_models_style(
+        self, project: str, /, experiment: str = None, *args, **kwargs
+    ):
         """Fetches model styles from db.
 
         :param project: Project ID.
-        :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.
+        :param experiment (Optional): Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/model_style/{project}")
-    def put_models_style(self, obj, project: str, /, *args, **kwargs):
+    def put_models_style(
+        self, obj, project: str, /, experiment: str = None, *args, **kwargs
+    ):
         """Stores model styles config in db.
 
         :param obj: Object to be stored.
         :param project: Project ID.
-        :param experiment (Optional): Experiment ID can be optionally provided as a kwarg.
+        :param experiment (Optional): Experiment ID.
         """
         raise NotImplementedError
 
@@ -439,6 +443,7 @@ class AerovalDB(abc.ABC):
         model: str,
         modvar: str,
         /,
+        time: str = None,
         *args,
         **kwargs,
     ):
@@ -451,7 +456,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer
         :param model: Model ID
         :param modvar: Model variable.
-        :param time: (Optional) Time parameter as kwarg.
+        :param time: (Optional) Time parameter.
         """
         raise NotImplementedError
 
@@ -469,6 +474,7 @@ class AerovalDB(abc.ABC):
         model: str,
         modvar: str,
         /,
+        time: str = None,
         *args,
         **kwargs,
     ):
@@ -482,7 +488,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer
         :param model: Model ID
         :param modvar: Model variable.
-        :param time: (Optional) Time parameter as kwarg.
+        :param time: (Optional) Time parameter.
         """
         raise NotImplementedError
 
@@ -500,6 +506,7 @@ class AerovalDB(abc.ABC):
         model: str,
         modvar: str,
         /,
+        time: str = None,
         *args,
         **kwargs,
     ):
@@ -512,7 +519,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         :param model: Model ID.
         :param modvar: Model variable.
-        :param time: (Optional) Optional time parameter as kwarg.
+        :param time: (Optional) Time parameter.
         """
         raise NotImplementedError
 
@@ -530,6 +537,7 @@ class AerovalDB(abc.ABC):
         model: str,
         modvar: str,
         /,
+        time: str = None,
         *args,
         **kwargs,
     ):
@@ -543,7 +551,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         :param model: Model ID.
         :param modvar: Model variable.
-        :param time: (Optional) Optional time parameter as kwarg.
+        :param time: (Optional) Time paramter.
         """
         raise NotImplementedError
 
@@ -599,6 +607,10 @@ class AerovalDB(abc.ABC):
         project: str,
         experiment: str,
         /,
+        station: str = None,
+        network: str = None,
+        obsvar: str = None,
+        layer: str = None,
         *args,
         **kwargs,
     ):
@@ -606,10 +618,10 @@ class AerovalDB(abc.ABC):
 
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: (Optional kwarg) Station ID.
-        :param network: (Optional kwarg) Observation Network.
-        :param obsvar: (Optional kwarg) Observation variable.
-        :param layer: (Optional kwarg) Layer.
+        :param station: (Optional) Station ID.
+        :param network: (Optional) Observation Network.
+        :param obsvar: (Optional) Observation variable.
+        :param layer: (Optional) Layer.
         """
         raise NotImplementedError
 
