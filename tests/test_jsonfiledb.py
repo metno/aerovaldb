@@ -130,6 +130,7 @@ get_parameters = [
     ),
 ]
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
 @pytest.mark.parametrize(*get_parameters)
@@ -158,11 +159,15 @@ def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected
 
         assert data["path"] == expected
 
+
 @pytest.mark.asyncio
 async def test_file_does_not_exist():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(aerovaldb.FileDoesNotExist):
-            await db.get_experiments("non-existent-project", access_type = aerovaldb.AccessType.FILE_PATH)
+            await db.get_experiments(
+                "non-existent-project", access_type=aerovaldb.AccessType.FILE_PATH
+            )
+
 
 @pytest.mark.parametrize(
     "fun,args,kwargs",
