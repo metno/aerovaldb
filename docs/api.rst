@@ -1,7 +1,7 @@
 API
 ========
 
-Documentation of the core API of pyaro.
+Documentation of the core API of aerovaldb.
 
 
 aerovaldb
