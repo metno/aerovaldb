@@ -4,8 +4,9 @@ class FileDoesNotExist(IOError):
     does not exist.
     """
 
+
 class UnusedArguments(ValueError):
     """
     Raised by jsondb if args or kwargs remain after matching (which
-    is likely a mistake by the caller). 
+    is likely a mistake by the caller).
     """

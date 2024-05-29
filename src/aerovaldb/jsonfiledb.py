@@ -99,6 +99,13 @@ class AerovalJsonFileDB(AerovalDB):
 
         relative_path = None
         for t in file_path_templates:
+            fieldnames = [
+                fname for _, fname, _, _ in string.Formatter().parse(t) if fname
+            ]
+            if set(fieldnames) != set(substitutions.keys()):
+                logger.debug("A template was skipped due to superfluous arguments.")
+                continue
+
             try:
                 relative_path = t.format(**substitutions)
             except KeyError:
@@ -111,11 +118,13 @@ class AerovalJsonFileDB(AerovalDB):
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
     async def _get(self, route, route_args, *args, **kwargs):
-        access_type = self._normalize_access_type(kwargs.get("access_type", None))
-        
+        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+
         if len(args) > 0:
-            raise UnusedArguments(f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently.")
-        
+            raise UnusedArguments(
+                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
+            )
+
         file_path = self._get_file_path_from_route(route, route_args, **kwargs)
         logger.debug(
             f"Mapped route {route} / { route_args} to file {file_path} with type {access_type}."
