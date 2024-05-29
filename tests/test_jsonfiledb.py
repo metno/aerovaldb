@@ -23,13 +23,13 @@ get_parameters = [
         ),
         (
             "get_timeseries",
-            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
             "./project/experiment/ts/",
         ),
         (
             "get_timeseries_weekly",
-            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
             "./project/experiment/ts/dirunal/",
         ),
@@ -57,12 +57,6 @@ get_parameters = [
             ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
             {"time": "time"},
             "./project/experiment/map/with_time",
-        ),
-        (
-            "get_timeseries_weekly",
-            ["project", "experiment", "region", "network", "obsvar", "layer"],
-            None,
-            "./project/experiment/ts/dirunal/",
         ),
         (
             "get_scatter",
@@ -105,7 +99,7 @@ get_parameters = [
                 "network": "network",
                 "obsvar": "obsvar",
                 "layer": "layer",
-                "station": "region",
+                "location": "location",
             },
             "./project/experiment/hm/ts/",
         ),
@@ -179,12 +173,12 @@ async def test_file_does_not_exist():
         ("contour", ["project", "experiment", "obsvar", "model"], None),
         (
             "timeseries",
-            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
         ),
         (
             "timeseries_weekly",
-            ["project", "experiment", "station", "network", "obsvar", "layer"],
+            ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
         ),
         ("experiments", ["project"], None),
@@ -226,7 +220,7 @@ async def test_file_does_not_exist():
             "heatmap_timeseries",
             ["project", "experiment"],
             {
-                "station": "station",
+                "location": "location",
                 "network": "network",
                 "obsvar": "obsvar",
                 "layer": "layer",
