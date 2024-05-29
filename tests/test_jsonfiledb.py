@@ -263,10 +263,19 @@ def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
         assert data["data"] == expected
 
 
-def test_for_exception_on_unexpected_args():
+def test_exception_on_unexpected_args():
     """
     https://github.com/metno/aerovaldb/issues/19
     """
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(aerovaldb.UnusedArguments):
             db.get_experiments("project", "excessive-positional-argument")
+
+
+def test_exception_on_unexpected_kwargs():
+    """
+    https://github.com/metno/aerovaldb/issues/19
+    """
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        with pytest.raises(ValueError):
+            db.get_experiments("project", unused_kwarg="test")
