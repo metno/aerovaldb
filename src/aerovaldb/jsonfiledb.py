@@ -7,8 +7,9 @@ import json
 import orjson
 import aiofile
 from enum import Enum
-from .exceptions import FileDoesNotExist
+from .exceptions import FileDoesNotExist, UnusedArguments
 from .types import AccessType
+import string
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class AerovalJsonFileDB(AerovalDB):
 
     def _get_file_path_from_route(self, route, route_args, /, *args, **kwargs):
         file_path_templates: list[str] = self.PATH_LOOKUP.get(route, None)
+
         if file_path_templates is None:
             raise KeyError(f"No file path template found for route {route}.")
 
@@ -110,7 +112,10 @@ class AerovalJsonFileDB(AerovalDB):
 
     async def _get(self, route, route_args, *args, **kwargs):
         access_type = self._normalize_access_type(kwargs.get("access_type", None))
-
+        
+        if len(args) > 0:
+            raise UnusedArguments(f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently.")
+        
         file_path = self._get_file_path_from_route(route, route_args, **kwargs)
         logger.debug(
             f"Mapped route {route} / { route_args} to file {file_path} with type {access_type}."
