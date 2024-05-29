@@ -173,12 +173,12 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
+    @get_method("/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}")
     async def get_timeseries(
         self,
         project: str,
         experiment: str,
-        region: str,
+        location: str,
         network: str,
         obsvar: str,
         layer: str,
@@ -201,13 +201,13 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/v0/ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
+    @put_method("/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}")
     def put_timeseries(
         self,
         obj,
         project: str,
         experiment: str,
-        region: str,
+        location: str,
         network: str,
         obsvar: str,
         layer: str,
@@ -233,13 +233,13 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(
-        "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}"
+        "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}"
     )
     async def get_timeseries_weekly(
         self,
         project: str,
         experiment: str,
-        station: str,
+        location: str,
         network: str,
         obsvar: str,
         layer: str,
@@ -259,14 +259,14 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method(
-        "/v0/ts_weekly/{project}/{experiment}/{station}_{network}-{obsvar}_{layer}"
+        "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}"
     )
     def put_timeseries_weekly(
         self,
         obj,
         project: str,
         experiment: str,
-        station: str,
+        location: str,
         network: str,
         obsvar: str,
         layer: str,
@@ -556,12 +556,12 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method("/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}")
+    @get_method("/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}")
     async def get_profiles(
         self,
         project: str,
         experiment: str,
-        station: str,
+        location: str,
         network: str,
         obsvar: str,
         /,
@@ -577,13 +577,13 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @put_method("/v0/profiles/{project}/{experiment}/{station}/{network}/{obsvar}")
+    @put_method("/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}")
     def put_profiles(
         self,
         obj,
         project: str,
         experiment: str,
-        station: str,
+        location: str,
         network: str,
         obsvar: str,
         /,
@@ -607,7 +607,7 @@ class AerovalDB(abc.ABC):
         project: str,
         experiment: str,
         /,
-        station: str = None,
+        region: str = None,
         network: str = None,
         obsvar: str = None,
         layer: str = None,
@@ -632,6 +632,10 @@ class AerovalDB(abc.ABC):
         project: str,
         experiment: str,
         /,
+        region: str = None,
+        network: str = None,
+        obsvar: str = None,
+        layer: str = None,
         *args,
         **kwargs,
     ):
@@ -649,13 +653,13 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(
-        "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
+        "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
     )
     async def get_forecast(
         self,
         project: str,
         experiment: str,
-        station: str,
+        region: str,
         network: str,
         obsvar: str,
         layer: str,
@@ -675,14 +679,14 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method(
-        "/v0/forecast/{project}/{experiment}/{station}/{network}/{obsvar}/{layer}"
+        "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
     )
     def put_forecast(
         self,
         obj,
         project: str,
         experiment: str,
-        station: str,
+        region: str,
         network: str,
         obsvar: str,
         layer: str,
