@@ -143,8 +143,10 @@ class AerovalDB(abc.ABC):
     ):
         """Fetch a contour object from the db.
 
-        :param project: Project ID-
+        :param project: Project ID.
         :param experiment: Experiment ID.
+        :param obsvar: Observation variable.
+        :param model: Model ID.
         :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
             "OBJ" (Default) a python object with the data is returned.
             "JSON_STR" the raw json string is returned.
@@ -169,6 +171,8 @@ class AerovalDB(abc.ABC):
         :param obj: The object to be stored.
         :param project: Project ID.
         :param experiment: Experiment ID.
+        :param obsvar: Observation variable.
+        :param model: Model ID.
         """
         raise NotImplementedError
 
@@ -190,7 +194,7 @@ class AerovalDB(abc.ABC):
 
         :param project: Project id.
         :param experiment: Experiment ID.
-        :param region: Region.
+        :param location: Location.
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
@@ -220,7 +224,7 @@ class AerovalDB(abc.ABC):
         :param obj: The object to write into the db.
         :param project: Project ID
         :param experiment: Experiment ID.
-        :param region: Region
+        :param location: Location.
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
@@ -251,7 +255,7 @@ class AerovalDB(abc.ABC):
 
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param location: Location.
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
@@ -279,7 +283,7 @@ class AerovalDB(abc.ABC):
         :param obj: The object to be stored.
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param location: Location.
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
@@ -288,19 +292,21 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method("/v0/experiments/{project}")
-    async def get_experiments(self, project: str, /, *args, **kwargs):
+    async def get_experiments(self, project: str, /, experiment: str = None, *args, **kwargs):
         """Fetches a list of experiments for a project from the db.
 
         :param project: Project ID.
+        :param experiment: (Optional) Experiment ID.
         """
         raise NotImplementedError
 
     @put_method("/v0/experiments/{project}")
-    def put_experiments(self, obj, project: str, /, *args, **kwargs):
+    def put_experiments(self, obj, project: str, /, experiment: str = None, *args, **kwargs):
         """Stores a list of experiments for a project to the db.
 
         :param obj: The object to be stored.
         :param project: Project ID.
+        :param experiment: (Optional) Experiment ID.
         """
         raise NotImplementedError
 
@@ -570,9 +576,9 @@ class AerovalDB(abc.ABC):
     ):
         """Fetches profiles from db.
 
-        :param project: Project ID._
+        :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param location: Location.
         :param network: Observation network.
         """
         raise NotImplementedError
@@ -595,7 +601,7 @@ class AerovalDB(abc.ABC):
         :param obj: Object to be stored.
         :param project: Project ID._
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param location: Location.
         :param network: Observation network.
         """
         raise NotImplementedError
@@ -618,7 +624,7 @@ class AerovalDB(abc.ABC):
 
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: (Optional) Station ID.
+        :param region: (Optional) Region ID.
         :param network: (Optional) Observation Network.
         :param obsvar: (Optional) Observation variable.
         :param layer: (Optional) Layer.
@@ -644,7 +650,7 @@ class AerovalDB(abc.ABC):
         :param obj: The object to be stored.
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param region: Region ID.
         :param network: Observation Network.
         :param obsvar: Observation variable.
         :param layer: Layer.
@@ -671,7 +677,7 @@ class AerovalDB(abc.ABC):
 
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param region: Region ID.
         :param network: Observation Network.
         :param obsvar: Observation variable.
         :param layer: Layer.
@@ -699,7 +705,7 @@ class AerovalDB(abc.ABC):
         :param obj: The Object to be stored.
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param station: Station ID.
+        :param region: Region ID.
         :param network: Observation Network.
         :param obsvar: Observation variable.
         :param layer: Layer.
