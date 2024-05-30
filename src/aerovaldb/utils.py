@@ -2,7 +2,6 @@ import asyncio
 import functools
 from typing import Callable, ParamSpec, TypeVar
 
-
 # Workaround to ensure function signature of the decorated function is shown correctly
 # Solution from here: https://stackoverflow.com/questions/74074580/how-to-avoid-losing-type-hinting-of-decorated-function
 P = ParamSpec("P")
