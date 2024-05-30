@@ -9,12 +9,43 @@ from pathlib import Path
 import aiofile
 import orjson
 from packaging.version import Version
-
+from ..utils import async_and_sync
 from aerovaldb.aerovaldb import AerovalDB, get_method, put_method
 from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments
 from aerovaldb.types import AccessType
 
 logger = logging.getLogger(__name__)
+
+
+class DataVersionMismatch(Exception):
+    pass
+
+
+class PyaerocomVersionToImplementationMapper:
+    def __init__(
+        self,
+        template: str,
+        *,
+        min_version: str | None = None,
+        max_version: str | None = None,
+    ):
+        self.min_version = None
+        self.max_version = None
+
+        if min_version is not None:
+            self.min_version = Version(min_version)
+        if max_version is not None:
+            self.max_version = Version(max_version)
+
+        self.template = template
+
+    def __call__(self, *args, version: Version, **kwargs) -> str:
+        if self.min_version is not None and version < self.min_version:
+            raise DataVersionMismatch
+        if self.max_version is not None and version > self.max_version:
+            raise DataVersionMismatch
+
+        return self.template.format(**kwargs)
 
 
 class AerovalJsonFileDB(AerovalDB):
@@ -24,41 +55,107 @@ class AerovalJsonFileDB(AerovalDB):
             self._basedir = Path(self._basedir)
 
         self.PATH_LOOKUP = {
-            "/v0/glob_stats/{project}/{experiment}/{frequency}": "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-            "/v0/contour/{project}/{experiment}/{obsvar}/{model}": "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
-            "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
-            "/v0/experiments/{project}": "./{project}/experiments.json",
-            "/v0/config/{project}/{experiment}": "./{project}/{experiment}/cfg_{project}_{experiment}.json",
-            "/v0/menu/{project}/{experiment}": "./{project}/{experiment}/menu.json",
-            "/v0/statistics/{project}/{experiment}": "./{project}/{experiment}/statistics.json",
-            "/v0/ranges/{project}/{experiment}": "./{project}/{experiment}/ranges.json",
-            "/v0/regions/{project}/{experiment}": "./{project}/{experiment}/regions.json",
-            "/v0/model_style/{project}": [
-                "./{project}/{experiment}/models-style.json",
-                "./{project}/models-style.json",
+            "/v0/glob_stats/{project}/{experiment}/{frequency}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
+                )
+            ],
+            "/v0/contour/{project}/{experiment}/{obsvar}/{model}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson"
+                )
+            ],
+            "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json"
+                )
+            ],
+            "/v0/experiments/{project}": [
+                PyaerocomVersionToImplementationMapper("./{project}/experiments.json")
+            ],
+            "/v0/config/{project}/{experiment}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/cfg_{project}_{experiment}.json"
+                )
+            ],
+            "/v0/menu/{project}/{experiment}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/menu.json"
+                )
+            ],
+            "/v0/statistics/{project}/{experiment}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/statistics.json"
+                )
+            ],
+            "/v0/ranges/{project}/{experiment}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/ranges.json"
+                )
+            ],
+            "/v0/regions/{project}/{experiment}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/regions.json"
+                )
+            ],
+            "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json"
+                )
+            ],
+            "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json"
+                )
+            ],
+            "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json"
+                )
+            ],
+            "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.json"
+                )
+            ],
+            "/v0/report/{project}/{experiment}/{title}": [
+                PyaerocomVersionToImplementationMapper(
+                    "./reports/{project}/{experiment}/{title}.json"
+                )
             ],
             "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}": [
-                "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
-                "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                    min_version="0.13.2",
+                ),
+                PyaerocomVersionToImplementationMapper(
+                    "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+                    max_version="0.13.1",
+                ),
             ],
-            "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}": "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-            "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": [
-                "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
-                "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-            ],
-            "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}": "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
-            "/v0/hm_ts/{project}/{experiment}": [
-                "./{project}/{experiment}/hm/ts/{location}-{network}-{obsvar}-{layer}.json",
-                "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
-                "./{project}/{experiment}/hm/ts/stats_ts.json",
-            ],
-            "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
-            "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": "./{project}/{experiment}/contour/{obsvar}_{model}.json",
-            "/v0/report/{project}/{experiment}/{title}": "./reports/{project}/{experiment}/{title}.json",
         }
+        # self.PATH_LOOKUP = {
+        #    "/v0/model_style/{project}": [
+        #        "./{project}/{experiment}/models-style.json",
+        #        "./{project}/models-style.json",
+        #    ],
+        #    "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}": [
+        #        "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+        #        "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+        #    ],
+        #    "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": [
+        #        "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+        #        "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+        #    ],
+        #    "/v0/hm_ts/{project}/{experiment}": [
+        #        "./{project}/{experiment}/hm/ts/{location}-{network}-{obsvar}-{layer}.json",
+        #        "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
+        #        "./{project}/{experiment}/hm/ts/stats_ts.json",
+        #    ],
+        # }
 
-    @cache
-    def _get_version(self, project: str, experiment: str) -> Version:
+    @async_and_sync
+    async def _get_version(self, project: str, experiment: str) -> Version:
         """
         Returns the version of pyaerocom used to generate the files for a given project
         and experiment.
@@ -68,10 +165,19 @@ class AerovalJsonFileDB(AerovalDB):
 
         :return : A Version object.
         """
-        config = self.get_config(project, experiment)
+        file_path = str(
+            self._basedir
+        ) + "/{project}/{experiment}/cfg_{project}_{experiment}.json".format(
+            project=project, experiment=experiment
+        )
+
+        async with aiofile.async_open(file_path, "r") as f:
+            data = await f.read()
+
+        data = orjson.loads(data)
 
         try:
-            version_str = config["exp_info"]["pyaerocom_version"]
+            version_str = data["exp_info"]["pyaerocom_version"]
             version = Version(version_str)
         except KeyError:
             version = Version("0.0.1")
@@ -142,14 +248,34 @@ class AerovalJsonFileDB(AerovalDB):
         return Path(os.path.join(self._basedir, relative_path)).resolve()
 
     async def _get(self, route, route_args, *args, **kwargs):
-        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
             )
 
-        file_path = self._get_file_path_from_route(route, route_args, **kwargs)
+        substitutions = route_args | kwargs
+
+        relative_path = None
+        for f in self.PATH_LOOKUP[route]:
+            try:
+                relative_path = f(
+                    **substitutions,
+                    version=await self._get_version(
+                        route_args["project"], route_args["experiment"]
+                    ),
+                )
+            except DataVersionMismatch:
+                continue
+
+            break
+
+        if relative_path is None:
+            raise Exception()
+
+        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+
+        file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
+
         logger.debug(
             f"Mapped route {route} / { route_args} to file {file_path} with type {access_type}."
         )

@@ -5,6 +5,7 @@ import random
 import pytest
 
 import aerovaldb
+import aerovaldb.jsondb
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -275,3 +276,17 @@ def test_exception_on_unexpected_kwargs():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(ValueError):
             db.get_experiments("project", unused_kwarg="test")
+
+
+def test_version1():
+    """ """
+    db = aerovaldb.jsondb.AerovalJsonFileDB("./tests/test-db/json")
+
+    assert str(db._get_version("project", "experiment")) == "0.0.1"
+
+
+def test_version2():
+    """ """
+    db = aerovaldb.jsondb.AerovalJsonFileDB("./tests/test-db/json")
+
+    assert str(db._get_version("project", "experiment2")) == "0.0.5"
