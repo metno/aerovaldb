@@ -292,7 +292,9 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method("/v0/experiments/{project}")
-    async def get_experiments(self, project: str, /, experiment: str = None, *args, **kwargs):
+    async def get_experiments(
+        self, project: str, /, experiment: str = None, *args, **kwargs
+    ):
         """Fetches a list of experiments for a project from the db.
 
         :param project: Project ID.
@@ -301,7 +303,9 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @put_method("/v0/experiments/{project}")
-    def put_experiments(self, obj, project: str, /, experiment: str = None, *args, **kwargs):
+    def put_experiments(
+        self, obj, project: str, /, experiment: str = None, *args, **kwargs
+    ):
         """Stores a list of experiments for a project to the db.
 
         :param obj: The object to be stored.

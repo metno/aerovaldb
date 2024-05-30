@@ -1,6 +1,12 @@
 import asyncio
 import functools
-from typing import Callable
+from typing import Callable, ParamSpec, TypeVar
+
+
+# Workaround to ensure function signature of the decorated function is shown correctly
+# Solution from here: https://stackoverflow.com/questions/74074580/how-to-avoid-losing-type-hinting-of-decorated-function
+P = ParamSpec("P")
+T = TypeVar("T")
 
 
 def _has_async_loop():
@@ -14,7 +20,7 @@ def _has_async_loop():
     return is_async
 
 
-def async_and_sync(function: Callable) -> Callable:
+def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
     """Wrap an async method to a sync method.
 
     This allows to run the async method in both async and sync contexts transparently
