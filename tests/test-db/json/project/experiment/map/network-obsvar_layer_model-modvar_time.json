@@ -1,3 +1,6 @@
 {
-    "path": "./project/experiment/map/with_time"
+    "path": "./project/experiment/map/with_time",
+    "exp_info": {
+        "pyaerocom_version": "0.13.2"
+    }
 }
