@@ -9,6 +9,9 @@ import aiofile
 from enum import Enum
 from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments
 from aerovaldb.types import AccessType
+from functools import cache
+from packaging.version import Version
+
 import string
 
 logger = logging.getLogger(__name__)
@@ -53,6 +56,27 @@ class AerovalJsonFileDB(AerovalDB):
             "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": "./{project}/{experiment}/contour/{obsvar}_{model}.json",
             "/v0/report/{project}/{experiment}/{title}": "./reports/{project}/{experiment}/{title}.json",
         }
+
+    @cache
+    def _get_version(self, project: str, experiment: str) -> Version:
+        """
+        Returns the version of pyaerocom used to generate the files for a given project
+        and experiment.
+
+        :param project : Project ID
+        :param experiment : Experiment ID
+
+        :return : A Version object
+        """
+        config = self.get_config(project, experiment)
+
+        try:
+            version_str = config["exp_info"]["pyaerocom_version"]
+            version = Version(version_str)
+        except KeyError:
+            version = Version("0.0.1")
+
+        return version
 
     def _normalize_access_type(
         self, access_type: AccessType | str | None, default: AccessType = AccessType.OBJ
