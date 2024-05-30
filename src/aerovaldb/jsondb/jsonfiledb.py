@@ -1,4 +1,4 @@
-from .aerovaldb import AerovalDB
+from aerovaldb.aerovaldb import AerovalDB
 from pathlib import Path
 import logging
 from aerovaldb.aerovaldb import get_method, put_method
@@ -7,8 +7,8 @@ import json
 import orjson
 import aiofile
 from enum import Enum
-from .exceptions import FileDoesNotExist, UnusedArguments
-from .types import AccessType
+from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments
+from aerovaldb.types import AccessType
 import string
 
 logger = logging.getLogger(__name__)
