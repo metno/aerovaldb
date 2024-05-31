@@ -184,7 +184,7 @@ async def test_file_does_not_exist():
                 "non-existent-project", access_type=aerovaldb.AccessType.FILE_PATH
             )
 
-
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "fun,args,kwargs",
     (
@@ -254,7 +254,7 @@ async def test_file_does_not_exist():
         ("report", ["project", "experiment", "title"], None),
     ),
 )
-def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
+async def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
     """
     This test tests that you read back the expected data, once you have written
     to a fresh db, assuming the same arguments.
@@ -265,13 +265,13 @@ def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
 
         expected = fun + str(random.randint(0, 100000))
         if kwargs is not None:
-            put({"data": expected}, *args, **kwargs)
+            await put({"data": expected}, *args, **kwargs)
 
-            data = get(*args, **kwargs)
+            data = await get(*args, **kwargs)
         else:
-            put({"data": expected}, *args)
+            await put({"data": expected}, *args)
 
-            data = get(*args)
+            data = await get(*args)
 
         assert data["data"] == expected
 
