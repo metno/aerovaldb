@@ -96,31 +96,17 @@ get_parameters = [
         ),
         (
             "get_heatmap_timeseries",
-            ["project", "experiment"],
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+            "./project/experiment/hm/ts/region-network-obsvar-layer",
+        ),
+        (
+            "get_heatmap_timeseries",
+            ["project", "experiment-old", "region", "network", "obsvar", "layer"],
             None,
             "project/experiment/hm/ts/stats_ts.json",
         ),
-        (
-            "get_heatmap_timeseries",
-            ["project", "experiment"],
-            {
-                "network": "network",
-                "obsvar": "obsvar",
-                "layer": "layer",
-            },
-            "./project/experiment/hm/ts/network-obsvar-layer",
-        ),
-        (
-            "get_heatmap_timeseries",
-            ["project", "experiment"],
-            {
-                "network": "network",
-                "obsvar": "obsvar",
-                "layer": "layer",
-                "location": "location",
-            },
-            "./project/experiment/hm/ts/",
-        ),
+        # TODO: Missing test case for heatmap_ts with the middle version format.
         (
             "get_forecast",
             ["project", "experiment", "region", "network", "obsvar", "layer"],
@@ -228,21 +214,10 @@ set_parametrization = pytest.mark.parametrize(
             {"time": "time"},
         ),
         ("profiles", ["project", "experiment", "station", "network", "obsvar"], None),
-        ("heatmap_timeseries", ["project", "experiment"], None),
         (
             "heatmap_timeseries",
-            ["project", "experiment"],
-            {"network": "network", "obsvar": "obsvar", "layer": "layer"},
-        ),
-        (
-            "heatmap_timeseries",
-            ["project", "experiment"],
-            {
-                "location": "location",
-                "network": "network",
-                "obsvar": "obsvar",
-                "layer": "layer",
-            },
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
         ),
         (
             "forecast",
@@ -278,6 +253,7 @@ async def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
 
         assert data["data"] == expected
 
+
 @set_parametrization
 def test_setters_sync(fun: str, args: list, kwargs: dict, tmp_path):
     """
@@ -300,6 +276,7 @@ def test_setters_sync(fun: str, args: list, kwargs: dict, tmp_path):
 
         assert data["data"] == expected
 
+
 def test_exception_on_unexpected_args():
     """
     https://github.com/metno/aerovaldb/issues/19
@@ -307,6 +284,7 @@ def test_exception_on_unexpected_args():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(aerovaldb.UnusedArguments):
             db.get_experiments("project", "excessive-positional-argument")
+
 
 @pytest.mark.xfail
 def test_exception_on_unexpected_kwargs():

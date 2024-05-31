@@ -351,7 +351,7 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         """
         raise NotImplementedError
-    
+
     @async_and_sync
     @put_method("/v0/menu/{project}/{experiment}")
     async def put_menu(self, obj, project: str, experiment: str, /, *args, **kwargs):
@@ -375,7 +375,9 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @put_method("/v0/statistics/{project}/{experiment}")
-    async def put_statistics(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    async def put_statistics(
+        self, obj, project: str, experiment: str, /, *args, **kwargs
+    ):
         """Stores statistics to the db.
 
         :param obj: The object to be stored.
@@ -626,16 +628,16 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method("/v0/hm_ts/{project}/{experiment}")
+    @get_method("/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
     async def get_heatmap_timeseries(
         self,
         project: str,
         experiment: str,
+        region: str,
+        network: str,
+        obsvar: str,
+        layer: str,
         /,
-        region: str = None,
-        network: str = None,
-        obsvar: str = None,
-        layer: str = None,
         *args,
         **kwargs,
     ):
@@ -643,25 +645,25 @@ class AerovalDB(abc.ABC):
 
         :param project: Project ID.
         :param experiment: Experiment ID.
-        :param region: (Optional) Region ID.
-        :param network: (Optional) Observation Network.
-        :param obsvar: (Optional) Observation variable.
-        :param layer: (Optional) Layer.
+        :param region: Region ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
         """
         raise NotImplementedError
 
     @async_and_sync
-    @put_method("/v0/hm_ts/{project}/{experiment}")
+    @put_method("/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}")
     async def put_heatmap_timeseries(
         self,
         obj,
         project: str,
         experiment: str,
+        region: str,
+        network: str,
+        obsvar: str,
+        layer: str,
         /,
-        region: str = None,
-        network: str = None,
-        obsvar: str = None,
-        layer: str = None,
         *args,
         **kwargs,
     ):
