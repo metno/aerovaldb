@@ -48,7 +48,7 @@ def put_method(route):
 
     def wrap(wrapped):
         @functools.wraps(wrapped)
-        def wrapper(self, obj, *args, **kwargs):
+        async def wrapper(self, obj, *args, **kwargs):
             print(obj, args)
             sig = inspect.signature(wrapped)
             route_args = {}
@@ -65,7 +65,7 @@ def put_method(route):
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
 
-            return self._put(obj, route, route_args, *args, **kwargs)
+            return await self._put(obj, route, route_args, *args, **kwargs)
 
         return wrapper
 
@@ -124,8 +124,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/glob_stats/{project}/{experiment}/{frequency}")
-    def put_glob_stats(
+    async def put_glob_stats(
         self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
         """Saves a glob_stats object to the database.
@@ -155,8 +156,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/contour/{project}/{experiment}/{obsvar}/{model}")
-    def put_contour(
+    async def put_contour(
         self,
         obj,
         project: str,
@@ -206,8 +208,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}")
-    def put_timeseries(
+    async def put_timeseries(
         self,
         obj,
         project: str,
@@ -263,10 +266,11 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method(
         "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}"
     )
-    def put_timeseries_weekly(
+    async def put_timeseries_weekly(
         self,
         obj,
         project: str,
@@ -303,8 +307,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/experiments/{project}")
-    def put_experiments(
+    async def put_experiments(
         self, obj, project: str, /, experiment: str = None, *args, **kwargs
     ):
         """Stores a list of experiments for a project to the db.
@@ -325,8 +330,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/config/{project}/{experiment}")
-    def put_config(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    async def put_config(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores a configuration to the db.
 
         :paran obj: The object to be stored.
@@ -345,9 +351,10 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         """
         raise NotImplementedError
-
+    
+    @async_and_sync
     @put_method("/v0/menu/{project}/{experiment}")
-    def put_menu(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    async def put_menu(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores a menu configuration in the db.
 
         :param obj: The object to be stored.
@@ -366,8 +373,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/statistics/{project}/{experiment}")
-    def put_statistics(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    async def put_statistics(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores statistics to the db.
 
         :param obj: The object to be stored.
@@ -386,8 +394,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/ranges/{project}/{experiment}")
-    def put_ranges(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    async def put_ranges(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores ranges in db.
 
         :param obj: The object to be stored.
@@ -406,8 +415,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/regions/{project}/{experiment}")
-    def put_regions(self, obj, project: str, experiment: str, /, *args, **kwargs):
+    async def put_regions(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores regions in db.
 
         :param obj: Object to be stored.
@@ -428,8 +438,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/model_style/{project}")
-    def put_models_style(
+    async def put_models_style(
         self, obj, project: str, /, experiment: str = None, *args, **kwargs
     ):
         """Stores model styles config in db.
@@ -471,10 +482,11 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method(
         "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
     )
-    def put_map(
+    async def put_map(
         self,
         obj,
         project: str,
@@ -534,10 +546,11 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method(
         "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
     )
-    def put_scatter(
+    async def put_scatter(
         self,
         obj,
         project: str,
@@ -588,8 +601,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}")
-    def put_profiles(
+    async def put_profiles(
         self,
         obj,
         project: str,
@@ -636,8 +650,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/hm_ts/{project}/{experiment}")
-    def put_heatmap_timeseries(
+    async def put_heatmap_timeseries(
         self,
         obj,
         project: str,
@@ -689,10 +704,11 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method(
         "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
     )
-    def put_forecast(
+    async def put_forecast(
         self,
         obj,
         project: str,
@@ -731,8 +747,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}")
-    def put_gridded_map(
+    async def put_gridded_map(
         self,
         obj,
         project: str,
@@ -766,8 +783,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
     @put_method("/v0/report/{project}/{experiment}/{title}")
-    def put_report(
+    async def put_report(
         self, obj, project: str, experiment: str, title: str, /, *args, **kwargs
     ):
         """Store report.
