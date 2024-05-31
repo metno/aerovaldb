@@ -11,6 +11,7 @@ class UnusedArguments(ValueError):
     is likely a mistake by the caller).
     """
 
+
 class TemplateNotFound(KeyError):
     """
     Raised by jsondb if no matching filepath template was found for

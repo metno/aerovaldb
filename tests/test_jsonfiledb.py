@@ -5,7 +5,6 @@ import random
 import pytest
 
 import aerovaldb
-import aerovaldb.jsondb
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -184,6 +183,7 @@ async def test_file_does_not_exist():
                 "non-existent-project", access_type=aerovaldb.AccessType.FILE_PATH
             )
 
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "fun,args,kwargs",
@@ -296,13 +296,11 @@ def test_exception_on_unexpected_kwargs():
 
 def test_version1():
     """ """
-    db = aerovaldb.jsondb.AerovalJsonFileDB("./tests/test-db/json")
-
-    assert str(db._get_version("project", "experiment")) == "0.13.5"
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        assert str(db._get_version("project", "experiment")) == "0.13.5"
 
 
 def test_version2():
     """ """
-    db = aerovaldb.jsondb.AerovalJsonFileDB("./tests/test-db/json")
-
-    assert str(db._get_version("project", "experiment-old")) == "0.0.5"
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        assert str(db._get_version("project", "experiment-old")) == "0.0.5"
