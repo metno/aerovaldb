@@ -298,11 +298,11 @@ def test_version1():
     """ """
     db = aerovaldb.jsondb.AerovalJsonFileDB("./tests/test-db/json")
 
-    assert str(db._get_version("project", "experiment")) == "0.0.1"
+    assert str(db._get_version("project", "experiment")) == "0.13.5"
 
 
 def test_version2():
     """ """
     db = aerovaldb.jsondb.AerovalJsonFileDB("./tests/test-db/json")
 
-    assert str(db._get_version("project", "experiment2")) == "0.0.5"
+    assert str(db._get_version("project", "experiment-old")) == "0.0.5"
