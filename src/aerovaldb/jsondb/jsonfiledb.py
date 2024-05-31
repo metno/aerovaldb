@@ -1,19 +1,22 @@
+import abc
 import json
 import logging
 import os
 import string
 from enum import Enum
-from functools import cache
 from pathlib import Path
+from typing import Callable
 
 import aiofile
 import orjson
+from async_lru import alru_cache
 from packaging.version import Version
-from ..utils import async_and_sync
+
 from aerovaldb.aerovaldb import AerovalDB, get_method, put_method
 from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments
 from aerovaldb.types import AccessType
-from typing import Callable
+
+from ..utils import async_and_sync
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +28,27 @@ class SkipMapper(Exception):
     pass
 
 
-class PyaerocomVersionToTemplateMapper:
+class TemplateMapper(abc.ABC):
+    """
+    This class is a base class for objects that implement a
+    file path template selection algorithm. Inheriting
+    implementations should implement the __call_ function,
+    and raising SkipMapper if the implementation can't or
+    won't handle the request.
+    """
+
+    @async_and_sync
+    async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
+        raise NotImplementedError
+
+
+class DataVersionToTemplateMapper(TemplateMapper):
+    """
+    This class returns its provided template if the
+    data version read from a config file matches
+    the configured bounds of this class.
+    """
+
     def __init__(
         self,
         template: str,
@@ -43,39 +66,42 @@ class PyaerocomVersionToTemplateMapper:
 
         self.template = template
 
-    def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
-        version = version_provider(kwargs["project"], kwargs["experiment"])
+    @async_and_sync
+    async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
+        version = await version_provider(kwargs["project"], kwargs["experiment"])
         if self.min_version is not None and version < self.min_version:
             raise SkipMapper
         if self.max_version is not None and version > self.max_version:
             raise SkipMapper
 
-        return self.template.format(**kwargs)
+        return self.template
 
 
-class PriorityPyaerocomVersionToTemplateMapper:
+class PriorityDataVersionToTemplateMapper(TemplateMapper):
+    """
+    This class takes a list of templates, trying them in turn
+    and returning the first template that fits the provided
+    parameters.
+    """
+
     def __init__(self, templates: list[str]):
         self.templates = templates
 
-    def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
-        relative_path = None
+    @async_and_sync
+    async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
+        selected_template = None
         for t in self.templates:
-            fieldnames = [
-                fname for _, fname, _, _ in string.Formatter().parse(t) if fname
-            ]
-            if set(fieldnames) != set(kwargs.keys()):
-                continue
-
             try:
-                relative_path = t.format(**kwargs)
+                t.format(**kwargs)
+                selected_template = t
                 break
-            except SkipMapper:
+            except:
                 continue
 
-        if relative_path is None:
+        if selected_template is None:
             raise SkipMapper
 
-        return relative_path
+        return selected_template
 
 
 class AerovalJsonFileDB(AerovalDB):
@@ -84,95 +110,89 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(self._basedir, str):
             self._basedir = Path(self._basedir)
 
-        self.PATH_LOOKUP = {
+        self.PATH_LOOKUP: dict[str, TemplateMapper] = {
             "/v0/glob_stats/{project}/{experiment}/{frequency}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
                 )
             ],
             "/v0/contour/{project}/{experiment}/{obsvar}/{model}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/contour/{obsvar}_{model}.geojson"
                 )
             ],
             "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json"
                 )
             ],
             "/v0/experiments/{project}": [
-                PriorityPyaerocomVersionToTemplateMapper(
-                    ["./{project}/experiments.json"]
-                )
+                PriorityDataVersionToTemplateMapper(["./{project}/experiments.json"])
             ],
             "/v0/config/{project}/{experiment}": [
-                PyaerocomVersionToTemplateMapper(
-                    "./{project}/{experiment}/cfg_{project}_{experiment}.json"
+                PriorityDataVersionToTemplateMapper(
+                    ["./{project}/{experiment}/cfg_{project}_{experiment}.json"]
                 )
             ],
             "/v0/menu/{project}/{experiment}": [
-                PyaerocomVersionToTemplateMapper("./{project}/{experiment}/menu.json")
+                DataVersionToTemplateMapper("./{project}/{experiment}/menu.json")
             ],
             "/v0/statistics/{project}/{experiment}": [
-                PyaerocomVersionToTemplateMapper(
-                    "./{project}/{experiment}/statistics.json"
-                )
+                DataVersionToTemplateMapper("./{project}/{experiment}/statistics.json")
             ],
             "/v0/ranges/{project}/{experiment}": [
-                PyaerocomVersionToTemplateMapper("./{project}/{experiment}/ranges.json")
+                DataVersionToTemplateMapper("./{project}/{experiment}/ranges.json")
             ],
             "/v0/regions/{project}/{experiment}": [
-                PyaerocomVersionToTemplateMapper(
-                    "./{project}/{experiment}/regions.json"
-                )
+                DataVersionToTemplateMapper("./{project}/{experiment}/regions.json")
             ],
             "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json"
                 )
             ],
             "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json"
                 )
             ],
             "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json"
                 )
             ],
             "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/contour/{obsvar}_{model}.json"
                 )
             ],
             "/v0/report/{project}/{experiment}/{title}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./reports/{project}/{experiment}/{title}.json"
                 )
             ],
             "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",
                 ),
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
                     max_version="0.13.1",
                 ),
             ],
             "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": [
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",
                 ),
-                PyaerocomVersionToTemplateMapper(
+                DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
                     max_version="0.13.1",
                 ),
             ],
             "/v0/hm_ts/{project}/{experiment}": [
-                PriorityPyaerocomVersionToTemplateMapper(
+                PriorityDataVersionToTemplateMapper(
                     [
                         "./{project}/{experiment}/hm/ts/{location}-{network}-{obsvar}-{layer}.json",
                         "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
@@ -181,7 +201,7 @@ class AerovalJsonFileDB(AerovalDB):
                 )
             ],
             "/v0/model_style/{project}": [
-                PriorityPyaerocomVersionToTemplateMapper(
+                PriorityDataVersionToTemplateMapper(
                     [
                         "./{project}/{experiment}/models-style.json",
                         "./{project}/models-style.json",
@@ -191,7 +211,8 @@ class AerovalJsonFileDB(AerovalDB):
         }
 
     @async_and_sync
-    def _get_version(self, project: str, experiment: str) -> Version:
+    @alru_cache(maxsize=2048)
+    async def _get_version(self, project: str, experiment: str) -> Version:
         """
         Returns the version of pyaerocom used to generate the files for a given project
         and experiment.
@@ -201,16 +222,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         :return : A Version object.
         """
-        file_path = str(
-            self._basedir
-        ) + "/{project}/{experiment}/cfg_{project}_{experiment}.json".format(
-            project=project, experiment=experiment
-        )
-
-        with open(file_path, "r") as f:
-            data = f.read()
-
-        data = orjson.loads(data)
+        data = await self.get_config(project, experiment)
 
         try:
             version_str = data["exp_info"]["pyaerocom_version"]
@@ -252,37 +264,6 @@ class AerovalJsonFileDB(AerovalDB):
             f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
         )
 
-    def _get_file_path_from_route(self, route, route_args, /, *args, **kwargs):
-        file_path_templates: list[str] = self.PATH_LOOKUP.get(route, None)
-
-        if file_path_templates is None:
-            raise KeyError(f"No file path template found for route {route}.")
-
-        substitutions = route_args | kwargs
-
-        if not isinstance(file_path_templates, list):
-            file_path_templates = [file_path_templates]
-
-        relative_path = None
-        for t in file_path_templates:
-            fieldnames = [
-                fname for _, fname, _, _ in string.Formatter().parse(t) if fname
-            ]
-            if set(fieldnames) != set(substitutions.keys()):
-                logger.debug("A template was skipped due to superfluous arguments.")
-                continue
-
-            try:
-                relative_path = t.format(**substitutions)
-            except KeyError:
-                continue
-
-            break
-
-        if relative_path is None:
-            raise ValueError("Error in relative path resolution.")
-        return Path(os.path.join(self._basedir, relative_path)).resolve()
-
     async def _get(self, route, route_args, *args, **kwargs):
         if len(args) > 0:
             raise UnusedArguments(
@@ -291,17 +272,21 @@ class AerovalJsonFileDB(AerovalDB):
 
         substitutions = route_args | kwargs
 
-        relative_path = None
+        file_template = None
         for f in self.PATH_LOOKUP[route]:
             try:
-                relative_path = f(**substitutions, version_provider=self._get_version)
+                file_template = await f(
+                    **substitutions, version_provider=self._get_version
+                )
             except SkipMapper:
                 continue
 
             break
 
-        if relative_path is None:
-            raise Exception()
+        if file_template is None:
+            raise Exception("No template found.")
+
+        relative_path = file_template.format(**substitutions)
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
