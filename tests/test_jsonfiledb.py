@@ -51,7 +51,15 @@ get_parameters = [
         ),
         (
             "get_map",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            [
+                "project",
+                "experiment-old",
+                "network",
+                "obsvar",
+                "layer",
+                "model",
+                "modvar",
+            ],
             None,
             "./project/experiment/map/",
         ),
@@ -63,7 +71,15 @@ get_parameters = [
         ),
         (
             "get_scatter",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            [
+                "project",
+                "experiment-old",
+                "network",
+                "obsvar",
+                "layer",
+                "model",
+                "modvar",
+            ],
             None,
             "./project/experiment/scat/",
         ),

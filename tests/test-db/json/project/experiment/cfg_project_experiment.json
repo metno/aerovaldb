@@ -1,6 +1,6 @@
 {
     "path": "./project/experiment/",
     "exp_info": {
-        "pyaerocom_version": "0.13.1"
+        "pyaerocom_version": "0.13.5"
     }
 }
