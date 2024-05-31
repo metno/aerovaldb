@@ -96,7 +96,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def _put(self, obj, route: str, route_args: dict[str, str], *args, **kwargs):
+    async def _put(self, obj, route: str, route_args: dict[str, str], *args, **kwargs):
         """Abstract implementation of the main getter functions. All get and put
         functions map to this function, with a corresponding route as key
         to enable key/value pair put and get functionality.

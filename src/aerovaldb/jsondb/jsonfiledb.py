@@ -13,7 +13,7 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB, get_method, put_method
-from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments
+from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments, TemplateNotFound
 from aerovaldb.types import AccessType
 
 from ..utils import async_and_sync
@@ -145,10 +145,13 @@ class AerovalJsonFileDB(AerovalDB):
 
         :return : A Version object.
         """
-        data = await self.get_config(project, experiment)
+        try:
+            config = await self.get_config(project, experiment)
+        except FileNotFoundError:
+            return Version("0.0.1")
 
         try:
-            version_str = data["exp_info"]["pyaerocom_version"]
+            version_str = config["exp_info"]["pyaerocom_version"]
             version = Version(version_str)
         except KeyError:
             version = Version("0.0.1")
@@ -187,18 +190,12 @@ class AerovalJsonFileDB(AerovalDB):
             f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
         )
 
-    async def _get(self, route, route_args, *args, **kwargs):
-        if len(args) > 0:
-            raise UnusedArguments(
-                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
-            )
-
-        substitutions = route_args | kwargs
-
-        file_template = None
+    @async_and_sync
+    async def _get_template(self, route: str, substitutions: dict) -> str:
+        file_path_template = None
         for f in self.PATH_LOOKUP[route]:
             try:
-                file_template = await f(
+                file_path_template = await f(
                     **substitutions, version_provider=self._get_version
                 )
             except SkipMapper:
@@ -206,10 +203,21 @@ class AerovalJsonFileDB(AerovalDB):
 
             break
 
-        if file_template is None:
-            raise Exception("No template found.")
+        if file_path_template is None:
+            raise TemplateNotFound("No template found.")
+        
+        return file_path_template
+    
+    async def _get(self, route, route_args, *args, **kwargs):
+        if len(args) > 0:
+            raise UnusedArguments(
+                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
+            )
 
-        relative_path = file_template.format(**substitutions)
+        substitutions = route_args | kwargs
+        path_template = await self._get_template(route, substitutions)
+        relative_path = path_template.format(**substitutions)
+
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
@@ -235,13 +243,23 @@ class AerovalJsonFileDB(AerovalDB):
 
         return orjson.loads(raw)
 
-    def _put(self, obj, route, route_args, *args, **kwargs):
+    async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
 
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        file_path = self._get_file_path_from_route(route, route_args, **kwargs)
+        if len(args) > 0:
+            raise UnusedArguments(
+                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
+            )
+        
+        substitutions = route_args | kwargs
+        path_template = await self._get_template(route, substitutions)
+        relative_path = path_template.format(**substitutions)
+
+        file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
+
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         if not os.path.exists(os.path.dirname(file_path)):
