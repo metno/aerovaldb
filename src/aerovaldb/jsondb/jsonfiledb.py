@@ -114,14 +114,19 @@ class AerovalJsonFileDB(AerovalDB):
                     max_version="0.13.1",
                 ),
             ],
-            "/v0/hm_ts/{project}/{experiment}": [
-                PriorityDataVersionToTemplateMapper(
-                    [
-                        "./{project}/{experiment}/hm/ts/{location}-{network}-{obsvar}-{layer}.json",
-                        "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
-                        "./{project}/{experiment}/hm/ts/stats_ts.json",
-                    ]
-                )
+            "/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
+                    min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                ),
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
+                    min_version="0.12.2",
+                    max_version="0.13.1",
+                ),
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/hm/ts/stats_ts.json", max_version="0.12.1"
+                ),
             ],
             "/v0/model_style/{project}": [
                 PriorityDataVersionToTemplateMapper(
@@ -171,7 +176,7 @@ class AerovalJsonFileDB(AerovalDB):
         """
         if isinstance(access_type, AccessType):
             return access_type
-        
+
         if isinstance(access_type, str):
             try:
                 return AccessType[access_type]
