@@ -466,8 +466,8 @@ class AerovalDB(abc.ABC):
         layer: str,
         model: str,
         modvar: str,
+        time,
         /,
-        time: str = None,
         *args,
         **kwargs,
     ):
@@ -498,8 +498,8 @@ class AerovalDB(abc.ABC):
         layer: str,
         model: str,
         modvar: str,
+        time: str,
         /,
-        time: str = None,
         *args,
         **kwargs,
     ):

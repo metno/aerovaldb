@@ -2,8 +2,11 @@ import abc
 from aerovaldb.utils import async_and_sync
 from packaging.version import Version
 from typing import Callable
+import logging
 
 VersionProvider = Callable[[str, str], Version]
+
+logger = logging.getLogger(__name__)
 
 
 class SkipMapper(Exception):
@@ -31,9 +34,11 @@ class TemplateMapper(abc.ABC):
 
 class DataVersionToTemplateMapper(TemplateMapper):
     """
-    This class returns its provided template if the
-    data version read from a config file matches
-    the configured bounds of this class.
+    This class returns its provided template if the data version read
+    from a config file matches the configured bounds of this class.
+
+    Version is matched according to the following equation:
+        min_version <= version < max_version
     """
 
     def __init__(
@@ -57,8 +62,14 @@ class DataVersionToTemplateMapper(TemplateMapper):
     async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
         version = await version_provider(kwargs["project"], kwargs["experiment"])
         if self.min_version is not None and version < self.min_version:
+            logging.debug(
+                f"Skipping due to version mismatch. {version} < {self.min_version}"
+            )
             raise SkipMapper
-        if self.max_version is not None and version > self.max_version:
+        if self.max_version is not None and version >= self.max_version:
+            logging.debug(
+                f"Skipping due to version mismatch. {version} >= {self.max_version}"
+            )
             raise SkipMapper
 
         return self.template

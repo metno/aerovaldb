@@ -101,7 +101,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ),
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-                    max_version="0.13.1",
+                    max_version="0.13.2",
                 ),
             ],
             "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": [
@@ -111,7 +111,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ),
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-                    max_version="0.13.1",
+                    max_version="0.13.2",
                 ),
             ],
             "/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
@@ -122,10 +122,10 @@ class AerovalJsonFileDB(AerovalDB):
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
                     min_version="0.12.2",
-                    max_version="0.13.1",
+                    max_version="0.13.2",
                 ),
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/stats_ts.json", max_version="0.12.1"
+                    "./{project}/{experiment}/hm/ts/stats_ts.json", max_version="0.12.2"
                 ),
             ],
             "/v0/model_style/{project}": [
@@ -214,18 +214,17 @@ class AerovalJsonFileDB(AerovalDB):
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
             )
-
+        logger.debug(f"Fetching data for {route}.")
         substitutions = route_args | kwargs
         path_template = await self._get_template(route, substitutions)
+        logger.debug(f"Using template string {path_template}")
+
         relative_path = path_template.format(**substitutions)
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
-
-        logger.debug(
-            f"Mapped route {route} / { route_args} to file {file_path} with type {access_type}."
-        )
+        logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         if access_type == AccessType.FILE_PATH:
             if not os.path.exists(file_path):
