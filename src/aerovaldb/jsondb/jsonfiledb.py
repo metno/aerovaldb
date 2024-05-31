@@ -169,14 +169,10 @@ class AerovalJsonFileDB(AerovalDB):
         :raises ValueError: If access_type is not str or AccessType
         :return: The normalized AccessType.
         """
-        logger.info(f"Test 1 - {access_type}")
         if isinstance(access_type, AccessType):
-            logger.info("Test 2")
-
             return access_type
+        
         if isinstance(access_type, str):
-            logger.info("Test 3")
-
             try:
                 return AccessType[access_type]
             except:
