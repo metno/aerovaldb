@@ -205,9 +205,9 @@ class AerovalJsonFileDB(AerovalDB):
 
         if file_path_template is None:
             raise TemplateNotFound("No template found.")
-        
+
         return file_path_template
-    
+
     async def _get(self, route, route_args, *args, **kwargs):
         if len(args) > 0:
             raise UnusedArguments(
@@ -217,7 +217,6 @@ class AerovalJsonFileDB(AerovalDB):
         substitutions = route_args | kwargs
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
-
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
@@ -253,7 +252,7 @@ class AerovalJsonFileDB(AerovalDB):
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
             )
-        
+
         substitutions = route_args | kwargs
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
