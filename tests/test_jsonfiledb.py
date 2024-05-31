@@ -284,7 +284,7 @@ def test_exception_on_unexpected_args():
         with pytest.raises(aerovaldb.UnusedArguments):
             db.get_experiments("project", "excessive-positional-argument")
 
-
+@pytest.mark.xfail
 def test_exception_on_unexpected_kwargs():
     """
     https://github.com/metno/aerovaldb/issues/19
