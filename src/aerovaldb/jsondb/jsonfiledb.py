@@ -242,6 +242,19 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     async def _get_template(self, route: str, substitutions: dict) -> str:
+        """
+        Loops through each instance of TemplateMapper finding the
+        appropriate template to use give an route, and a dictionary
+        of substitutions.
+
+        :param route : The route for which to look up the template.
+        :param substitutions : Dictionary of format substitutions available.
+
+        :returns The template string.
+
+        :raises TemplateNotFound :
+            If no valid template was found.
+        """
         file_path_template = None
         for f in self.PATH_LOOKUP[route]:
             try:

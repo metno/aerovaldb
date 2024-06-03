@@ -49,6 +49,14 @@ class DataVersionToTemplateMapper(TemplateMapper):
         max_version: str | None = None,
         version_provider: VersionProvider,
     ):
+        """
+        :param template : The template string to return.
+        :min_version : The minimum version to which to apply this template (inclusive).
+        :max_version : The maximum version to which to apply this template (exclusive).
+        :version_provider :
+            Function or other callable that takes 'project' and 'experiment', returning
+            the Pyaerocom version that wrote the data to be read.
+        """
         self.min_version = None
         self.max_version = None
 
