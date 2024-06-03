@@ -136,6 +136,14 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
     ):
+        """Fetches regional stats from the database.
+
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+        :param frequency: The frequency.
+        :param network: Observation network.
+        :param variable: Variable name.
+        """
         raise NotImplementedError
 
     @async_and_sync
@@ -143,6 +151,14 @@ class AerovalDB(abc.ABC):
     async def get_heatmap(
         self, project: str, experiment: str, frequency: str, region: str, time: str, /
     ):
+        """Fetches heatmap data from the database
+
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+        :param frequency: The frequency.
+        :param region: Region.
+        :param time: Time.
+        """
         raise NotImplementedError
 
     @async_and_sync
@@ -324,7 +340,7 @@ class AerovalDB(abc.ABC):
         """Fetches a list of experiments for a project from the db.
 
         :param project: Project ID.
-        :param experiment: (Optional) Experiment ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
@@ -337,7 +353,7 @@ class AerovalDB(abc.ABC):
 
         :param obj: The object to be stored.
         :param project: Project ID.
-        :param experiment: (Optional) Experiment ID.
+        :param experiment: Experiment ID.
         """
         raise NotImplementedError
 
@@ -501,7 +517,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer
         :param model: Model ID
         :param modvar: Model variable.
-        :param time: (Optional) Time parameter.
+        :param time: Time parameter.
         """
         raise NotImplementedError
 
@@ -534,7 +550,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer
         :param model: Model ID
         :param modvar: Model variable.
-        :param time: (Optional) Time parameter.
+        :param time: Time parameter.
         """
         raise NotImplementedError
 
@@ -565,7 +581,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         :param model: Model ID.
         :param modvar: Model variable.
-        :param time: (Optional) Time parameter.
+        :param time: Time parameter.
         """
         raise NotImplementedError
 
@@ -598,7 +614,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         :param model: Model ID.
         :param modvar: Model variable.
-        :param time: (Optional) Time paramter.
+        :param time: Time paramter.
         """
         raise NotImplementedError
 
@@ -621,6 +637,7 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         :param location: Location.
         :param network: Observation network.
+        :param obsvar: Observation variable.
         """
         raise NotImplementedError
 
@@ -645,6 +662,7 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         :param location: Location.
         :param network: Observation network.
+        :param obsvar: Observation variable.
         """
         raise NotImplementedError
 

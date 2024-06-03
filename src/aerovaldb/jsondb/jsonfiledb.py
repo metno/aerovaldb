@@ -287,7 +287,7 @@ class AerovalJsonFileDB(AerovalDB):
         if access_type == AccessType.JSON_STR:
             if filter_func is not None:
                 raise UnsupportedOperation(
-                    "Raw json string can not return a raw json string."
+                    "Raw json string can not return a filtered endpoint."
                 )
             async with aiofile.async_open(file_path, "r") as f:
                 raw = await f.read()
