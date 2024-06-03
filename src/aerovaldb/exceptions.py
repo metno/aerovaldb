@@ -17,3 +17,9 @@ class TemplateNotFound(KeyError):
     Raised by jsondb if no matching filepath template was found for
     the requested version of data.
     """
+
+
+class UnsupportedOperation(NotImplementedError):
+    """
+    Raised if some operation could not be provided for some reason.
+    """

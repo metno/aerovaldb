@@ -23,6 +23,8 @@ from .templatemapper import (
     PriorityDataVersionToTemplateMapper,
     SkipMapper,
 )
+from .filter import filter_heatmap, filter_regional_stats
+from ..exceptions import UnsupportedOperation
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +37,20 @@ class AerovalJsonFileDB(AerovalDB):
 
         self.PATH_LOOKUP: dict[str, TemplateMapper] = {
             "/v0/glob_stats/{project}/{experiment}/{frequency}": [
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                    version_provider=self._get_version,
+                )
+            ],
+            "/v0/regional_stats/{project}/{experiment}/{frequency}": [
+                # Same as glob_stats
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                    version_provider=self._get_version,
+                )
+            ],
+            "/v0/heatmap/{project}/{experiment}/{frequency}": [
+                # Same as glob_stats
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                     version_provider=self._get_version,
@@ -166,6 +182,11 @@ class AerovalJsonFileDB(AerovalDB):
             ],
         }
 
+        self.FILTERS = {
+            "/v0/regional_stats/{project}/{experiment}/{frequency}": filter_regional_stats,
+            "/v0/heatmap/{project}/{experiment}/{frequency}": filter_heatmap,
+        }
+
     @async_and_sync
     @alru_cache(maxsize=2048)
     async def _get_version(self, project: str, experiment: str) -> Version:
@@ -252,12 +273,22 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
+        filter_func = self.FILTERS.get(route, None)
         if access_type == AccessType.FILE_PATH:
+            if filter_func is not None:
+                raise UnsupportedOperation(
+                    "Filtered endpoints can not return a file path."
+                )
+
             if not os.path.exists(file_path):
                 raise FileDoesNotExist(f"File {file_path} does not exist.")
             return file_path
 
         if access_type == AccessType.JSON_STR:
+            if filter_func is not None:
+                raise UnsupportedOperation(
+                    "Raw json string can not return a raw json string."
+                )
             async with aiofile.async_open(file_path, "r") as f:
                 raw = await f.read()
 
@@ -266,7 +297,11 @@ class AerovalJsonFileDB(AerovalDB):
         async with aiofile.async_open(file_path, "r") as f:
             raw = await f.read()
 
-        return orjson.loads(raw)
+        if filter_func is None:
+            return orjson.loads(raw)
+
+        filter_vars = route_args | kwargs
+        return filter_func(orjson.loads(raw), **filter_vars)
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.

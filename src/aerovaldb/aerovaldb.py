@@ -125,6 +125,27 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
+    @get_method("/v0/regional_stats/{project}/{experiment}/{frequency}")
+    async def get_regional_stats(
+        self,
+        project: str,
+        experiment: str,
+        frequency: str,
+        network: str,
+        variable: str,
+        layer: str,
+        /,
+    ):
+        raise NotImplementedError
+
+    @async_and_sync
+    @get_method("/v0/heatmap/{project}/{experiment}/{frequency}")
+    async def get_heatmap(
+        self, project: str, experiment: str, frequency: str, region: str, time: str, /
+    ):
+        raise NotImplementedError
+
+    @async_and_sync
     @put_method("/v0/glob_stats/{project}/{experiment}/{frequency}")
     async def put_glob_stats(
         self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs

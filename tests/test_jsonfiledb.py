@@ -18,6 +18,12 @@ get_parameters = [
             "./project/experiment/hm/",
         ),
         (
+            "get_regional_stats",
+            ["project", "experiment", "frequency", "network", "variable", "layer"],
+            None,
+            "./project/experiment/hm/regional_stats",
+        ),
+        (
             "get_contour",
             ["project", "experiment", "modvar", "model"],
             None,
