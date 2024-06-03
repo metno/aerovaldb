@@ -47,6 +47,7 @@ class DataVersionToTemplateMapper(TemplateMapper):
         *,
         min_version: str | None = None,
         max_version: str | None = None,
+        version_provider: VersionProvider,
     ):
         self.min_version = None
         self.max_version = None
@@ -58,10 +59,12 @@ class DataVersionToTemplateMapper(TemplateMapper):
 
         self.template = template
 
+        self.version_provider = version_provider
+
     @async_and_sync
-    async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
+    async def __call__(self, *args, **kwargs) -> str:
         logger.debug(f"Trying template string {self.template}")
-        version = await version_provider(kwargs["project"], kwargs["experiment"])
+        version = await self.version_provider(kwargs["project"], kwargs["experiment"])
         if self.min_version is not None and version < self.min_version:
             logging.debug(
                 f"Skipping due to version mismatch. {version} < {self.min_version}"
@@ -87,7 +90,7 @@ class PriorityDataVersionToTemplateMapper(TemplateMapper):
         self.templates = templates
 
     @async_and_sync
-    async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
+    async def __call__(self, *args, **kwargs) -> str:
         selected_template = None
         for t in self.templates:
             try:
