@@ -60,6 +60,7 @@ class DataVersionToTemplateMapper(TemplateMapper):
 
     @async_and_sync
     async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
+        logger.debug(f"Trying template string {self.template}")
         version = await version_provider(kwargs["project"], kwargs["experiment"])
         if self.min_version is not None and version < self.min_version:
             logging.debug(
