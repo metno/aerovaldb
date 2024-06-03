@@ -36,17 +36,20 @@ class AerovalJsonFileDB(AerovalDB):
         self.PATH_LOOKUP: dict[str, TemplateMapper] = {
             "/v0/glob_stats/{project}/{experiment}/{frequency}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/contour/{project}/{experiment}/{obsvar}/{model}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson"
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json"
+                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/experiments/{project}": [
@@ -58,74 +61,99 @@ class AerovalJsonFileDB(AerovalDB):
                 )
             ],
             "/v0/menu/{project}/{experiment}": [
-                DataVersionToTemplateMapper("./{project}/{experiment}/menu.json")
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/menu.json",
+                    version_provider=self._get_version,
+                )
             ],
             "/v0/statistics/{project}/{experiment}": [
-                DataVersionToTemplateMapper("./{project}/{experiment}/statistics.json")
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/statistics.json",
+                    version_provider=self._get_version,
+                )
             ],
             "/v0/ranges/{project}/{experiment}": [
-                DataVersionToTemplateMapper("./{project}/{experiment}/ranges.json")
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/ranges.json",
+                    version_provider=self._get_version,
+                )
             ],
             "/v0/regions/{project}/{experiment}": [
-                DataVersionToTemplateMapper("./{project}/{experiment}/regions.json")
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/regions.json",
+                    version_provider=self._get_version,
+                )
             ],
             "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json"
+                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json"
+                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json"
+                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.json"
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/report/{project}/{experiment}/{title}": [
                 DataVersionToTemplateMapper(
-                    "./reports/{project}/{experiment}/{title}.json"
+                    "./reports/{project}/{experiment}/{title}.json",
+                    version_provider=self._get_version,
                 )
             ],
             "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}": [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",
+                    version_provider=self._get_version,
                 ),
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
                     max_version="0.13.2",
+                    version_provider=self._get_version,
                 ),
             ],
             "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}": [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",
+                    version_provider=self._get_version,
                 ),
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
                     max_version="0.13.2",
+                    version_provider=self._get_version,
                 ),
             ],
             "/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                     min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                    version_provider=self._get_version,
                 ),
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
                     min_version="0.12.2",
                     max_version="0.13.2",
+                    version_provider=self._get_version,
                 ),
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/stats_ts.json", max_version="0.12.2"
+                    "./{project}/{experiment}/hm/ts/stats_ts.json",
+                    max_version="0.12.2",
+                    version_provider=self._get_version,
                 ),
             ],
             "/v0/model_style/{project}": [
@@ -196,9 +224,7 @@ class AerovalJsonFileDB(AerovalDB):
         file_path_template = None
         for f in self.PATH_LOOKUP[route]:
             try:
-                file_path_template = await f(
-                    **substitutions, version_provider=self._get_version
-                )
+                file_path_template = await f(**substitutions)
             except SkipMapper:
                 continue
 
