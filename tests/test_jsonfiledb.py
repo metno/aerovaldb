@@ -24,6 +24,11 @@ get_parameters = [
             "./project/experiment/hm/regional_stats",
         ),
         (
+            "get_heatmap",
+            ["project", "experiment", "frequency", "region", "time"],
+            None,
+            "TODO",
+        )(
             "get_contour",
             ["project", "experiment", "modvar", "model"],
             None,
