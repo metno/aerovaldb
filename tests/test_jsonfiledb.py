@@ -58,35 +58,37 @@ get_parameters = [
                 "layer",
                 "model",
                 "modvar",
+                "time"
             ],
             None,
             "./project/experiment/map/",
         ),
         (
             "get_map",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
-            {"time": "time"},
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar", "time"],
+            None,
             "./project/experiment/map/with_time",
         ),
         (
             "get_scatter",
             [
                 "project",
-                "experiment-old",
+                "experiment",
                 "network",
                 "obsvar",
                 "layer",
                 "model",
                 "modvar",
+                "time"
             ],
             None,
-            "./project/experiment/scat/",
+            "./project/experiment/scat/time",
         ),
         (
             "get_scatter",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
-            {"time": "time"},
-            "./project/experiment/scat/time",
+            ["project", "experiment-old", "network", "obsvar", "layer", "model", "modvar", "test"],
+            None,
+            "./project/experiment/scat/",
         ),
         (
             "get_profiles",
@@ -195,23 +197,23 @@ set_parametrization = pytest.mark.parametrize(
         ("models_style", ["project"], {"experiment": "experiment"}),
         (
             "map",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar", "time"],
             None,
         ),
         (
             "map",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
-            {"time": "time"},
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar", "time"],
+            None
         ),
         (
             "scatter",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar", "time"],
             None,
         ),
         (
             "scatter",
-            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar"],
-            {"time": "time"},
+            ["project", "experiment", "network", "obsvar", "layer", "model", "modvar", "time"],
+            None,
         ),
         ("profiles", ["project", "experiment", "station", "network", "obsvar"], None),
         (

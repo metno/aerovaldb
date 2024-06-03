@@ -104,7 +104,7 @@ class AerovalJsonFileDB(AerovalDB):
                     max_version="0.13.2",
                 ),
             ],
-            "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}": [
+            "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}": [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",

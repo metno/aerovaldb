@@ -466,7 +466,7 @@ class AerovalDB(abc.ABC):
         layer: str,
         model: str,
         modvar: str,
-        time,
+        time: str,
         /,
         *args,
         **kwargs,
@@ -519,7 +519,7 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(
-        "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
+        "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}"
     )
     async def get_scatter(
         self,
@@ -530,8 +530,8 @@ class AerovalDB(abc.ABC):
         layer: str,
         model: str,
         modvar: str,
+        time: str,
         /,
-        time: str = None,
         *args,
         **kwargs,
     ):
@@ -550,7 +550,7 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @put_method(
-        "/v0/scat/{project}/{experiment}/{network}-{obsvar}_{layer}_{model}-{modvar}"
+        "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}"
     )
     async def put_scatter(
         self,
@@ -562,8 +562,8 @@ class AerovalDB(abc.ABC):
         layer: str,
         model: str,
         modvar: str,
+        time: str,
         /,
-        time: str = None,
         *args,
         **kwargs,
     ):
