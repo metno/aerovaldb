@@ -25,6 +25,7 @@ from .templatemapper import (
 )
 from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
+from .readers import uncached_load_json, cached_load_json
 
 logger = logging.getLogger(__name__)
 
@@ -272,7 +273,14 @@ class AerovalJsonFileDB(AerovalDB):
 
         return file_path_template
 
-    async def _get(self, route, route_args, *args, **kwargs):
+    async def _get(
+        self,
+        route,
+        route_args,
+        *args,
+        json_loader: Callable[[str], str] = uncached_load_json,
+        **kwargs,
+    ):
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
@@ -305,19 +313,16 @@ class AerovalJsonFileDB(AerovalDB):
                 raise UnsupportedOperation(
                     "Raw json string can not return a filtered endpoint."
                 )
-            async with aiofile.async_open(file_path, "r") as f:
-                raw = await f.read()
-
+            raw = await json_loader(file_path)
             return raw
 
-        async with aiofile.async_open(file_path, "r") as f:
-            raw = await f.read()
+        raw = await json_loader(file_path)
 
         if filter_func is None:
             return orjson.loads(raw)
 
         filter_vars = route_args | kwargs
-        return filter_func(orjson.loads(raw), **filter_vars)
+        return filter_func(orjson.loads(await json_loader(file_path)), **filter_vars)
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
@@ -347,3 +352,63 @@ class AerovalJsonFileDB(AerovalDB):
             json = orjson.dumps(obj)
         with open(file_path, "wb") as f:
             f.write(json)
+
+    @async_and_sync
+    async def get_regional_stats(
+        self,
+        project: str,
+        experiment: str,
+        frequency: str,
+        network: str,
+        variable: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """Fetches regional stats from the database.
+
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+        :param frequency: The frequency.
+        :param network: Observation network.
+        :param variable: Variable name.
+        """
+        return await self._get(
+            "/v0/regional_stats/{project}/{experiment}/{frequency}",
+            {"project": project, "experiment": experiment, "frequency": frequency},
+            json_loader=cached_load_json,
+            access_type=kwargs.get("access_type", AccessType.OBJ),
+            network=network,
+            variable=variable,
+            layer=layer,
+        )
+
+    @async_and_sync
+    async def get_heatmap(
+        self,
+        project: str,
+        experiment: str,
+        frequency: str,
+        region: str,
+        time: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """Fetches heatmap data from the database
+
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+        :param frequency: The frequency.
+        :param region: Region.
+        :param time: Time.
+        """
+        return await self._get(
+            "/v0/heatmap/{project}/{experiment}/{frequency}",
+            {"project": project, "experiment": experiment, "frequency": frequency},
+            json_loader=cached_load_json,
+            access_type=kwargs.get("access_type", AccessType.OBJ),
+            region=region,
+            time=time,
+        )

@@ -23,12 +23,13 @@ get_parameters = [
             None,
             "./project/experiment/hm/regional_stats",
         ),
-        # (
-        #    "get_heatmap",
-        #    ["project", "experiment", "frequency", "region", "time"],
-        #    None,
-        #    "TODO",
-        # ),
+        pytest.param(
+            "get_heatmap",
+            ["project", "experiment", "frequency", "region", "time"],
+            None,
+            "./project/experiment/hm/regional_stats",
+            marks=pytest.mark.xfail(reason="missing test file in json testdb"),
+        ),
         (
             "get_contour",
             ["project", "experiment", "modvar", "model"],
