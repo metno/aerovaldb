@@ -135,6 +135,8 @@ class AerovalDB(abc.ABC):
         variable: str,
         layer: str,
         /,
+        *args,
+        **kwargs,
     ):
         """Fetches regional stats from the database.
 
@@ -149,7 +151,15 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method("/v0/heatmap/{project}/{experiment}/{frequency}")
     async def get_heatmap(
-        self, project: str, experiment: str, frequency: str, region: str, time: str, /
+        self,
+        project: str,
+        experiment: str,
+        frequency: str,
+        region: str,
+        time: str,
+        /,
+        *args,
+        **kwargs,
     ):
         """Fetches heatmap data from the database
 
