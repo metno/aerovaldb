@@ -203,6 +203,9 @@ class AerovalJsonFileDB(AerovalDB):
             config = await self.get_config(project, experiment)
         except FileNotFoundError:
             return Version("0.0.1")
+        except orjson.JSONDecodeError:
+            # Work around for https://github.com/metno/aerovaldb/issues/28
+            return Version("0.14.0")
 
         try:
             version_str = config["exp_info"]["pyaerocom_version"]
