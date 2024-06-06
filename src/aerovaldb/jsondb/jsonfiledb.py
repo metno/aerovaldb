@@ -273,6 +273,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         return file_path_template
 
+    @async_and_sync
     async def _get(
         self,
         route,
@@ -325,6 +326,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         return filter_func(orjson.loads(await json_loader(file_path)), **filter_vars)
 
+    @async_and_sync
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
 
