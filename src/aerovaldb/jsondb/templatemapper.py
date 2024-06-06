@@ -1,10 +1,10 @@
 import abc
 from aerovaldb.utils import async_and_sync
 from packaging.version import Version
-from typing import Callable
+from typing import Callable, Awaitable
 import logging
 
-VersionProvider = Callable[[str, str], Version]
+VersionProvider = Callable[[str, str], Awaitable[Version]]
 
 logger = logging.getLogger(__name__)
 

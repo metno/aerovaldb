@@ -18,7 +18,7 @@ def filter_heatmap(data, region: str, time: str, **kwargs):
     :region : Region ID.
     :time : Time.
     """
-    filtered_data = {}
+    filtered_data = {}  # type: ignore
     for variable, variable_data in data.items():
         filtered_data.setdefault(variable, {})
         for network, network_data in variable_data.items():

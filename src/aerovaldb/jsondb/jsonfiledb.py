@@ -5,7 +5,7 @@ import os
 import string
 from enum import Enum
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Awaitable, Any
 
 import aiofile
 import orjson
@@ -36,7 +36,7 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(self._basedir, str):
             self._basedir = Path(self._basedir)
 
-        self.PATH_LOOKUP: dict[str, TemplateMapper] = {
+        self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
             "/v0/glob_stats/{project}/{experiment}/{frequency}": [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
@@ -183,7 +183,7 @@ class AerovalJsonFileDB(AerovalDB):
             ],
         }
 
-        self.FILTERS = {
+        self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             "/v0/regional_stats/{project}/{experiment}/{frequency}": filter_regional_stats,
             "/v0/heatmap/{project}/{experiment}/{frequency}": filter_heatmap,
         }
@@ -278,7 +278,7 @@ class AerovalJsonFileDB(AerovalDB):
         route,
         route_args,
         *args,
-        json_loader: Callable[[str], str] = uncached_load_json,
+        json_loader: Callable[[str | Path], Awaitable[str]] = uncached_load_json,
         **kwargs,
     ):
         if len(args) > 0:
