@@ -66,4 +66,4 @@ def open(resource) -> AerovalDB:
 
     aerodb = list_engines()[name]
 
-    return aerodb(path)
+    return aerodb(path)  # type: ignore

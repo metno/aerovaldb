@@ -345,7 +345,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method("/v0/experiments/{project}")
     async def get_experiments(
-        self, project: str, /, experiment: str = None, *args, **kwargs
+        self, project: str, /, experiment: str | None = None, *args, **kwargs
     ):
         """Fetches a list of experiments for a project from the db.
 
@@ -357,7 +357,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @put_method("/v0/experiments/{project}")
     async def put_experiments(
-        self, obj, project: str, /, experiment: str = None, *args, **kwargs
+        self, obj, project: str, /, experiment: str | None = None, *args, **kwargs
     ):
         """Stores a list of experiments for a project to the db.
 
@@ -478,7 +478,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method("/v0/model_style/{project}")
     async def get_models_style(
-        self, project: str, /, experiment: str = None, *args, **kwargs
+        self, project: str, /, experiment: str | None = None, *args, **kwargs
     ):
         """Fetches model styles from db.
 
@@ -490,7 +490,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @put_method("/v0/model_style/{project}")
     async def put_models_style(
-        self, obj, project: str, /, experiment: str = None, *args, **kwargs
+        self, obj, project: str, /, experiment: str | None = None, *args, **kwargs
     ):
         """Stores model styles config in db.
 
