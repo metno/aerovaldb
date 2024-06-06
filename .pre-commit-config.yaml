@@ -15,4 +15,8 @@ repos:
     pass_filenames: false
     verbose: true
     entry: tox -v
-
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: 'v1.10.0'
+  hooks:
+  - id: mypy
+    args: [./src]
