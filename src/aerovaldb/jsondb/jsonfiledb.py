@@ -298,6 +298,8 @@ class AerovalJsonFileDB(AerovalDB):
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
+        filter_vars = route_args | kwargs
+
         if access_type == AccessType.FILE_PATH:
             if filter_func is not None:
                 raise UnsupportedOperation(
@@ -309,19 +311,16 @@ class AerovalJsonFileDB(AerovalDB):
             return file_path
 
         if access_type == AccessType.JSON_STR:
-            if filter_func is not None:
-                raise UnsupportedOperation(
-                    "Raw json string can not return a filtered endpoint."
-                )
             raw = await json_loader(file_path)
-            return raw
+            obj = orjson.loads(raw)
+            filtered = filter_func(obj, **filter_vars)
+            return filtered
 
         raw = await json_loader(file_path)
 
         if filter_func is None:
             return orjson.loads(raw)
 
-        filter_vars = route_args | kwargs
         return filter_func(orjson.loads(await json_loader(file_path)), **filter_vars)
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
