@@ -311,6 +311,8 @@ class AerovalJsonFileDB(AerovalDB):
             return file_path
 
         if access_type == AccessType.JSON_STR:
+            if filter_func is None:
+                return await json_loader(file_path)
             raw = await json_loader(file_path)
             obj = orjson.loads(raw)
             filtered = filter_func(obj, **filter_vars)
