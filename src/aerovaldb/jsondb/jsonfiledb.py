@@ -314,7 +314,7 @@ class AerovalJsonFileDB(AerovalDB):
             raw = await json_loader(file_path)
             obj = orjson.loads(raw)
             filtered = filter_func(obj, **filter_vars)
-            return filtered
+            return orjson.dumps(filtered)
 
         raw = await json_loader(file_path)
 
