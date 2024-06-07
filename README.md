@@ -3,7 +3,7 @@
 
 ## About
 
-aerovaldb is the database-interface using in the aeroval-API to send data to
+aerovaldb is the database-interface used in the aeroval-API to send data to
 aeroval database instances like https://aeroval.met.no . Data is usually provided
 by [PyAerocom](https://pyaerocom.readthedocs.io).
 
