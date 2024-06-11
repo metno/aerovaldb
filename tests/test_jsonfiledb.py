@@ -48,11 +48,11 @@ get_parameters = [
             None,
             "./project/experiment/ts/dirunal/",
         ),
-        ("get_experiments", ["project"], None, "./project/"),
+        # ("get_experiments", ["project"], None, "./project/"),
         ("get_config", ["project", "experiment"], None, "./project/experiment/"),
-        ("get_menu", ["project", "experiment"], None, "./project/experiment/"),
+        # ("get_menu", ["project", "experiment"], None, "./project/experiment/"),
         ("get_statistics", ["project", "experiment"], None, "./project/experiment/"),
-        ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
+        # ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
         ("get_regions", ["project", "experiment"], None, "./project/experiment/"),
         ("get_models_style", ["project"], None, "./project/"),
         (
@@ -198,8 +198,10 @@ def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected
 async def test_file_does_not_exist():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(aerovaldb.FileDoesNotExist):
-            await db.get_experiments(
-                "non-existent-project", access_type=aerovaldb.AccessType.FILE_PATH
+            await db.get_config(
+                "non-existent-project",
+                "experiment",
+                access_type=aerovaldb.AccessType.FILE_PATH,
             )
 
 
@@ -218,11 +220,11 @@ set_parametrization = pytest.mark.parametrize(
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
         ),
-        ("experiments", ["project"], None),
+        # ("experiments", ["project"], None),
         ("config", ["project", "experiment"], None),
-        ("menu", ["project", "experiment"], None),
+        # ("menu", ["project", "experiment"], None),
         ("statistics", ["project", "experiment"], None),
-        ("ranges", ["project", "experiment"], None),
+        # ("ranges", ["project", "experiment"], None),
         ("regions", ["project", "experiment"], None),
         ("models_style", ["project"], None),
         ("models_style", ["project"], {"experiment": "experiment"}),
@@ -352,7 +354,7 @@ def test_exception_on_unexpected_args():
     """
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(aerovaldb.UnusedArguments):
-            db.get_experiments("project", "excessive-positional-argument")
+            db.get_config("project", "experiment", "excessive-positional-argument")
 
 
 @pytest.mark.xfail
@@ -375,3 +377,9 @@ def test_version2():
     """ """
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         assert str(db._get_version("project", "experiment-old")) == "0.0.5"
+
+
+def test_list_experiments():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        experiments = db._list_experiments("project")
+        assert set(experiments) == set(["experiment", "experiment-old"])

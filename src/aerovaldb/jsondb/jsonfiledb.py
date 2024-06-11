@@ -1,3 +1,4 @@
+import glob
 import logging
 import os
 from enum import Enum
@@ -359,6 +360,35 @@ class AerovalJsonFileDB(AerovalDB):
             f.write(json)
 
     @async_and_sync
+    async def get_experiments(self, project: str, /, *args, **kwargs):
+        experiments = {}
+        for exp in self._list_experiments(project, has_results=True):
+            config = await self.get_config(project, exp)
+            public = config["exp_info"]["public"]
+            experiments[exp] = {"public": public}
+
+        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+
+        if access_type == AccessType.FILE_PATH:
+            raise UnsupportedOperation(
+                f"get_experiment() does not support access_type {access_type}."
+            )
+
+        if access_type == AccessType.JSON_STR:
+            json = orjson.dumps(experiments)
+            return json
+
+        return experiments
+
+    # @async_and_sync
+    # async def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
+    #    raise NotImplementedError
+
+    # @async_and_sync
+    # async def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
+    #    raise NotImplementedError
+
+    @async_and_sync
     async def get_regional_stats(
         self,
         project: str,
@@ -417,3 +447,24 @@ class AerovalJsonFileDB(AerovalDB):
             time=time,
             cache=True,
         )
+
+    def _list_experiments(
+        self, project: str, /, has_results: bool = False
+    ) -> list[str]:
+        project_path = os.path.join(self._basedir, project)
+        experiments = []
+
+        for f in os.listdir(project_path):
+            if not has_results:
+                if os.path.isdir(os.path.join(project_path, f)):
+                    experiments.append(f)
+            else:
+                if not os.path.isdir(os.path.join(project_path, f)):
+                    continue
+                glb = os.path.join(project_path, f, "map", "*.json")
+                if len(glob.glob(glb)) == 0:
+                    continue
+
+                experiments.append(f)
+
+        return experiments
