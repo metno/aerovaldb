@@ -1,5 +1,6 @@
 {
     "exp_info": {
-        "pyaerocom_version": "0.0.5"
+        "pyaerocom_version": "0.0.5",
+        "public": false
     }
 }

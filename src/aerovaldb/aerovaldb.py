@@ -351,17 +351,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def _list_experiments(self, project: str, /, has_results: bool = False) -> list[str]:
-        raise NotImplementedError
-
-    @async_and_sync
-    @put_method("/v0/experiments/{project}")
-    async def put_experiments(self, obj, project: str, /, *args, **kwargs):
-        """Stores a list of experiments for a project to the db.
-
-        :param obj: The object to be stored.
-        :param project: Project ID.
-        """
+    def _list_experiments(
+        self, project: str, /, has_results: bool = False
+    ) -> list[str]:
         raise NotImplementedError
 
     @async_and_sync
