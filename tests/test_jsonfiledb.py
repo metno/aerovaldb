@@ -48,11 +48,10 @@ get_parameters = [
             None,
             "./project/experiment/ts/dirunal/",
         ),
-        # ("get_experiments", ["project"], None, "./project/"),
         ("get_config", ["project", "experiment"], None, "./project/experiment/"),
-        # ("get_menu", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_menu", ["project", "experiment"], None, "./project/experiment/"),
         ("get_statistics", ["project", "experiment"], None, "./project/experiment/"),
-        # ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
+        ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
         ("get_regions", ["project", "experiment"], None, "./project/experiment/"),
         ("get_models_style", ["project"], None, "./project/"),
         (
@@ -220,11 +219,10 @@ set_parametrization = pytest.mark.parametrize(
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
         ),
-        # ("experiments", ["project"], None),
         ("config", ["project", "experiment"], None),
-        # ("menu", ["project", "experiment"], None),
+        ("menu", ["project", "experiment"], None),
         ("statistics", ["project", "experiment"], None),
-        # ("ranges", ["project", "experiment"], None),
+        ("ranges", ["project", "experiment"], None),
         ("regions", ["project", "experiment"], None),
         ("models_style", ["project"], None),
         ("models_style", ["project"], {"experiment": "experiment"}),
@@ -383,3 +381,13 @@ def test_list_experiments():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         experiments = db._list_experiments("project")
         assert set(experiments) == set(["experiment", "experiment-old"])
+
+
+def test_get_experiments():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        experiments = db.get_experiments("project")
+
+        assert experiments == {
+            "experiment": {"public": True},
+            "experiment-old": {"public": False},
+        }

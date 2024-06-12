@@ -381,14 +381,6 @@ class AerovalJsonFileDB(AerovalDB):
 
         return experiments
 
-    # @async_and_sync
-    # async def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
-    #    raise NotImplementedError
-
-    # @async_and_sync
-    # async def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
-    #    raise NotImplementedError
-
     @async_and_sync
     async def get_regional_stats(
         self,
