@@ -380,6 +380,14 @@ def test_version2():
 def test_list_experiments():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         experiments = db._list_experiments("project")
+        assert set(experiments) == set(
+            ["experiment", "experiment-old", "empty-experiment"]
+        )
+
+
+def test_list_experiments_results_only():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        experiments = db._list_experiments("project", has_results=True)
         assert set(experiments) == set(["experiment", "experiment-old"])
 
 
