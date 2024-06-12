@@ -360,7 +360,7 @@ class AerovalJsonFileDB(AerovalDB):
             f.write(json)
 
     @async_and_sync
-    async def get_experiments(self, project: str, /, *args, **kwargs):
+    async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
         experiments = {}
         for exp in self._list_experiments(project, has_results=True):
             config = await self.get_config(project, exp)
@@ -369,6 +369,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
+        experiments = dict(experiments.items())
         if access_type == AccessType.FILE_PATH:
             raise UnsupportedOperation(
                 f"get_experiment() does not support access_type {access_type}."
