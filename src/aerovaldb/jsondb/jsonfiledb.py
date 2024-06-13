@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import shutil
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Awaitable, Any
@@ -380,6 +381,20 @@ class AerovalJsonFileDB(AerovalDB):
             return json
 
         return experiments
+
+    @async_and_sync
+    def rm_experiment_data(self, project: str, experiment: str) -> None:
+        """Deletes ALL data associated with an experiment.
+
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+        """
+        exp_dir = os.path.join(self._basedir, project, experiment)
+
+        logger.info(
+            f"Removing experiment data for project {project}, experiment, {experiment}."
+        )
+        shutil.rmtree(exp_dir)
 
     @async_and_sync
     async def get_regional_stats(
