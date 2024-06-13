@@ -356,8 +356,6 @@ class AerovalDB(abc.ABC):
 
         :param project : Project ID.
         :param experiment : Experiment ID.
-
-        :returns : List of assets removed.
         """
         raise NotImplementedError
 
