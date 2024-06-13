@@ -391,10 +391,11 @@ class AerovalJsonFileDB(AerovalDB):
         """
         exp_dir = os.path.join(self._basedir, project, experiment)
 
-        logger.info(
-            f"Removing experiment data for project {project}, experiment, {experiment}."
-        )
-        shutil.rmtree(exp_dir)
+        if os.path.exists(exp_dir):
+            logger.info(
+                f"Removing experiment data for project {project}, experiment, {experiment}."
+            )
+            shutil.rmtree(exp_dir)
 
     @async_and_sync
     async def get_regional_stats(
