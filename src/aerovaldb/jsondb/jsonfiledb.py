@@ -382,7 +382,6 @@ class AerovalJsonFileDB(AerovalDB):
 
         return experiments
 
-    @async_and_sync
     def rm_experiment_data(self, project: str, experiment: str) -> None:
         """Deletes ALL data associated with an experiment.
 
