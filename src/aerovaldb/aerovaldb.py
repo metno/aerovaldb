@@ -351,7 +351,6 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    @async_and_sync
     def rm_experiment_data(self, project: str, experiment: str):
         """Deletes ALL data associated with an experiment.
 
