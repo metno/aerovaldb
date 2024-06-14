@@ -34,10 +34,22 @@ class JSONCache:
 
     @property
     def hit_count(self) -> int:
+        """Returns the number of cache hits since the last `invalidate_all()` call.
+
+        Note:
+        -----
+        This does not include calls with `no_cache=True`
+        """
         return self._hit_count
 
     @property
     def miss_count(self) -> int:
+        """Returns the number of cache misses since the last `invalidate_all()` call.
+
+        Note:
+        -----
+        This does not include calls with `no_cache=True`
+        """
         return self._miss_count
 
     def _canonical_file_path(self, file_path: str | Path) -> str:
