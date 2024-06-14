@@ -1,11 +1,10 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from pathlib import Path
 from ..utils import async_and_sync
 import logging
 import os
 import aiofile
 import time
-from dataclasses import dataclass
 from typing import TypedDict
 
 logger = logging.getLogger(__name__)
@@ -15,20 +14,26 @@ class CacheEntry(TypedDict):
     json: str
 
     last_modified: float
-    last_accessed: float
 
 
-class JSONCache:
+class JSONLRUCache:
     """
-    Implements an in-memory cache for file access in aerovaldb.
+    Implements an in-memory LRU cache for file content in aerovaldb.
     """
 
-    def __init__(self):
+    def __init__(self, *, max_size: int):
+        """
+        :param max_size : The maximum size of the cache in terms of number of entries / files.
+
+        Files will be ejected based on least recently used, when full.
+        """
+        self._max_size = max_size
         self.invalidate_all()
 
     def invalidate_all(self) -> None:
         logger.debug("JSON Cache invalidated.")
         self._cache: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
+        self._deque: deque = deque()
         self._hit_count: int = 0
         self._miss_count: int = 0
 
@@ -41,6 +46,11 @@ class JSONCache:
         This does not include calls with `no_cache=True`
         """
         return self._hit_count
+
+    @property
+    def size(self) -> int:
+        """Returns the current size of the cache in terms of number of elements."""
+        return len(self._cache)
 
     @property
     def miss_count(self) -> int:
@@ -69,6 +79,24 @@ class JSONCache:
         async with aiofile.async_open(abspath, "r") as f:
             return await f.read()
 
+    def _get(self, abspath: str) -> str:
+        """Returns an element from the cache."""
+        self._deque.remove(abspath)
+        self._deque.append(abspath)
+        self._hit_count = self._hit_count + 1
+        logger.debug(f"Returning contents from file {abspath} from cache.")
+        self._cache[abspath]["last_accessed"] = time.time()  # type: ignore
+        return self._cache[abspath]["json"]  # type: ignore
+
+    def _put(self, abspath: str, *, json: str, modified: float):
+        self._cache[abspath] = {
+            "json": json,
+            "last_modified": os.path.getmtime(abspath),
+        }
+        while self.size > self._max_size:
+            key = self._deque.popleft()
+            self.invalidate_entry(key)
+
     @async_and_sync
     async def get_json(self, file_path: str | Path, *, no_cache: bool = False) -> str:
         """
@@ -82,22 +110,16 @@ class JSONCache:
             return await self._read_json(abspath)
 
         if self.is_valid(abspath):
-            self._hit_count = self._hit_count + 1
-            logger.debug(f"Returning contents from file {abspath} from cache.")
-            self._cache[abspath]["last_accessed"] = time.time()  # type: ignore
-            return self._cache[abspath]["json"]  # type: ignore
+            return self._get(abspath)
 
         self._miss_count = self._miss_count + 1
         logger.debug(f"Reading file {abspath} and adding to cache.")
         json = await self._read_json(abspath)
-        self._cache[abspath] = {
-            "json": json,
-            "last_modified": os.path.getmtime(abspath),
-            "last_accessed": time.time(),
-        }
+        self._deque.append(abspath)
+        self._put(abspath, json=json, modified=os.path.getmtime(abspath))
         return json
 
-    def invalidate_cache(self, file_path: str | Path) -> None:
+    def invalidate_entry(self, file_path: str | Path) -> None:
         """
         Invalidates the cache for a file path, ensuring it will be re-read on the next read.
 
@@ -105,7 +127,12 @@ class JSONCache:
         """
         abspath = self._canonical_file_path(file_path)
         logger.debug(f"Invalidating cache for file {abspath}.")
-        self._cache[abspath] = None
+        if abspath in self._cache:
+            del self._cache[abspath]
+            try:
+                self._deque.remove(abspath)
+            except ValueError:
+                pass
 
     def is_valid(self, file_path: str | Path) -> bool:
         """
