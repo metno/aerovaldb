@@ -32,8 +32,14 @@ class JSONLRUCache:
 
     def invalidate_all(self) -> None:
         logger.debug("JSON Cache invalidated.")
+
+        # Stores the actual cached content, indexed by canonical file path.
         self._cache: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
+
+        # Stores queue of cache accesses, used for implementing LRU logic.
         self._deque: deque = deque()
+
+        # Tally of cache hits and misses.
         self._hit_count: int = 0
         self._miss_count: int = 0
 
@@ -85,7 +91,6 @@ class JSONLRUCache:
         self._deque.append(abspath)
         self._hit_count = self._hit_count + 1
         logger.debug(f"Returning contents from file {abspath} from cache.")
-        self._cache[abspath]["last_accessed"] = time.time()  # type: ignore
         return self._cache[abspath]["json"]  # type: ignore
 
     def _put(self, abspath: str, *, json: str, modified: float):
