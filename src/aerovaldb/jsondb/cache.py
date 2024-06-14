@@ -27,6 +27,7 @@ class JSONCache:
         self.invalidate_all()
 
     def invalidate_all(self) -> None:
+        logger.debug("JSON Cache invalidated.")
         self._cache: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
 
     def _canonical_file_path(self, file_path: str | Path) -> str:
@@ -41,7 +42,9 @@ class JSONCache:
         return str(os.path.realpath(file_path))
 
     async def _read_json(self, file_path: str | Path) -> str:
-        async with aiofile.async_open(file_path, "r") as f:
+        abspath = self._canonical_file_path(file_path)
+        logger.debug(f"Reading file {abspath}")
+        async with aiofile.async_open(abspath, "r") as f:
             return await f.read()
 
     @async_and_sync
@@ -57,9 +60,11 @@ class JSONCache:
             return await self._read_json(abspath)
 
         if self.is_valid(abspath):
+            logger.debug(f"Returning contents from file {abspath} from cache.")
             self._cache[abspath]["last_accessed"] = time.time()  # type: ignore
             return self._cache[abspath]["json"]  # type: ignore
 
+        logger.debug(f"Reading file {abspath} and adding to cache.")
         json = await self._read_json(abspath)
         self._cache[abspath] = {
             "json": json,
@@ -74,7 +79,9 @@ class JSONCache:
 
         :param file_path : The file path to invalidate cache for.
         """
-        self._cache[self._canonical_file_path(file_path)] = None
+        abspath = self._canonical_file_path(file_path)
+        logger.debug(f"Invalidating cache for file {abspath}.")
+        self._cache[abspath] = None
 
     def is_valid(self, file_path: str | Path) -> bool:
         """

@@ -31,7 +31,7 @@ def get_method(route):
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
 
-            return await self._get(route, route_args, *args, **kwargs)
+            return await self._get(route, route_args, *args, cache=False, **kwargs)
 
         return wrapper
 
