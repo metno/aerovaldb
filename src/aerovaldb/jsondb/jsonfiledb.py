@@ -1,13 +1,9 @@
-import abc
-import json
 import logging
 import os
-import string
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Awaitable, Any
 
-import aiofile
 import orjson
 from async_lru import alru_cache
 from packaging.version import Version
@@ -25,13 +21,15 @@ from .templatemapper import (
 )
 from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
-from .readers import uncached_load_json, cached_load_json
+from .cache import JSONCache
 
 logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
     def __init__(self, basedir: str | Path):
+        self._cache = JSONCache()
+
         self._basedir = basedir
         if isinstance(self._basedir, str):
             self._basedir = Path(self._basedir)
@@ -278,9 +276,9 @@ class AerovalJsonFileDB(AerovalDB):
         route,
         route_args,
         *args,
-        json_loader: Callable[[str | Path], Awaitable[str]] = uncached_load_json,
         **kwargs,
     ):
+        use_caching = kwargs.get("cache", False)
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
@@ -312,18 +310,24 @@ class AerovalJsonFileDB(AerovalDB):
 
         if access_type == AccessType.JSON_STR:
             if filter_func is None:
-                return await json_loader(file_path)
-            raw = await json_loader(file_path)
+                return await self._cache.get_json(file_path, no_cache=not use_caching)
+
+            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
             obj = orjson.loads(raw)
             filtered = filter_func(obj, **filter_vars)
             return orjson.dumps(filtered)
 
-        raw = await json_loader(file_path)
+        raw = await self._cache.get_json(file_path, no_cache=not use_caching)
 
         if filter_func is None:
             return orjson.loads(raw)
 
-        return filter_func(orjson.loads(await json_loader(file_path)), **filter_vars)
+        return filter_func(
+            orjson.loads(
+                await self._cache.get_json(file_path, no_cache=not use_caching)
+            ),
+            **filter_vars,
+        )
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
@@ -378,11 +382,11 @@ class AerovalJsonFileDB(AerovalDB):
         return await self._get(
             "/v0/regional_stats/{project}/{experiment}/{frequency}",
             {"project": project, "experiment": experiment, "frequency": frequency},
-            json_loader=cached_load_json,
             access_type=kwargs.get("access_type", AccessType.OBJ),
             network=network,
             variable=variable,
             layer=layer,
+            use_caching=True,
         )
 
     @async_and_sync
@@ -408,8 +412,8 @@ class AerovalJsonFileDB(AerovalDB):
         return await self._get(
             "/v0/heatmap/{project}/{experiment}/{frequency}",
             {"project": project, "experiment": experiment, "frequency": frequency},
-            json_loader=cached_load_json,
             access_type=kwargs.get("access_type", AccessType.OBJ),
             region=region,
             time=time,
+            cache=True,
         )
