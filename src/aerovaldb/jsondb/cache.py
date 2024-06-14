@@ -29,6 +29,16 @@ class JSONCache:
     def invalidate_all(self) -> None:
         logger.debug("JSON Cache invalidated.")
         self._cache: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
+        self._hit_count: int = 0
+        self._miss_count: int = 0
+
+    @property
+    def hit_count(self) -> int:
+        return self._hit_count
+
+    @property
+    def miss_count(self) -> int:
+        return self._miss_count
 
     def _canonical_file_path(self, file_path: str | Path) -> str:
         """
@@ -60,10 +70,12 @@ class JSONCache:
             return await self._read_json(abspath)
 
         if self.is_valid(abspath):
+            self._hit_count = self._hit_count + 1
             logger.debug(f"Returning contents from file {abspath} from cache.")
             self._cache[abspath]["last_accessed"] = time.time()  # type: ignore
             return self._cache[abspath]["json"]  # type: ignore
 
+        self._miss_count = self._miss_count + 1
         logger.debug(f"Reading file {abspath} and adding to cache.")
         json = await self._read_json(abspath)
         self._cache[abspath] = {
