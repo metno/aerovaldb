@@ -2,7 +2,6 @@ import glob
 import logging
 import os
 import shutil
-from enum import Enum
 from pathlib import Path
 from typing import Callable, Awaitable, Any
 
@@ -10,7 +9,7 @@ import orjson
 from async_lru import alru_cache
 from packaging.version import Version
 
-from aerovaldb.aerovaldb import AerovalDB, get_method, put_method
+from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments, TemplateNotFound
 from aerovaldb.types import AccessType
 
