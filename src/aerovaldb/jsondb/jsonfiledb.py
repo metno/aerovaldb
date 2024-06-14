@@ -21,14 +21,14 @@ from .templatemapper import (
 )
 from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
-from .cache import JSONCache
+from .cache import JSONLRUCache
 
 logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
     def __init__(self, basedir: str | Path):
-        self._cache = JSONCache()
+        self._cache = JSONLRUCache(max_size=64)
 
         self._basedir = basedir
         if isinstance(self._basedir, str):
