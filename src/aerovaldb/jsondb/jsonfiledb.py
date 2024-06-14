@@ -363,8 +363,12 @@ class AerovalJsonFileDB(AerovalDB):
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
         experiments = {}
         for exp in self._list_experiments(project, has_results=True):
-            config = await self.get_config(project, exp)
-            public = config["exp_info"]["public"]
+            try:
+                config = await self.get_config(project, exp)
+            except FileNotFoundError:
+                public = False
+            finally:
+                public = config.get("exp_info", {}).get("public", False)
             experiments[exp] = {"public": public}
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
