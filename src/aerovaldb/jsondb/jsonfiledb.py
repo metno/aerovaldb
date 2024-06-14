@@ -386,7 +386,7 @@ class AerovalJsonFileDB(AerovalDB):
             network=network,
             variable=variable,
             layer=layer,
-            use_caching=True,
+            cache=True,
         )
 
     @async_and_sync
