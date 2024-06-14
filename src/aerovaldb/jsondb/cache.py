@@ -148,6 +148,9 @@ class JSONLRUCache:
         if cache is None:
             return False
 
+        if not os.path.exists(abspath):
+            return False
+
         if os.path.getmtime(abspath) > cache["last_modified"]:
             return False
 
