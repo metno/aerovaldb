@@ -399,3 +399,10 @@ def test_get_experiments():
             "experiment": {"public": True},
             "experiment-old": {"public": False},
         }
+
+
+def test_list_timeseries():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        timeseries = db.list_timeseries("project", "experiment")
+
+        assert len(list(timeseries)) == 1
