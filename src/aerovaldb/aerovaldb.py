@@ -286,8 +286,9 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_timeseries(self, project: str, experiment: str):
-        """Returns a list of uuids of all timeseries files for
+    def list_timeseries(
+        self, project: str, experiment: str
+    ) -> Generator[str, None, None]:        """Returns a list of uuids of all timeseries files for
         a given project and experiment id.
 
         :param project : Project ID.
