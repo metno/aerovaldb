@@ -1,6 +1,7 @@
 import abc
 import functools
 import inspect
+from typing import Generator
 from .types import AccessType
 from .utils import async_and_sync
 
@@ -288,7 +289,8 @@ class AerovalDB(abc.ABC):
 
     def list_timeseries(
         self, project: str, experiment: str
-    ) -> Generator[str, None, None]:        """Returns a list of uuids of all timeseries files for
+    ) -> Generator[str, None, None]:
+        """Returns a list of uuids of all timeseries files for
         a given project and experiment id.
 
         :param project : Project ID.
