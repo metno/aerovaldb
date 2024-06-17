@@ -1,7 +1,7 @@
 import abc
 import functools
 import inspect
-
+from .types import AccessType
 from .utils import async_and_sync
 
 
@@ -283,6 +283,15 @@ class AerovalDB(abc.ABC):
             "OBJ" (Default) a python object with the data is returned.
             "JSON_STR" the raw json string is returned.
             "FILE_PATH" the path to the file where the data is stored is returned.
+        """
+        raise NotImplementedError
+
+    def list_timeseries(self, project: str, experiment: str):
+        """Returns a list of uuids of all timeseries files for
+        a given project and experiment id.
+
+        :param project : Project ID.
+        :param experiment : Experiment ID.
         """
         raise NotImplementedError
 
@@ -842,5 +851,36 @@ class AerovalDB(abc.ABC):
         :param project: Project ID.
         :param experiment: Experiment ID.
         :param title: Report title (ie. filename without extension).
+        """
+        raise NotImplementedError
+
+    @async_and_sync
+    async def get_by_uuid(
+        self, uuid: str, /, access_type: str | AccessType, cache: bool = False
+    ):
+        """Gets a stored object by its UUID.
+
+        :param uuid : uuid of the item to fetch.
+
+        Note:
+        -----
+        UUID is implementation specific. While AerovalJsonFileDB returns
+        a file path, this behaviour should not be relied upon as other
+        implementations may not.
+        """
+        raise NotImplementedError
+
+    @async_and_sync
+    async def put_by_uuid(self, obj, uuid: str):
+        """Replaces a stored object by uuid with a new object.
+
+        :param obj: The object to be stored. Either a json str, or a
+        json serializable python object.
+
+        Note:
+        -----
+        UUID is implementation specific. While AerovalJsonFileDB returns
+        a file path as the uuid, this behaviour should not be relied upon
+        as other implementations will not.
         """
         raise NotImplementedError

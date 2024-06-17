@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Callable, Awaitable, Any
+from typing import Callable, Awaitable, Any, Generator
 
 import orjson
 from async_lru import alru_cache
@@ -14,6 +14,7 @@ from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments, TemplateNotF
 from aerovaldb.types import AccessType
 
 from ..utils import async_and_sync
+from .uuid import get_uuid
 from .templatemapper import (
     TemplateMapper,
     DataVersionToTemplateMapper,
@@ -31,9 +32,9 @@ class AerovalJsonFileDB(AerovalDB):
     def __init__(self, basedir: str | Path):
         self._cache = JSONLRUCache(max_size=64)
 
-        self._basedir = basedir
+        self._basedir = os.path.realpath(basedir)
         if isinstance(self._basedir, str):
-            self._basedir = Path(self._basedir)
+            self._basedir = str(Path(self._basedir))
 
         self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
             "/v0/glob_stats/{project}/{experiment}/{frequency}": [
@@ -376,7 +377,7 @@ class AerovalJsonFileDB(AerovalDB):
         experiments = dict(experiments.items())
         if access_type == AccessType.FILE_PATH:
             raise UnsupportedOperation(
-                f"get_experiment() does not support access_type {access_type}."
+                f"get_experiments() does not support access_type {access_type}."
             )
 
         if access_type == AccessType.JSON_STR:
@@ -459,6 +460,31 @@ class AerovalJsonFileDB(AerovalDB):
             cache=True,
         )
 
+    def list_timeseries(
+        self, project: str, experiment: str
+    ) -> Generator[str, None, None]:
+        template = str(
+            os.path.realpath(
+                os.path.join(
+                    self._basedir,
+                    self._get_template(
+                        "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}",
+                        {"project": project, "experiment": experiment},
+                    ),
+                )
+            )
+        )
+        glb = (
+            template.replace("{location}", "*")
+            .replace("{network}", "*")
+            .replace("{obsvar}", "*")
+            .replace("{layer}", "*")
+        )
+        glb = glb.format(project=project, experiment=experiment)
+
+        for f in glob.glob(glb):
+            yield f
+
     def _list_experiments(
         self, project: str, /, has_results: bool = False
     ) -> list[str]:
@@ -479,3 +505,45 @@ class AerovalJsonFileDB(AerovalDB):
                 experiments.append(f)
 
         return experiments
+
+    @async_and_sync
+    async def get_by_uuid(
+        self, uuid: str, /, access_type: str | AccessType, cache: bool = False
+    ):
+        uuid = get_uuid(uuid)
+        if not uuid.startswith(self._basedir):
+            raise PermissionError(
+                f"UUID {uuid} is out of bounds of the current aerovaldb connection."
+            )
+
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type == AccessType.FILE_PATH:
+            return uuid
+
+        if access_type == AccessType.JSON_STR:
+            raw = await self._cache.get_json(uuid, no_cache=not cache)
+            return orjson.dumps(raw)
+
+        raw = await self._cache.get_json(uuid, no_cache=not cache)
+
+        return orjson.loads(raw)
+
+    @async_and_sync
+    async def put_by_uuid(self, obj, uuid: str):
+        uuid = get_uuid(uuid)
+
+        if not uuid.startswith(self._basedir):
+            raise PermissionError(
+                f"UUID {uuid} is out of bounds of the current aerovaldb connection."
+            )
+
+        if not os.path.exists(uuid):
+            raise FileNotFoundError(f"Object with UUID {uuid} does not exist.")
+
+        if isinstance(obj, str):
+            json = obj
+        else:
+            json = orjson.dumps(obj)
+        with open(uuid, "wb") as f:
+            f.write(json)
