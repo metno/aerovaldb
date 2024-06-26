@@ -4,10 +4,51 @@ from ..utils import async_and_sync
 import logging
 import os
 import aiofile
-import time
-from typing import TypedDict
+from typing import TypedDict, Hashable
 
 logger = logging.getLogger(__name__)
+
+
+class LRUQueue:
+    """
+    Small helper class that efficiently maintains a LRUQueue
+    by combining a set and deque to maintain a unique constraint
+    on the queue. Re-adding an element will return it to the
+    end of the queue.
+    """
+
+    def __init__(self):
+        self._set = set()
+        self._deque = deque()
+
+    @property
+    def size(self) -> int:
+        """Returns the lenth of the queue."""
+        return len(self._set)
+
+    def add(self, item: Hashable):
+        """
+        Adds an item to the queue.
+        """
+        if item in self._set:
+            self._deque.remove(item)
+
+        self._set.add(item)
+        self._deque.appendleft(item)
+
+    def pop(self) -> Hashable:
+        """Removes and returns the top item from the queue."""
+        item = self._deque.pop()
+        self._set.remove(item)
+        return item
+
+    def remove(self, item: Hashable):
+        """
+        Removes an item from the queue.
+        """
+        if item in self._set:
+            self._set.remove(item)
+            self._deque.remove(item)
 
 
 class CacheEntry(TypedDict):
@@ -37,7 +78,7 @@ class JSONLRUCache:
         self._cache: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
 
         # Stores queue of cache accesses, used for implementing LRU logic.
-        self._deque: deque = deque()
+        self._queue = LRUQueue()
 
         # Tally of cache hits and misses.
         self._hit_count: int = 0
@@ -56,7 +97,7 @@ class JSONLRUCache:
     @property
     def size(self) -> int:
         """Returns the current size of the cache in terms of number of elements."""
-        return len(self._cache)
+        return self._queue.size
 
     @property
     def miss_count(self) -> int:
@@ -87,8 +128,7 @@ class JSONLRUCache:
 
     def _get(self, abspath: str) -> str:
         """Returns an element from the cache."""
-        self._deque.remove(abspath)
-        self._deque.append(abspath)
+        self._queue.add(abspath)
         self._hit_count = self._hit_count + 1
         logger.debug(f"Returning contents from file {abspath} from cache.")
         return self._cache[abspath]["json"]  # type: ignore
@@ -99,8 +139,8 @@ class JSONLRUCache:
             "last_modified": os.path.getmtime(abspath),
         }
         while self.size > self._max_size:
-            key = self._deque.popleft()
-            self.invalidate_entry(key)
+            key = self._queue.pop()
+            self.invalidate_entry(str(key))
 
     @async_and_sync
     async def get_json(self, file_path: str | Path, *, no_cache: bool = False) -> str:
@@ -120,7 +160,7 @@ class JSONLRUCache:
         self._miss_count = self._miss_count + 1
         logger.debug(f"Reading file {abspath} and adding to cache.")
         json = await self._read_json(abspath)
-        self._deque.append(abspath)
+        self._queue.add(abspath)
         self._put(abspath, json=json, modified=os.path.getmtime(abspath))
         return json
 
@@ -134,10 +174,7 @@ class JSONLRUCache:
         logger.debug(f"Invalidating cache for file {abspath}.")
         if abspath in self._cache:
             del self._cache[abspath]
-            try:
-                self._deque.remove(abspath)
-            except ValueError:
-                pass
+            self._queue.remove(abspath)
 
     def is_valid(self, file_path: str | Path) -> bool:
         """
