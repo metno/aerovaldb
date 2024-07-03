@@ -364,10 +364,11 @@ class AerovalJsonFileDB(AerovalDB):
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
         experiments = {}
         for exp in self._list_experiments(project, has_results=True):
+            public = False
             try:
                 config = await self.get_config(project, exp)
             except FileNotFoundError:
-                public = False
+                pass
             finally:
                 public = config.get("exp_info", {}).get("public", False)
             experiments[exp] = {"public": public}
@@ -470,7 +471,7 @@ class AerovalJsonFileDB(AerovalDB):
                     self._get_template(
                         "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}",
                         {"project": project, "experiment": experiment},
-                    ),
+                    ),  # type: ignore
                 )
             )
         )
@@ -544,6 +545,6 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(obj, str):
             json = obj
         else:
-            json = orjson.dumps(obj)
-        with open(uuid, "wb") as f:
+            json = str(orjson.dumps(obj))
+        with open(uuid, "w") as f:
             f.write(json)
