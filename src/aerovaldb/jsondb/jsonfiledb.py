@@ -362,6 +362,16 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
+        # If an experiments.json file exists, read it.
+        try:
+            access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+            experiments = await self._get("/v0/experiments/{project}", {"project": project}, access_type=access_type)
+        except (FileDoesNotExist, FileNotFoundError):
+            pass
+        else:
+            return experiments
+        
+        # Otherwise generate it based on config and expinfo.public information.
         experiments = {}
         for exp in self._list_experiments(project, has_results=True):
             public = False
