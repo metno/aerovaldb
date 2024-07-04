@@ -54,6 +54,7 @@ get_parameters = [
         ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
         ("get_regions", ["project", "experiment"], None, "./project/experiment/"),
         ("get_models_style", ["project"], None, "./project/"),
+        ("get_experiments", ["project"], None, "./project/"),
         (
             "get_models_style",
             ["project"],
@@ -393,11 +394,10 @@ def test_list_experiments_results_only():
 
 def test_get_experiments():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        experiments = db.get_experiments("project")
+        experiments = db.get_experiments("project-no-experiments-json")
 
         assert experiments == {
             "experiment": {"public": True},
-            "experiment-old": {"public": False},
         }
 
 

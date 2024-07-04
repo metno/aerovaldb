@@ -1,0 +1,10 @@
+{
+    "path": "./project/experiment/hm/",
+    "variable": {
+        "network": {
+            "layer": {
+                "path": "./project/experiment/hm/regional_stats"
+            }
+        }
+    }
+}
