@@ -578,6 +578,16 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
+        """Lists all map files for a given project / experiment combination.
+
+        :param project: The project ID.
+        :param experiment: The experiment ID.
+
+        :return Generator with the UUIDs.
+        """
+        raise NotImplementedError
+
     @async_and_sync
     @get_method(ROUTE_SCATTER)
     async def get_scatter(
