@@ -372,6 +372,15 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
+    @async_and_sync
+    @put_method(ROUTE_EXPERIMENTS)
+    async def put_experiments(self, obj, project: str, /, *args, **kwargs):
+        """Stores a list of experiments for a project from the db.
+
+        :param project: Project ID.
+        """
+        raise NotImplementedError
+
     def rm_experiment_data(self, project: str, experiment: str):
         """Deletes ALL data associated with an experiment.
 
