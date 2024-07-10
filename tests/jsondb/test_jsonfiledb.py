@@ -197,7 +197,7 @@ def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected
 @pytest.mark.asyncio
 async def test_file_does_not_exist():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        with pytest.raises(aerovaldb.FileDoesNotExist):
+        with pytest.raises(FileNotFoundError):
             await db.get_config(
                 "non-existent-project",
                 "experiment",

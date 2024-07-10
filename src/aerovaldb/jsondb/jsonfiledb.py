@@ -10,7 +10,7 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
-from aerovaldb.exceptions import FileDoesNotExist, UnusedArguments, TemplateNotFound
+from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.types import AccessType
 
 from ..utils import async_and_sync
@@ -301,36 +301,24 @@ class AerovalJsonFileDB(AerovalDB):
         filter_func = self.FILTERS.get(route, None)
         filter_vars = route_args | kwargs
 
-        if access_type == AccessType.FILE_PATH:
-            if filter_func is not None:
-                raise UnsupportedOperation(
-                    "Filtered endpoints can not return a file path."
-                )
-
-            if not os.path.exists(file_path):
-                raise FileDoesNotExist(f"File {file_path} does not exist.")
-            return file_path
-
-        if access_type == AccessType.JSON_STR:
-            if filter_func is None:
-                return await self._cache.get_json(file_path, no_cache=not use_caching)
-
-            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-            obj = orjson.loads(raw)
-            filtered = filter_func(obj, **filter_vars)
-            return orjson.dumps(filtered)
-
-        raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-
-        if filter_func is None:
-            return orjson.loads(raw)
-
-        return filter_func(
-            orjson.loads(
-                await self._cache.get_json(file_path, no_cache=not use_caching)
-            ),
-            **filter_vars,
+        data = await self.get_by_uuid(
+            file_path, access_type=access_type, cache=use_caching
         )
+        if filter_func is not None:
+            if access_type in (AccessType.JSON_STR, AccessType.OBJ):
+                if isinstance(data, str):
+                    data = orjson.loads(data)
+
+                data = filter_func(data, **filter_vars)
+
+                if access_type == AccessType.JSON_STR:
+                    data = orjson.dumps(data)
+
+                return data
+
+            raise UnsupportedOperation("Filtered endpoints can not return a file path.")
+
+        return data
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
@@ -351,15 +339,17 @@ class AerovalJsonFileDB(AerovalDB):
 
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
-        if not os.path.exists(os.path.dirname(file_path)):
-            os.makedirs(os.path.dirname(file_path))
+        await self.put_by_uuid(obj, file_path)
+        # return
+        # if not os.path.exists(os.path.dirname(file_path)):
+        #    os.makedirs(os.path.dirname(file_path))
 
-        if isinstance(obj, str):
-            json = obj
-        else:
-            json = orjson.dumps(obj)
-        with open(file_path, "wb") as f:
-            f.write(json)
+    #
+    # if isinstance(obj, str):
+    #    json = obj
+    # else:
+    #    json = orjson.dumps(obj)#with open(file_path, "wb") as f:
+    #    f.write(json)
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
@@ -371,7 +361,7 @@ class AerovalJsonFileDB(AerovalDB):
                 {"project": project},
                 access_type=access_type,
             )
-        except (FileDoesNotExist, FileNotFoundError):
+        except FileNotFoundError:
             pass
         else:
             return experiments
@@ -581,6 +571,9 @@ class AerovalJsonFileDB(AerovalDB):
 
         access_type = self._normalize_access_type(access_type)
 
+        if not os.path.exists(uuid):
+            raise FileNotFoundError(f"Object with UUID {uuid} does not exist.")
+
         if access_type == AccessType.FILE_PATH:
             return uuid
 
@@ -600,13 +593,11 @@ class AerovalJsonFileDB(AerovalDB):
             raise PermissionError(
                 f"UUID {uuid} is out of bounds of the current aerovaldb connection."
             )
-
-        if not os.path.exists(uuid):
-            raise FileNotFoundError(f"Object with UUID {uuid} does not exist.")
-
+        if not os.path.exists(os.path.dirname(uuid)):
+            os.makedirs(os.path.dirname(uuid))
         if isinstance(obj, str):
             json = obj
         else:
-            json = str(orjson.dumps(obj))
-        with open(uuid, "w") as f:
-            f.write(json)
+            json = orjson.dumps(obj)
+        with open(uuid, "wb") as f:
+            f.write(json)  # type: ignore
