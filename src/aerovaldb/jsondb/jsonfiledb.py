@@ -479,7 +479,20 @@ class AerovalJsonFileDB(AerovalDB):
     def list_glob_stats(
         self, project: str, experiment: str
     ) -> Generator[str, None, None]:
-        pass
+        template = str(
+            os.path.realpath(
+                os.path.join(
+                    self._basedir,
+                    self._get_template(
+                        ROUTE_GLOB_STATS, {"project": project, "experiment": experiment}
+                    ),  # type: ignore
+                )
+            )
+        )
+        glb = template.replace("{frequency}", "*")
+
+        for f in glob.glob(glb):
+            yield f
 
     def list_timeseries(
         self, project: str, experiment: str
@@ -500,6 +513,31 @@ class AerovalJsonFileDB(AerovalDB):
             .replace("{network}", "*")
             .replace("{obsvar}", "*")
             .replace("{layer}", "*")
+        )
+        glb = glb.format(project=project, experiment=experiment)
+
+        for f in glob.glob(glb):
+            yield f
+
+    def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
+        template = str(
+            os.path.realpath(
+                os.path.join(
+                    self._basedir,
+                    self._get_template(
+                        ROUTE_MAP,
+                        {"project": project, "experiment": experiment},
+                    ),  # type: ignore
+                )
+            )
+        )
+        glb = (
+            template.replace("{network}", "*")
+            .replace("{obsvar}", "*")
+            .replace("{layer}", "*")
+            .replace("{model}", "*")
+            .replace("{modvar}", "*")
+            .replace("{time}", "*")
         )
         glb = glb.format(project=project, experiment=experiment)
 
