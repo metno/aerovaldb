@@ -384,7 +384,7 @@ class AerovalJsonFileDB(AerovalDB):
                 config = await self.get_config(project, exp)
             except FileNotFoundError:
                 pass
-            finally:
+            else:
                 public = config.get("exp_info", {}).get("public", False)
             experiments[exp] = {"public": public}
 
