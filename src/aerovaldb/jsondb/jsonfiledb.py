@@ -567,7 +567,11 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     async def get_by_uuid(
-        self, uuid: str, /, access_type: str | AccessType, cache: bool = False
+        self,
+        uuid: str,
+        /,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
     ):
         uuid = get_uuid(uuid)
         if not uuid.startswith(self._basedir):
