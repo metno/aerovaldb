@@ -546,6 +546,9 @@ class AerovalJsonFileDB(AerovalDB):
         project_path = os.path.join(self._basedir, project)
         experiments = []
 
+        if not os.path.exists(project_path):
+            return []
+
         for f in os.listdir(project_path):
             if not has_results:
                 if os.path.isdir(os.path.join(project_path, f)):
