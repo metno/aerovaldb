@@ -46,7 +46,7 @@ with aerovaldb.open('json_files:path/to/data/') as db:
     try:
         fh = db.get_map(*args, access_type=aerovaldb.AccessType.FILE_PATH)
         # ... sendfile of filehandle
-    except aerovaldb.FileDoesNotExist as e:
+    except FileNotFoundError as e:
         json = db.get_map(*args, access_type=aerovaldb.AccessType.JSON_STR)
         # ... send json string to client
 
