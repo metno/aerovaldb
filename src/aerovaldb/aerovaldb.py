@@ -875,7 +875,12 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     async def get_by_uuid(
-        self, uuid: str, /, access_type: str | AccessType, cache: bool = False
+        self,
+        uuid: str,
+        /,
+        access_type: str | AccessType,
+        cache: bool = False,
+        default=None,
     ):
         """Gets a stored object by its UUID.
 

@@ -302,8 +302,14 @@ class AerovalJsonFileDB(AerovalDB):
         filter_vars = route_args | kwargs
 
         data = await self.get_by_uuid(
-            file_path, access_type=access_type, cache=use_caching
+            file_path,
+            access_type=access_type,
+            cache=use_caching,
+            default=kwargs.get("default", None),
         )
+        if "default" in kwargs:
+            # Dont want to apply filtering to default value.
+            return data
         if filter_func is not None:
             if access_type in (AccessType.JSON_STR, AccessType.OBJ):
                 if isinstance(data, str):
@@ -562,6 +568,7 @@ class AerovalJsonFileDB(AerovalDB):
         /,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
+        default=None,
     ):
         uuid = get_uuid(uuid)
         if not uuid.startswith(self._basedir):
@@ -572,8 +579,10 @@ class AerovalJsonFileDB(AerovalDB):
         access_type = self._normalize_access_type(access_type)
 
         if not os.path.exists(uuid):
-            raise FileNotFoundError(f"Object with UUID {uuid} does not exist.")
+            if default is None or access_type == AccessType.FILE_PATH:
+                raise FileNotFoundError(f"Object with UUID {uuid} does not exist.")
 
+            return default
         if access_type == AccessType.FILE_PATH:
             return uuid
 
