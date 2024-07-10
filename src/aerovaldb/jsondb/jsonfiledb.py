@@ -24,6 +24,7 @@ from .templatemapper import (
 from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
+from ..routes import *
 
 logger = logging.getLogger(__name__)
 
@@ -37,101 +38,85 @@ class AerovalJsonFileDB(AerovalDB):
             self._basedir = str(Path(self._basedir))
 
         self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
-            "/v0/glob_stats/{project}/{experiment}/{frequency}": [
+            ROUTE_GLOB_STATS: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/regional_stats/{project}/{experiment}/{frequency}": [
+            ROUTE_REG_STATS: [
                 # Same as glob_stats
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/heatmap/{project}/{experiment}/{frequency}": [
+            ROUTE_HEATMAP: [
                 # Same as glob_stats
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/contour/{project}/{experiment}/{obsvar}/{model}": [
+            ROUTE_CONTOUR: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}": [
+            ROUTE_TIMESERIES: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/experiments/{project}": [
-                PriorityDataVersionToTemplateMapper(["./{project}/experiments.json"])
-            ],
-            "/v0/config/{project}/{experiment}": [
-                PriorityDataVersionToTemplateMapper(
-                    ["./{project}/{experiment}/cfg_{project}_{experiment}.json"]
-                )
-            ],
-            "/v0/menu/{project}/{experiment}": [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/menu.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            "/v0/statistics/{project}/{experiment}": [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/statistics.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            "/v0/ranges/{project}/{experiment}": [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ranges.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            "/v0/regions/{project}/{experiment}": [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/regions.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}": [
+            ROUTE_TIMESERIES_WEEKLY: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}": [
+            ROUTE_EXPERIMENTS: [
+                PriorityDataVersionToTemplateMapper(["./{project}/experiments.json"])
+            ],
+            ROUTE_CONFIG: [
+                PriorityDataVersionToTemplateMapper(
+                    ["./{project}/{experiment}/cfg_{project}_{experiment}.json"]
+                )
+            ],
+            ROUTE_MENU: [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
+                    "./{project}/{experiment}/menu.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
+            ROUTE_STATISTICS: [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                    "./{project}/{experiment}/statistics.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}": [
+            ROUTE_RANGES: [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.json",
+                    "./{project}/{experiment}/ranges.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/report/{project}/{experiment}/{title}": [
+            ROUTE_REGIONS: [
                 DataVersionToTemplateMapper(
-                    "./reports/{project}/{experiment}/{title}.json",
+                    "./{project}/{experiment}/regions.json",
                     version_provider=self._get_version,
                 )
             ],
-            "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}": [
+            ROUTE_MODELS_STYLE: [
+                PriorityDataVersionToTemplateMapper(
+                    [
+                        "./{project}/{experiment}/models-style.json",
+                        "./{project}/models-style.json",
+                    ]
+                )
+            ],
+            ROUTE_MAP: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",
@@ -143,7 +128,7 @@ class AerovalJsonFileDB(AerovalDB):
                     version_provider=self._get_version,
                 ),
             ],
-            "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}": [
+            ROUTE_SCATTER: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                     min_version="0.13.2",
@@ -155,7 +140,13 @@ class AerovalJsonFileDB(AerovalDB):
                     version_provider=self._get_version,
                 ),
             ],
-            "/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}": [
+            ROUTE_PROFILES: [
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
+                    version_provider=self._get_version,
+                )
+            ],
+            ROUTE_HEATMAP_TIMESERIES: [
                 DataVersionToTemplateMapper(
                     "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                     min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
@@ -173,19 +164,29 @@ class AerovalJsonFileDB(AerovalDB):
                     version_provider=self._get_version,
                 ),
             ],
-            "/v0/model_style/{project}": [
-                PriorityDataVersionToTemplateMapper(
-                    [
-                        "./{project}/{experiment}/models-style.json",
-                        "./{project}/models-style.json",
-                    ]
+            ROUTE_FORECAST: [
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                    version_provider=self._get_version,
+                )
+            ],
+            ROUTE_GRIDDED_MAP: [
+                DataVersionToTemplateMapper(
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.json",
+                    version_provider=self._get_version,
+                )
+            ],
+            ROUTE_REPORT: [
+                DataVersionToTemplateMapper(
+                    "./reports/{project}/{experiment}/{title}.json",
+                    version_provider=self._get_version,
                 )
             ],
         }
 
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
-            "/v0/regional_stats/{project}/{experiment}/{frequency}": filter_regional_stats,
-            "/v0/heatmap/{project}/{experiment}/{frequency}": filter_heatmap,
+            ROUTE_REG_STATS: filter_regional_stats,
+            ROUTE_HEATMAP: filter_heatmap,
         }
 
     @async_and_sync
@@ -366,7 +367,7 @@ class AerovalJsonFileDB(AerovalDB):
         try:
             access_type = self._normalize_access_type(kwargs.pop("access_type", None))
             experiments = await self._get(
-                "/v0/experiments/{project}",
+                ROUTE_EXPERIMENTS,
                 {"project": project},
                 access_type=access_type,
             )
@@ -437,7 +438,7 @@ class AerovalJsonFileDB(AerovalDB):
         :param variable: Variable name.
         """
         return await self._get(
-            "/v0/regional_stats/{project}/{experiment}/{frequency}",
+            ROUTE_REG_STATS,
             {"project": project, "experiment": experiment, "frequency": frequency},
             access_type=kwargs.get("access_type", AccessType.OBJ),
             network=network,
@@ -467,13 +468,18 @@ class AerovalJsonFileDB(AerovalDB):
         :param time: Time.
         """
         return await self._get(
-            "/v0/heatmap/{project}/{experiment}/{frequency}",
+            ROUTE_HEATMAP,
             {"project": project, "experiment": experiment, "frequency": frequency},
             access_type=kwargs.get("access_type", AccessType.OBJ),
             region=region,
             time=time,
             cache=True,
         )
+
+    def list_glob_stats(
+        self, project: str, experiment: str
+    ) -> Generator[str, None, None]:
+        pass
 
     def list_timeseries(
         self, project: str, experiment: str
@@ -483,7 +489,7 @@ class AerovalJsonFileDB(AerovalDB):
                 os.path.join(
                     self._basedir,
                     self._get_template(
-                        "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}",
+                        ROUTE_TIMESERIES,
                         {"project": project, "experiment": experiment},
                     ),  # type: ignore
                 )
