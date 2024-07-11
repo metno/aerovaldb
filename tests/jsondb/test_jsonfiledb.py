@@ -406,3 +406,10 @@ def test_list_timeseries():
         timeseries = db.list_timeseries("project", "experiment")
 
         assert len(list(timeseries)) == 1
+
+
+def test_list_glob_stats():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        glob_stats = list(db.list_glob_stats("project", "experiment"))
+
+        assert len(glob_stats) == 1

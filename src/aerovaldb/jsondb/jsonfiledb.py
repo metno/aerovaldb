@@ -480,6 +480,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
         glb = template.replace("{frequency}", "*")
 
+        glb = glb.format(project=project, experiment=experiment)
         for f in glob.glob(glb):
             yield f
 
