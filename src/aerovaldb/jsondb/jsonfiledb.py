@@ -37,6 +37,9 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(self._basedir, str):
             self._basedir = str(Path(self._basedir))
 
+        if not os.path.exists(self._basedir):
+            os.makedirs(self._basedir)
+
         self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
             ROUTE_GLOB_STATS: [
                 DataVersionToTemplateMapper(
@@ -346,16 +349,6 @@ class AerovalJsonFileDB(AerovalDB):
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         await self.put_by_uuid(obj, file_path)
-        # return
-        # if not os.path.exists(os.path.dirname(file_path)):
-        #    os.makedirs(os.path.dirname(file_path))
-
-    #
-    # if isinstance(obj, str):
-    #    json = obj
-    # else:
-    #    json = orjson.dumps(obj)#with open(file_path, "wb") as f:
-    #    f.write(json)
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
