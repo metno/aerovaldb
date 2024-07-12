@@ -572,7 +572,11 @@ class AerovalJsonFileDB(AerovalDB):
         cache: bool = False,
         default=None,
     ):
-        uuid = get_uuid(uuid)
+        if not isinstance(uuid, str):
+            uuid = str(uuid)
+        if uuid.startswith("."):
+            uuid = get_uuid(os.path.join(self._basedir, uuid))
+
         if not uuid.startswith(self._basedir):
             raise PermissionError(
                 f"UUID {uuid} is out of bounds of the current aerovaldb connection."
@@ -598,7 +602,10 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     async def put_by_uuid(self, obj, uuid: str):
-        uuid = get_uuid(uuid)
+        if not isinstance(uuid, str):
+            uuid = str(uuid)
+        if uuid.startswith("."):
+            uuid = get_uuid(os.path.join(self._basedir, uuid))
 
         if not uuid.startswith(self._basedir):
             raise PermissionError(

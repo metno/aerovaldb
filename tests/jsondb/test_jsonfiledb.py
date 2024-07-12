@@ -5,6 +5,7 @@ import random
 import pytest
 
 import aerovaldb
+import orjson
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -413,3 +414,18 @@ def test_list_glob_stats():
         glob_stats = list(db.list_glob_stats("project", "experiment"))
 
         assert len(glob_stats) == 1
+
+
+def test_getter_with_default():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        data = db.get_by_uuid(
+            "./project/experiment/non-existent-file.json", default={"data": "test"}
+        )
+
+        assert data["data"] == "test"
+
+
+def test_getter_with_default_error():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        with pytest.raises(orjson.JSONDecodeError):
+            db.get_by_uuid("./invalid-json.json", default={"data": "data"})
