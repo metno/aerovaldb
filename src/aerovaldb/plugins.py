@@ -44,7 +44,7 @@ def list_engines() -> dict[str, AerovalDB]:
     return _build_db_engines(entrypoints)
 
 
-def open(resource) -> AerovalDB:
+def open(resource, /, use_async: bool = False) -> AerovalDB:
     """open an AerovalDB directly, sending args and kwargs
     directly to the `AervoalDB()` function
 
@@ -66,4 +66,4 @@ def open(resource) -> AerovalDB:
 
     aerodb = list_engines()[name]
 
-    return aerodb(path)  # type: ignore
+    return aerodb(path, use_async=use_async)  # type: ignore

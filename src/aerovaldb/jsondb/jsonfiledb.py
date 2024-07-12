@@ -30,8 +30,13 @@ logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
-    def __init__(self, basedir: str | Path):
-        self._cache = JSONLRUCache(max_size=64)
+    def __init__(self, basedir: str | Path, /, use_async: bool = False):
+        """
+        :param basedir The root directory where aerovaldb will look for files.
+        :param asyncio Whether to use asynchronous io to read and store files.
+        """
+        self._asyncio = use_async
+        self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
         self._basedir = os.path.realpath(basedir)
         if isinstance(self._basedir, str):
