@@ -52,6 +52,8 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         - 'entrypoint:path', with path being the location where the database should be generated
         - 'path', with path containing either an aerovaldb.cfg configuration
         - or path being a json_files dabasase
+    :param use_async : If true, aiofile will be used to read files, otherwise files will be read
+        synchronously.
     :return: an implementation-object of AerovalDB openend to a location
     """
 
