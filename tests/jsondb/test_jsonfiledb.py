@@ -169,7 +169,7 @@ async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expecte
     """
     This test tests that data is read as expected from a static, fixed database.
     """
-    with aerovaldb.open(resource) as db:
+    with aerovaldb.open(resource, use_async=True) as db:
         f = getattr(db, fun)
 
         if kwargs is not None:
@@ -183,7 +183,7 @@ async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expecte
 @pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
 @pytest.mark.parametrize(*get_parameters)
 def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected):
-    with aerovaldb.open(resource) as db:
+    with aerovaldb.open(resource, use_async=False) as db:
         f = getattr(db, fun)
 
         if kwargs is not None:

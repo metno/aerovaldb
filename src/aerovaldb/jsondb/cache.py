@@ -62,12 +62,13 @@ class JSONLRUCache:
     Implements an in-memory LRU cache for file content in aerovaldb.
     """
 
-    def __init__(self, *, max_size: int):
+    def __init__(self, *, max_size: int, asyncio: bool = False):
         """
         :param max_size : The maximum size of the cache in terms of number of entries / files.
 
         Files will be ejected based on least recently used, when full.
         """
+        self._asyncio = asyncio
         self._max_size = max_size
         self.invalidate_all()
 
@@ -123,8 +124,12 @@ class JSONLRUCache:
     async def _read_json(self, file_path: str | Path) -> str:
         abspath = self._canonical_file_path(file_path)
         logger.debug(f"Reading file {abspath}")
-        async with aiofile.async_open(abspath, "r") as f:
-            return await f.read()
+        if self._asyncio:
+            async with aiofile.async_open(abspath, "r") as f:
+                return await f.read()
+
+        with open(abspath, "r") as f:
+            return f.read()
 
     def _get(self, abspath: str) -> str:
         """Returns an element from the cache."""
