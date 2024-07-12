@@ -112,17 +112,28 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method(ROUTE_GLOB_STATS)
     async def get_glob_stats(
-        self, project: str, experiment: str, frequency: str, /, *args, **kwargs
+        self,
+        project: str,
+        experiment: str,
+        frequency: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
     ):
         """Fetches a glob_stats object from the database.
 
         :param project: The project ID.
         :param experiment: The experiment ID.
         :param frequency: The frequency (eg. 'monthly')
-        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
-            "OBJ" (Default) a python object with the data is returned.
-            "JSON_STR" the raw json string is returned.
-            "FILE_PATH" the path to the file where the data is stored is returned.
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -138,6 +149,9 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches regional stats from the database.
@@ -161,6 +175,9 @@ class AerovalDB(abc.ABC):
         time: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches heatmap data from the database
@@ -170,6 +187,13 @@ class AerovalDB(abc.ABC):
         :param frequency: The frequency.
         :param region: Region.
         :param time: Time.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -202,7 +226,17 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method(ROUTE_CONTOUR)
     async def get_contour(
-        self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
     ):
         """Fetch a contour object from the db.
 
@@ -210,10 +244,13 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         :param obsvar: Observation variable.
         :param model: Model ID.
-        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
-            "OBJ" (Default) a python object with the data is returned.
-            "JSON_STR" the raw json string is returned.
-            "FILE_PATH" the path to the file where the data is stored is returned.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -252,6 +289,9 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches a timeseries from the db.
@@ -262,10 +302,13 @@ class AerovalDB(abc.ABC):
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
-        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
-            "OBJ" (Default) a python object with the data is returned.
-            "JSON_STR" the raw json string is returned.
-            "FILE_PATH" the path to the file where the data is stored is returned.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -293,10 +336,6 @@ class AerovalDB(abc.ABC):
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
-        :param access_type: How the data is to be retrieved. One of "OBJ", "JSON_STR", "FILE_PATH"
-            "OBJ" (Default) a python object with the data is returned.
-            "JSON_STR" the raw json string is returned.
-            "FILE_PATH" the path to the file where the data is stored is returned.
         """
         raise NotImplementedError
 
@@ -323,6 +362,9 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches a weekly time series from the db.
@@ -333,6 +375,13 @@ class AerovalDB(abc.ABC):
         :param network: Observation network.
         :param obsvar: Observation variable.
         :param layer: Layer.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -365,10 +414,26 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(ROUTE_EXPERIMENTS)
-    async def get_experiments(self, project: str, /, *args, **kwargs):
+    async def get_experiments(
+        self,
+        project: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
         """Fetches a list of experiments for a project from the db.
 
         :param project: Project ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -396,11 +461,28 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(ROUTE_CONFIG)
-    async def get_config(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_config(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
         """Fetches a configuration from the db.
 
         :param project: Project ID.
         :param experiment: Experiment ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -418,11 +500,28 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(ROUTE_MENU)
-    async def get_menu(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_menu(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
         """Fetches a menu configuartion from the db.
 
         :param project: Project ID.
         :param experiment: Experiment ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -439,11 +538,28 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(ROUTE_STATISTICS)
-    async def get_statistics(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_statistics(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
         """Fetches statistics for an experiment.
 
         :param project: Project ID.
         :param experiment: Experiment ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -462,11 +578,28 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(ROUTE_RANGES)
-    async def get_ranges(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_ranges(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
         """Fetches ranges from the db.
 
         :param project: Project ID.
         :param experiment: Experiment ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -483,11 +616,28 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     @get_method(ROUTE_REGIONS)
-    async def get_regions(self, project: str, experiment: str, /, *args, **kwargs):
+    async def get_regions(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
         """Fetches regions from db.
 
         :param project: Project ID.
         :param experiment: Experiment ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -505,12 +655,27 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method(ROUTE_MODELS_STYLE)
     async def get_models_style(
-        self, project: str, /, experiment: str | None = None, *args, **kwargs
+        self,
+        project: str,
+        /,
+        experiment: str | None = None,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
     ):
         """Fetches model styles from db.
 
         :param project: Project ID.
         :param experiment (Optional): Experiment ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -541,6 +706,9 @@ class AerovalDB(abc.ABC):
         time: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches map data from db.
@@ -553,6 +721,13 @@ class AerovalDB(abc.ABC):
         :param model: Model ID
         :param modvar: Model variable.
         :param time: Time parameter.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -611,6 +786,9 @@ class AerovalDB(abc.ABC):
         time: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Get scat.
@@ -623,6 +801,13 @@ class AerovalDB(abc.ABC):
         :param model: Model ID.
         :param modvar: Model variable.
         :param time: Time parameter.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -668,6 +853,9 @@ class AerovalDB(abc.ABC):
         obsvar: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches profiles from db.
@@ -677,6 +865,13 @@ class AerovalDB(abc.ABC):
         :param location: Location.
         :param network: Observation network.
         :param obsvar: Observation variable.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -717,6 +912,9 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetches heatmap timeseries.
@@ -727,6 +925,13 @@ class AerovalDB(abc.ABC):
         :param network: Observation Network.
         :param obsvar: Observation variable.
         :param layer: Layer.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -769,6 +974,9 @@ class AerovalDB(abc.ABC):
         layer: str,
         /,
         *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
         **kwargs,
     ):
         """Fetch forecast.
@@ -779,6 +987,13 @@ class AerovalDB(abc.ABC):
         :param network: Observation Network.
         :param obsvar: Observation variable.
         :param layer: Layer.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -812,7 +1027,17 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method(ROUTE_GRIDDED_MAP)
     async def get_gridded_map(
-        self, project: str, experiment: str, obsvar: str, model: str, /, *args, **kwargs
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
     ):
         """Fetches gridded map.
 
@@ -820,6 +1045,13 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         :param obsvar: Observation variable.
         :param model: Model ID.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -849,13 +1081,29 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @get_method(ROUTE_REPORT)
     async def get_report(
-        self, project: str, experiment: str, title: str, /, *args, **kwargs
+        self,
+        project: str,
+        experiment: str,
+        title: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
     ):
         """Fetch report.
 
         :param project: Project ID.
         :param experiment: Experiment ID.
         :param title: Report title (ie. filename without extension).
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+        if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns The fetched data.
         """
         raise NotImplementedError
 
@@ -885,6 +1133,11 @@ class AerovalDB(abc.ABC):
         """Gets a stored object by its UUID.
 
         :param uuid : uuid of the item to fetch.
+        :param access_type : See AccessType.
+        :param cache : Whether to use the cache.
+        :param default : If provided, this value will be returned instead of raising
+        a FileNotFoundError if not file exists. The provided object will be returned
+        as is, and will not be converted to match access_type.
 
         Note:
         -----
@@ -900,6 +1153,7 @@ class AerovalDB(abc.ABC):
 
         :param obj: The object to be stored. Either a json str, or a
         json serializable python object.
+        :param uuid: The UUID as which to store the object.
 
         Note:
         -----
