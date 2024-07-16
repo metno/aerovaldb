@@ -25,6 +25,8 @@ from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
 from ..routes import *
+from .lock import JsonDbLock
+from hashlib import md5
 
 logger = logging.getLogger(__name__)
 
@@ -39,11 +41,22 @@ class AerovalJsonFileDB(AerovalDB):
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
         self._basedir = os.path.realpath(basedir)
+
+        os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
+        self._lock = JsonDbLock(
+            os.path.join(
+                os.environ.get(
+                    "AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/.lock/")
+                ),
+                md5(self._basedir.encode()).hexdigest(),
+            )
+        )
+        logger.debug(md5(self._basedir.encode()).hexdigest())
         if isinstance(self._basedir, str):
             self._basedir = str(Path(self._basedir))
 
-        if not os.path.exists(self._basedir):
-            os.makedirs(self._basedir)
+        # if not os.path.exists(self._basedir):
+        #    os.makedirs(self._basedir)
 
         self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
             ROUTE_GLOB_STATS: [
@@ -616,6 +629,16 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(obj, str):
             json = obj
         else:
-            json = orjson.dumps(obj)
+            json = orjson.dumps(obj)  # type: ignore
         with open(uuid, "wb") as f:
             f.write(json)  # type: ignore
+
+    @async_and_sync
+    async def acquire_lock(self):
+        await self._lock.acquire()
+
+    def release_lock(self):
+        self._lock.release()
+
+    def is_locked(self):
+        return self._lock.has_lock()
