@@ -1164,10 +1164,28 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    async def acquire_lock(self):
+    async def acquire_lock(
+        self,
+        blocking: bool = True,
+        delay: float = 0.01,
+        max_delay: float = 0.1,
+        timeout: float | None = None,
+    ) -> bool:
         """
         Acquires the database lock which will prevent multiple instances
         of aerovaldb to write to this database.
+
+        :param blocking: Whether to wait to try to acquire the lock.
+        :param delay: When blocking, starting delay as well as the delay increment (in seconds).
+        :param max_delay: When blocking the maximum delay in between attempts to acquire (in seconds).
+        :param timeout: When blocking, maximal waiting time (in seconds).
+
+        :return
+            Boolean indicating whether or not the acquisition succeeded.
+
+        Note:
+        -----
+        See also: https://fasteners.readthedocs.io/en/latest/api/inter_process/
 
         Note:
         -----

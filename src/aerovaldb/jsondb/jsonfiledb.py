@@ -634,8 +634,16 @@ class AerovalJsonFileDB(AerovalDB):
             f.write(json)  # type: ignore
 
     @async_and_sync
-    async def acquire_lock(self):
-        await self._lock.acquire()
+    async def acquire_lock(
+        self,
+        blocking: bool = True,
+        delay: float = 0.01,
+        max_delay: float = 0.1,
+        timeout: float | None = None,
+    ) -> bool:
+        return await self._lock.acquire(
+            blocking=blocking, delay=delay, max_delay=max_delay, timeout=timeout
+        )
 
     def release_lock(self):
         self._lock.release()
