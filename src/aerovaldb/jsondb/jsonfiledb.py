@@ -52,8 +52,6 @@ class AerovalJsonFileDB(AerovalDB):
             )
         )
         logger.debug(md5(self._basedir.encode()).hexdigest())
-        if isinstance(self._basedir, str):
-            self._basedir = str(Path(self._basedir))
 
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
