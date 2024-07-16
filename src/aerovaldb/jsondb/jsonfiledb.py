@@ -351,6 +351,11 @@ class AerovalJsonFileDB(AerovalDB):
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
+        temporary_lock = False
+        if not self.is_locked():
+            temporary_lock = True
+            await self.acquire_lock()
+
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
@@ -365,6 +370,9 @@ class AerovalJsonFileDB(AerovalDB):
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         await self.put_by_uuid(obj, file_path)
+
+        if temporary_lock:
+            self.release_lock()
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
