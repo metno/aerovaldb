@@ -55,8 +55,8 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(self._basedir, str):
             self._basedir = str(Path(self._basedir))
 
-        # if not os.path.exists(self._basedir):
-        #    os.makedirs(self._basedir)
+        if not os.path.exists(self._basedir):
+            os.makedirs(self._basedir)
 
         self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
             ROUTE_GLOB_STATS: [
