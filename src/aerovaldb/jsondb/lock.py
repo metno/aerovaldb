@@ -14,10 +14,23 @@ class JsonDbLock:
         pathlib.Path(lock_file).touch()
         self._iplock = fasteners.InterProcessLock(lock_file)
 
-    async def acquire(self):
+    async def acquire(
+        self,
+        blocking: bool = True,
+        delay: float = 0.01,
+        max_delay: float = 0.1,
+        timeout: float | None = None,
+    ) -> bool:
         logger.debug("Acquiring lock with lockfile %s", self._lock_file)
         await self._aiolock.acquire()
-        self._iplock.acquire()
+        success = self._iplock.acquire(
+            blocking=blocking, delay=delay, max_delay=max_delay, timeout=timeout
+        )
+
+        if not success:
+            self._aiolock.release()
+
+        return success
 
     def release(self):
         logger.debug("Releasing lock with lockfile %s", self._lock_file)
