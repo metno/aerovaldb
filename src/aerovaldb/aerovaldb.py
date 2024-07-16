@@ -1162,3 +1162,30 @@ class AerovalDB(abc.ABC):
         as other implementations will not.
         """
         raise NotImplementedError
+
+    @async_and_sync
+    async def acquire_lock(self):
+        """
+        Acquires the database lock which will prevent multiple instances
+        of aerovaldb to write to this database.
+
+        Note:
+        -----
+        This assumes that each instance of aerovaldb uses the same lockfile
+        directory, `~/.aerovaldb/` by default, but can be set using the
+        `AVDB_LOCK_DIR` environment variable.
+        """
+        raise NotImplementedError
+
+    def release_lock(self):
+        """
+        Releases the database lock.
+        """
+        raise NotImplementedError
+
+    def is_locked(self) -> bool:
+        """
+        Returns a boolean indicating whether this aerovaldb instance currently
+        has the db lock.
+        """
+        raise NotImplementedError
