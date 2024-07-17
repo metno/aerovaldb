@@ -33,7 +33,10 @@ The following example illustrates how to use locking in practice:
 Limitations
 ------------
 
+Locking uses so-called advisory locks, i.e.
+
 - Locking will not work for multiple instances of aerovaldb which are configured with different locking directories.
 - Locking will not prevent other programs that don't use aerovaldb to access the files from reading or writing the files.
-- `See also <https://fasteners.readthedocs.io/en/latest/guide/inter_process/#lack-of-features>
+
+See also https://man7.org/linux/man-pages/man2/flock.2.html
 
