@@ -5,8 +5,13 @@ To ensure consistent writes, aerovaldb provides a locking mechanism which can be
 
 For :class:`AerovalJsonFileDB` the locking mechanism uses a folder of lock files (`~/.aerovaldb/` by default) to coordinate the lock. It is important that the file system where the lock files are stored supports `fcntl <https://linux.die.net/man/2/fcntl>`.
 
+Overriding the lock-file directory
+----------------------------------
+
+To override the lock file directory, set the environment variable `AVDB_LOCK_DIR`
+
 Example
-==========
+-----------
 
 The following example illustrates how to use locking in practice:
 
@@ -26,7 +31,7 @@ The following example illustrates how to use locking in practice:
 - :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.is_locked`
 
 Limitations
-============
+------------
 
 - Locking will not work for multiple instances of aerovaldb which are configured with different locking directories.
 - Locking will not prevent other programs that don't use aerovaldb to access the files from reading or writing the files.
