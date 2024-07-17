@@ -37,7 +37,6 @@ Writing
    import json
    
    with aerovaldb.open('json_files:path/to/data/') as db:
-       db.put
        obj = {"data": "Some test data"}
        json_str = "{ 'data': 'Some test data' }"
        db.put_map(json_str) # String is assumed to be json string and stored directly.
