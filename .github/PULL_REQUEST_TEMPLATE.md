@@ -16,5 +16,5 @@
 * [ ] Tests for the changes exist where applicable
 * [ ] Tests pass locally
 * [ ] Tests pass on CI
-<!-- * [ ] At least 1 reviewer is selected -->
-<!-- * [ ] Make PR ready to review -->
+* [ ] At least 1 reviewer is selected
+* [ ] Make PR ready to review

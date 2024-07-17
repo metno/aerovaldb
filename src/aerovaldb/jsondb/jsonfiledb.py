@@ -27,6 +27,7 @@ from .cache import JSONLRUCache
 from ..routes import *
 from .lock import JsonDbLock
 from hashlib import md5
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -37,21 +38,11 @@ class AerovalJsonFileDB(AerovalDB):
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
         """
+        self._uuid = str(uuid4())
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
         self._basedir = os.path.realpath(basedir)
-
-        os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
-        self._lock = JsonDbLock(
-            os.path.join(
-                os.environ.get(
-                    "AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/.lock/")
-                ),
-                md5(self._basedir.encode()).hexdigest(),
-            )
-        )
-        logger.debug(md5(self._basedir.encode()).hexdigest())
 
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
@@ -351,11 +342,6 @@ class AerovalJsonFileDB(AerovalDB):
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        temporary_lock = False
-        if not self.is_locked():
-            temporary_lock = True
-            await self.acquire_lock()
-
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
@@ -370,9 +356,6 @@ class AerovalJsonFileDB(AerovalDB):
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
         await self.put_by_uuid(obj, file_path)
-
-        if temporary_lock:
-            self.release_lock()
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
@@ -639,20 +622,13 @@ class AerovalJsonFileDB(AerovalDB):
         with open(uuid, "wb") as f:
             f.write(json)  # type: ignore
 
-    @async_and_sync
-    async def acquire_lock(
-        self,
-        blocking: bool = True,
-        delay: float = 0.01,
-        max_delay: float = 0.1,
-        timeout: float | None = None,
-    ) -> bool:
-        return await self._lock.acquire(
-            blocking=blocking, delay=delay, max_delay=max_delay, timeout=timeout
+    def _get_lock_file(self) -> str:
+        os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
+        lock_file = os.path.join(
+            os.environ.get("AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/.lock/")),
+            md5(self._basedir.encode()).hexdigest(),
         )
+        return lock_file
 
-    def release_lock(self):
-        self._lock.release()
-
-    def is_locked(self):
-        return self._lock.is_locked()
+    def get_lock(self):
+        return JsonDbLock(self._get_lock_file(), self._uuid)
