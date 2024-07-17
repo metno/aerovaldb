@@ -20,11 +20,10 @@ The following example illustrates how to use locking in practice:
     import aerovaldb
 
     with aerovaldb.open('json_files:.') as db:
-        db.acquire_lock()
-        data = db.get_by_uuid('./file.json', default={"counter": 0})
-        data["counter"] += 1
-        db.put_by_uuid(data, './file.json')
-        db.release_lock()
+        async with db.get_lock():
+            data = db.get_by_uuid('./file.json', default={"counter": 0})
+            data["counter"] += 1
+            db.put_by_uuid(data, './file.json')
 
 - :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.acquire_lock`
 - :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.release_lock`
@@ -37,6 +36,4 @@ Locking uses so-called advisory locks, i.e.
 
 - Locking will not work for multiple instances of aerovaldb which are configured with different locking directories.
 - Locking will not prevent other programs that don't use aerovaldb to access the files from reading or writing the files.
-
-See also https://man7.org/linux/man-pages/man2/flock.2.html
 
