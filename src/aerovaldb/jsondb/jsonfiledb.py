@@ -655,4 +655,4 @@ class AerovalJsonFileDB(AerovalDB):
         self._lock.release()
 
     def is_locked(self):
-        return self._lock.has_lock()
+        return self._lock.is_locked()
