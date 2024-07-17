@@ -16,13 +16,13 @@ logger = logging.getLogger(__name__)
 async def test_simple_locking(tmp_path):
     lock = JsonDbLock(tmp_path / "lock")
 
-    assert not lock.has_lock()
+    assert not lock.is_locked()
 
     await lock.acquire()
-    assert lock.has_lock()
+    assert lock.is_locked()
 
     lock.release()
-    assert not lock.has_lock()
+    assert not lock.is_locked()
 
 
 @pytest.mark.asyncio

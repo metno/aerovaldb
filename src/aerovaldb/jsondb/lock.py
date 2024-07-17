@@ -37,5 +37,5 @@ class JsonDbLock:
         self._iplock.unlock()
         self._aiolock.release()
 
-    def has_lock(self) -> bool:
+    def is_locked(self) -> bool:
         return self._aiolock.locked() and self._iplock.acquired

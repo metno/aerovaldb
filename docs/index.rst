@@ -52,6 +52,7 @@ Writing
    index
    installation
    api
+   locking
    genindex
 
 Indices and tables
