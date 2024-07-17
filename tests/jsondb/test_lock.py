@@ -5,6 +5,7 @@ import asyncio
 from aerovaldb.jsondb.lock import JsonDbLock
 import aerovaldb
 from pathlib import Path
+from uuid import uuid4
 import logging
 
 pytest_plugins = ("pytest_asyncio",)
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.asyncio
 async def test_simple_locking(tmp_path):
-    lock = JsonDbLock(tmp_path / "lock")
+    lock = JsonDbLock(tmp_path / "lock", uuid4)
 
     assert not lock.is_locked()
 
@@ -34,11 +35,10 @@ async def test_multiprocess_locking(monkeypatch, tmp_path):
     async def increment(n: int):
         with aerovaldb.open(f"json_files:{tmp_path}") as db:
             for i in range(n):
-                await db.acquire_lock()
-                data = await db.get_by_uuid(data_file, default={"counter": 0})
-                data["counter"] += 1
-                await db.put_by_uuid(data, data_file)
-                db.release_lock()
+                async with db.get_lock():
+                    data = await db.get_by_uuid(data_file, default={"counter": 0})
+                    data["counter"] += 1
+                    await db.put_by_uuid(data, data_file)
 
     def helper(x):
         asyncio.run(increment(x))
