@@ -1,13 +1,46 @@
-import asyncio
-import pathlib
+from abc import ABC, abstractmethod
 import logging
 import fcntl
-from ..lock import AerovaldbLock
+import asyncio
+import pathlib
+
 
 logger = logging.getLogger(__name__)
 
 
-class JsonDbLock(AerovaldbLock):
+class AerovaldbLock(ABC):
+    async def __aenter__(self):
+        await self.acquire()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, exc_traceback):
+        self.release()
+
+    @abstractmethod
+    async def acquire(self):
+        """
+        Acquire the lock manually. Usually this should be done
+        using a with statement.
+        """
+        pass
+
+    @abstractmethod
+    def release(self):
+        """
+        Release the lock manually. Usually this should be done
+        using a with statement.
+        """
+        pass
+
+    @abstractmethod
+    def is_locked(self) -> bool:
+        """
+        Check whether the lock is currently acquired.
+        """
+        pass
+
+
+class FileLock(AerovaldbLock):
     def __init__(self, lock_file: str | pathlib.Path):
         logger.debug("Initializing lock with lockfile %s", lock_file)
         self._lock_file = lock_file
