@@ -18,3 +18,6 @@ aerovaldb.AerovalDB - User API
    :members:
    :undoc-members:
 
+.. autoclass:: aerovaldb.lock.AerovaldbLock
+   :members:
+   :undoc-members:

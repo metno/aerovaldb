@@ -2,7 +2,7 @@ import pytest
 from multiprocessing import Process
 
 import asyncio
-from aerovaldb.jsondb.lock import JsonDbLock
+from aerovaldb.lock.lock import FileLock
 import aerovaldb
 from pathlib import Path
 import logging
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.asyncio
 async def test_simple_locking(tmp_path):
-    lock = JsonDbLock(tmp_path / "lock")
+    lock = FileLock(tmp_path / "lock")
 
     assert not lock.is_locked()
 

@@ -25,7 +25,7 @@ from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
 from ..routes import *
-from .lock import JsonDbLock
+from ..lock.lock import FileLock
 from hashlib import md5
 
 logger = logging.getLogger(__name__)
@@ -629,4 +629,4 @@ class AerovalJsonFileDB(AerovalDB):
         return lock_file
 
     def lock(self):
-        return JsonDbLock(self._get_lock_file())
+        return FileLock(self._get_lock_file())
