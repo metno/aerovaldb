@@ -1163,5 +1163,11 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def get_lock(self):
+    def lock(self):
+        """Acquires an exclusive advisory lock to coordinate file access
+        between instances of aerovaldb. Intended to be used as a context
+        manager.
+
+        See also: https://aerovaldb.readthedocs.io/en/latest/locking.html
+        """
         raise NotImplementedError

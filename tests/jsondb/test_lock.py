@@ -35,7 +35,7 @@ async def test_multiprocess_locking(monkeypatch, tmp_path):
     async def increment(n: int):
         with aerovaldb.open(f"json_files:{tmp_path}") as db:
             for i in range(n):
-                async with db.get_lock():
+                async with db.lock():
                     data = await db.get_by_uuid(data_file, default={"counter": 0})
                     data["counter"] += 1
                     await db.put_by_uuid(data, data_file)
