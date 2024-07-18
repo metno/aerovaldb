@@ -616,11 +616,11 @@ class AerovalJsonFileDB(AerovalDB):
         if not os.path.exists(os.path.dirname(uuid)):
             os.makedirs(os.path.dirname(uuid))
         if isinstance(obj, str):
-            json = obj
+            json = obj.encode()
         else:
-            json = orjson.dumps(obj)  # type: ignore
+            json = orjson.dumps(obj)
         with open(uuid, "wb") as f:
-            f.write(json)  # type: ignore
+            f.write(json)
 
     def _get_lock_file(self) -> str:
         os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
