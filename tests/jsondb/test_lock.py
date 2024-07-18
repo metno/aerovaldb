@@ -15,10 +15,6 @@ logger = logging.getLogger(__name__)
 @pytest.mark.asyncio
 async def test_simple_locking(tmp_path):
     lock = FileLock(tmp_path / "lock")
-
-    assert not lock.is_locked()
-
-    await lock.acquire()
     assert lock.is_locked()
 
     lock.release()
@@ -34,7 +30,7 @@ async def test_multiprocess_locking(monkeypatch, tmp_path):
     async def increment(n: int):
         with aerovaldb.open(f"json_files:{tmp_path}") as db:
             for i in range(n):
-                async with db.lock():
+                with db.lock():
                     data = await db.get_by_uri(data_file, default={"counter": 0})
                     data["counter"] += 1
                     await db.put_by_uri(data, data_file)

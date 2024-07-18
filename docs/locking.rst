@@ -20,14 +20,10 @@ The following example illustrates how to use locking in practice:
     import aerovaldb
 
     with aerovaldb.open('json_files:.') as db:
-        async with db.lock():
+        with db.lock():
             data = db.get_by_uri('./file.json', default={"counter": 0})
             data["counter"] += 1
             db.put_by_uri(data, './file.json')
-
-- :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.acquire_lock`
-- :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.release_lock`
-- :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.is_locked`
 
 The above is the recommended approach to locking as it will automatically release the lock when done. However it is also possible to acquire and release the lock manually:
 
@@ -37,7 +33,6 @@ The above is the recommended approach to locking as it will automatically releas
 
     with aerovaldb.open('json_files:.') as db:
         lck = db.lock()
-        lck.acquire()
         data = db.get_by_uri('./file.json', default={"counter": 0})
         data["counter"] += 1
         db.put_by_uri(data, './file.json')
