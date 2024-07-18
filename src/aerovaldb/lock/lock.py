@@ -9,6 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 class AerovaldbLock(ABC):
+    """
+    Interface for a context manager based locking mechanism.
+
+    Can be used as a context manager (ie. in a with block).
+    """
+
     async def __aenter__(self):
         await self.acquire()
         return self
