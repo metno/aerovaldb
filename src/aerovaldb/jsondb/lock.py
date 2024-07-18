@@ -2,24 +2,18 @@ import asyncio
 import pathlib
 import logging
 import fcntl
+from ..lock import AerovaldbLock
 
 logger = logging.getLogger(__name__)
 
 
-class JsonDbLock:
+class JsonDbLock(AerovaldbLock):
     def __init__(self, lock_file: str | pathlib.Path):
         logger.debug("Initializing lock with lockfile %s", lock_file)
         self._lock_file = lock_file
         self._lock_handle = open(lock_file, "a+")
         self._aiolock = asyncio.Lock()
         self._acquired = False
-
-    async def __aenter__(self):
-        await self.acquire()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, exc_traceback):
-        self.release()
 
     async def acquire(self):
         logger.debug("Acquiring lock with lockfile %s", self._lock_file)
