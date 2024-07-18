@@ -21,9 +21,9 @@ The following example illustrates how to use locking in practice:
 
     with aerovaldb.open('json_files:.') as db:
         async with db.lock():
-            data = db.get_by_uuid('./file.json', default={"counter": 0})
+            data = db.get_by_uri('./file.json', default={"counter": 0})
             data["counter"] += 1
-            db.put_by_uuid(data, './file.json')
+            db.put_by_uri(data, './file.json')
 
 - :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.acquire_lock`
 - :meth:`~aerovaldb.jsondb.jsonfiledb.AerovalJsonFileDB.release_lock`
