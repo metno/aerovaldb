@@ -214,12 +214,12 @@ class AerovalDB(abc.ABC):
     def list_glob_stats(
         self, project: str, experiment: str
     ) -> Generator[str, None, None]:
-        """Generator that lists the uuid for each glob_stats object.
+        """Generator that lists the URI for each glob_stats object.
 
         :param project: str
         :param experiment: str
 
-        :return Generator of UUIDs.
+        :return Generator of URIs.
         """
         raise NotImplementedError
 
@@ -342,7 +342,7 @@ class AerovalDB(abc.ABC):
     def list_timeseries(
         self, project: str, experiment: str
     ) -> Generator[str, None, None]:
-        """Returns a list of uuids of all timeseries files for
+        """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
         :param project : Project ID.
@@ -768,7 +768,7 @@ class AerovalDB(abc.ABC):
         :param project: The project ID.
         :param experiment: The experiment ID.
 
-        :return Generator with the UUIDs.
+        :return Generator with the URIs.
         """
         raise NotImplementedError
 
@@ -1122,17 +1122,17 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    async def get_by_uuid(
+    async def get_by_uri(
         self,
-        uuid: str,
+        uri: str,
         /,
         access_type: str | AccessType,
         cache: bool = False,
         default=None,
     ):
-        """Gets a stored object by its UUID.
+        """Gets a stored object by its URI.
 
-        :param uuid : uuid of the item to fetch.
+        :param uri : URI of the item to fetch.
         :param access_type : See AccessType.
         :param cache : Whether to use the cache.
         :param default : If provided, this value will be returned instead of raising
@@ -1141,24 +1141,24 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        UUID is implementation specific. While AerovalJsonFileDB returns
+        URI is implementation specific. While AerovalJsonFileDB returns
         a file path, this behaviour should not be relied upon as other
         implementations may not.
         """
         raise NotImplementedError
 
     @async_and_sync
-    async def put_by_uuid(self, obj, uuid: str):
-        """Replaces a stored object by uuid with a new object.
+    async def put_by_uri(self, obj, uri: str):
+        """Replaces a stored object by uri with a new object.
 
         :param obj: The object to be stored. Either a json str, or a
         json serializable python object.
-        :param uuid: The UUID as which to store the object.
+        :param uri: The uri as which to store the object.
 
         Note:
         -----
-        UUID is implementation specific. While AerovalJsonFileDB returns
-        a file path as the uuid, this behaviour should not be relied upon
+        URI is implementation specific. While AerovalJsonFileDB returns
+        a file path as the uri, this behaviour should not be relied upon
         as other implementations will not.
         """
         raise NotImplementedError

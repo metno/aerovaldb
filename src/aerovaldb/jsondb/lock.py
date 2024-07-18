@@ -7,8 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class JsonDbLock:
-    def __init__(self, lock_file: str | pathlib.Path, uuid: str):
-        self._uuid = uuid
+    def __init__(self, lock_file: str | pathlib.Path):
         logger.debug("Initializing lock with lockfile %s", lock_file)
         self._lock_file = lock_file
         self._lock_handle = open(lock_file, "a+")

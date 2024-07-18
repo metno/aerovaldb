@@ -14,7 +14,7 @@ from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.types import AccessType
 
 from ..utils import async_and_sync
-from .uuid import get_uuid
+from .uri import get_uri
 from .templatemapper import (
     TemplateMapper,
     DataVersionToTemplateMapper,
@@ -27,7 +27,6 @@ from .cache import JSONLRUCache
 from ..routes import *
 from .lock import JsonDbLock
 from hashlib import md5
-from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,6 @@ class AerovalJsonFileDB(AerovalDB):
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
         """
-        self._uuid = str(uuid4())
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
@@ -311,7 +309,7 @@ class AerovalJsonFileDB(AerovalDB):
         filter_func = self.FILTERS.get(route, None)
         filter_vars = route_args | kwargs
 
-        data = await self.get_by_uuid(
+        data = await self.get_by_uri(
             file_path,
             access_type=access_type,
             cache=use_caching,
@@ -355,7 +353,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
-        await self.put_by_uuid(obj, file_path)
+        await self.put_by_uri(obj, file_path)
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
@@ -566,60 +564,60 @@ class AerovalJsonFileDB(AerovalDB):
         return experiments
 
     @async_and_sync
-    async def get_by_uuid(
+    async def get_by_uri(
         self,
-        uuid: str,
+        uri: str,
         /,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,
     ):
-        if not isinstance(uuid, str):
-            uuid = str(uuid)
-        if uuid.startswith("."):
-            uuid = get_uuid(os.path.join(self._basedir, uuid))
+        if not isinstance(uri, str):
+            uri = str(uri)
+        if uri.startswith("."):
+            uri = get_uri(os.path.join(self._basedir, uri))
 
-        if not uuid.startswith(self._basedir):
+        if not uri.startswith(self._basedir):
             raise PermissionError(
-                f"UUID {uuid} is out of bounds of the current aerovaldb connection."
+                f"URI {uri} is out of bounds of the current aerovaldb connection."
             )
 
         access_type = self._normalize_access_type(access_type)
 
-        if not os.path.exists(uuid):
+        if not os.path.exists(uri):
             if default is None or access_type == AccessType.FILE_PATH:
-                raise FileNotFoundError(f"Object with UUID {uuid} does not exist.")
+                raise FileNotFoundError(f"Object with URI {uri} does not exist.")
 
             return default
         if access_type == AccessType.FILE_PATH:
-            return uuid
+            return uri
 
         if access_type == AccessType.JSON_STR:
-            raw = await self._cache.get_json(uuid, no_cache=not cache)
+            raw = await self._cache.get_json(uri, no_cache=not cache)
             return orjson.dumps(raw)
 
-        raw = await self._cache.get_json(uuid, no_cache=not cache)
+        raw = await self._cache.get_json(uri, no_cache=not cache)
 
         return orjson.loads(raw)
 
     @async_and_sync
-    async def put_by_uuid(self, obj, uuid: str):
-        if not isinstance(uuid, str):
-            uuid = str(uuid)
-        if uuid.startswith("."):
-            uuid = get_uuid(os.path.join(self._basedir, uuid))
+    async def put_by_uri(self, obj, uri: str):
+        if not isinstance(uri, str):
+            uri = str(uri)
+        if uri.startswith("."):
+            uri = get_uri(os.path.join(self._basedir, uri))
 
-        if not uuid.startswith(self._basedir):
+        if not uri.startswith(self._basedir):
             raise PermissionError(
-                f"UUID {uuid} is out of bounds of the current aerovaldb connection."
+                f"URI {uri} is out of bounds of the current aerovaldb connection."
             )
-        if not os.path.exists(os.path.dirname(uuid)):
-            os.makedirs(os.path.dirname(uuid))
+        if not os.path.exists(os.path.dirname(uri)):
+            os.makedirs(os.path.dirname(uri))
         if isinstance(obj, str):
             json = obj.encode()
         else:
             json = orjson.dumps(obj)
-        with open(uuid, "wb") as f:
+        with open(uri, "wb") as f:
             f.write(json)
 
     def _get_lock_file(self) -> str:
@@ -631,4 +629,4 @@ class AerovalJsonFileDB(AerovalDB):
         return lock_file
 
     def lock(self):
-        return JsonDbLock(self._get_lock_file(), self._uuid)
+        return JsonDbLock(self._get_lock_file())
