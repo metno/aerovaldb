@@ -630,5 +630,5 @@ class AerovalJsonFileDB(AerovalDB):
         )
         return lock_file
 
-    def get_lock(self):
+    def lock(self):
         return JsonDbLock(self._get_lock_file(), self._uuid)

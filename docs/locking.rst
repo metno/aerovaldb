@@ -20,7 +20,7 @@ The following example illustrates how to use locking in practice:
     import aerovaldb
 
     with aerovaldb.open('json_files:.') as db:
-        async with db.get_lock():
+        async with db.lock():
             data = db.get_by_uuid('./file.json', default={"counter": 0})
             data["counter"] += 1
             db.put_by_uuid(data, './file.json')
