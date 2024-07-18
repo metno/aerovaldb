@@ -3,7 +3,7 @@ import logging
 import fcntl
 import asyncio
 import pathlib
-
+from ..utils import _has_async_loop
 
 logger = logging.getLogger(__name__)
 
@@ -15,15 +15,14 @@ class AerovaldbLock(ABC):
     Can be used as a context manager (ie. in a with block).
     """
 
-    async def __aenter__(self):
-        await self.acquire()
+    def __enter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.release()
 
     @abstractmethod
-    async def acquire(self):
+    def acquire(self):
         """
         Acquire the lock manually. Usually this should be done
         using a with statement.
@@ -52,11 +51,14 @@ class FileLock(AerovaldbLock):
         self._lock_file = lock_file
         self._lock_handle = open(lock_file, "a+")
         self._aiolock = asyncio.Lock()
-        self._acquired = False
+        self.acquire()
 
-    async def acquire(self):
+    def acquire(self):
         logger.debug("Acquiring lock with lockfile %s", self._lock_file)
-        await self._aiolock.acquire()
+
+        if _has_async_loop():
+            task = asyncio.ensure_future(self._aiolock.acquire())
+            asyncio.wait(task)
 
         fcntl.lockf(self._lock_handle, fcntl.LOCK_EX)
         self._acquired = True
@@ -66,7 +68,8 @@ class FileLock(AerovaldbLock):
 
         fcntl.fcntl(self._lock_handle, fcntl.LOCK_UN)
         self._acquired = False
-        self._aiolock.release()
+        if self._aiolock.locked():
+            self._aiolock.release()
 
     def is_locked(self) -> bool:
         return self._acquired
