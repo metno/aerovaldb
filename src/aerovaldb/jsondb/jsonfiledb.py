@@ -8,7 +8,7 @@ from typing import Callable, Awaitable, Any, Generator
 import orjson
 from async_lru import alru_cache
 from packaging.version import Version
-from pkg_resources import get_distribution  # type: ignore
+from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
@@ -27,7 +27,7 @@ from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
 from ..routes import *
-from ..lock.lock import FileLock
+from ..lock.lock import FakeLock, FileLock
 from hashlib import md5
 
 logger = logging.getLogger(__name__)
@@ -224,7 +224,16 @@ class AerovalJsonFileDB(AerovalDB):
         try:
             config = await self.get_config(project, experiment)
         except FileNotFoundError:
-            return Version("0.0.1")
+            try:
+                # If pyaerocom is installed in the current environment, but no config has
+                # been written, we use the version of the installed pyaerocom. This is
+                # important for tests to work correctly, and for files to be written
+                # correctly if the config file happens to be written after data files.
+                version = Version(get_distribution("pyaerocom").version)
+            except DistributionNotFound:
+                version = Version("0.0.1")
+            finally:
+                return version
         except orjson.JSONDecodeError:
             # Work around for https://github.com/metno/aerovaldb/issues/28
             return Version("0.14.0")
@@ -233,14 +242,7 @@ class AerovalJsonFileDB(AerovalDB):
             version_str = config["exp_info"]["pyaerocom_version"]
             version = Version(version_str)
         except KeyError:
-            try:
-                # If pyaerocom is installed in the current environment, but no config has
-                # been written, we use the version of the installed pyaerocom. This is
-                # important for tests to work correctly, and for files to be written
-                # correctly if the config file happens to be written after data files.
-                version = Version(get_distribution("pyaerocom").version)
-            except KeyError:
-                version = Version("0.0.1")
+            version = Version("0.0.1")
 
         return version
 
@@ -648,4 +650,9 @@ class AerovalJsonFileDB(AerovalDB):
         return lock_file
 
     def lock(self):
-        return FileLock(self._get_lock_file())
+        real_lock = bool(os.environ.get("AVDB_USE_LOCKING", False))
+
+        if real_lock:
+            return FileLock(self._get_lock_file())
+
+        return FakeLock()

@@ -45,6 +45,28 @@ class AerovaldbLock(ABC):
         pass
 
 
+class FakeLock(AerovaldbLock):
+    """
+    A lock class which does not lock anything. Useful for
+    disabling locking when it is not really needed, but leave
+    code written for using locking.
+    """
+
+    def __init__(self):
+        logger.debug("Initializing FAKE lock")
+        self.acquire()
+
+    def acquire(self):
+        self._acquired = True
+
+    def release(self):
+        self._acquired = False
+
+    @abstractmethod
+    def is_locked(self) -> bool:
+        return self._acquired
+
+
 class FileLock(AerovaldbLock):
     def __init__(self, lock_file: str | pathlib.Path):
         logger.debug("Initializing lock with lockfile %s", lock_file)
