@@ -11,6 +11,7 @@ from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
+from aerovaldb.serialization.default_serialization import default_serialization
 from aerovaldb.types import AccessType
 
 from ..utils import async_and_sync
@@ -326,7 +327,7 @@ class AerovalJsonFileDB(AerovalDB):
                 data = filter_func(data, **filter_vars)
 
                 if access_type == AccessType.JSON_STR:
-                    data = orjson.dumps(data)
+                    data = orjson.dumps(data, default=default_serialization)
 
                 return data
 
@@ -391,7 +392,7 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         if access_type == AccessType.JSON_STR:
-            json = orjson.dumps(experiments)
+            json = orjson.dumps(experiments, default=default_serialization)
             return json
 
         return experiments
@@ -594,7 +595,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         if access_type == AccessType.JSON_STR:
             raw = await self._cache.get_json(uri, no_cache=not cache)
-            return orjson.dumps(raw)
+            return orjson.dumps(raw, default_serialization=default_serialization)
 
         raw = await self._cache.get_json(uri, no_cache=not cache)
 
@@ -616,7 +617,7 @@ class AerovalJsonFileDB(AerovalDB):
         if isinstance(obj, str):
             json = obj.encode()
         else:
-            json = orjson.dumps(obj)
+            json = orjson.dumps(obj, default=default_serialization)
         with open(uri, "wb") as f:
             f.write(json)
 
