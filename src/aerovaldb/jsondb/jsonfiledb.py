@@ -8,6 +8,7 @@ from typing import Callable, Awaitable, Any, Generator
 import orjson
 from async_lru import alru_cache
 from packaging.version import Version
+from pkg_resources import get_distribution  # type: ignore
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
@@ -232,7 +233,14 @@ class AerovalJsonFileDB(AerovalDB):
             version_str = config["exp_info"]["pyaerocom_version"]
             version = Version(version_str)
         except KeyError:
-            version = Version("0.0.1")
+            try:
+                # If pyaerocom is installed in the current environment, but no config has
+                # been written, we use the version of the installed pyaerocom. This is
+                # important for tests to work correctly, and for files to be written
+                # correctly if the config file happens to be written after data files.
+                version = Version(get_distribution("pyaerocom").version)
+            except KeyError:
+                version = Version("0.0.1")
 
         return version
 
