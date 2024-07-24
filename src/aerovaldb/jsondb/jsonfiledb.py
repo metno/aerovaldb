@@ -29,18 +29,20 @@ from .cache import JSONLRUCache
 from ..routes import *
 from ..lock.lock import FakeLock, FileLock
 from hashlib import md5
+import simplejson  # type: ignore
 
 logger = logging.getLogger(__name__)
 
 
-def json_dumps_wrapper(obj):
+def json_dumps_wrapper(obj, **kwargs):
     """
-    Wrapper which calls orjson.dumps with the correct options, known to work for objects
+    Wrapper which calls simple.json with the correct options, known to work for objects
     returned by Pyaerocom.
     """
-    return orjson.dumps(
-        obj, default=default_serialization, option=orjson.OPT_NON_STR_KEYS
-    )
+    return simplejson.dumps(obj, allow_nan=True, **kwargs)
+    # return orjson.dumps(
+    #    obj, default=default_serialization, option=orjson.OPT_NON_STR_KEYS
+    # )
 
 
 class AerovalJsonFileDB(AerovalDB):
@@ -635,10 +637,10 @@ class AerovalJsonFileDB(AerovalDB):
         if not os.path.exists(os.path.dirname(uri)):
             os.makedirs(os.path.dirname(uri))
         if isinstance(obj, str):
-            json = obj.encode()
+            json = obj
         else:
             json = json_dumps_wrapper(obj)
-        with open(uri, "wb") as f:
+        with open(uri, "w") as f:
             f.write(json)
 
     def _get_lock_file(self) -> str:
