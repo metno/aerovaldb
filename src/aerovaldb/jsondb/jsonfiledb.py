@@ -34,9 +34,9 @@ import simplejson  # type: ignore
 logger = logging.getLogger(__name__)
 
 
-def json_dumps_wrapper(obj, **kwargs):
+def json_dumps_wrapper(obj, **kwargs) -> str:
     """
-    Wrapper which calls simplejson with the correct options, known to work for objects
+    Wrapper which calls simplejson.dumps with the correct options, known to work for objects
     returned by Pyaerocom.
     """
     return simplejson.dumps(obj, allow_nan=True, **kwargs)
