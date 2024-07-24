@@ -36,13 +36,10 @@ logger = logging.getLogger(__name__)
 
 def json_dumps_wrapper(obj, **kwargs):
     """
-    Wrapper which calls simple.json with the correct options, known to work for objects
+    Wrapper which calls simplejson with the correct options, known to work for objects
     returned by Pyaerocom.
     """
     return simplejson.dumps(obj, allow_nan=True, **kwargs)
-    # return orjson.dumps(
-    #    obj, default=default_serialization, option=orjson.OPT_NON_STR_KEYS
-    # )
 
 
 class AerovalJsonFileDB(AerovalDB):
@@ -51,6 +48,12 @@ class AerovalJsonFileDB(AerovalDB):
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
         """
+        use_locking = os.environ.get("AVDB_USE_LOCKING", "")
+        if use_locking == "0" or use_locking == "":
+            self._use_real_lock = False
+        else:
+            self._use_real_lock = True
+
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
@@ -652,13 +655,7 @@ class AerovalJsonFileDB(AerovalDB):
         return lock_file
 
     def lock(self):
-        use_locking = os.environ.get("AVDB_USE_LOCKING", "")
-        if use_locking == "0" or use_locking == "":
-            real_lock = False
-        else:
-            real_lock = True
-
-        if real_lock:
+        if self._use_real_lock:
             return FileLock(self._get_lock_file())
 
         return FakeLock()
