@@ -62,7 +62,6 @@ class FakeLock(AerovaldbLock):
     def release(self):
         self._acquired = False
 
-    @abstractmethod
     def is_locked(self) -> bool:
         return self._acquired
 

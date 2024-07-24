@@ -650,7 +650,11 @@ class AerovalJsonFileDB(AerovalDB):
         return lock_file
 
     def lock(self):
-        real_lock = bool(os.environ.get("AVDB_USE_LOCKING", False))
+        use_locking = os.environ.get("AVDB_USE_LOCKING", "")
+        if use_locking == "0" or use_locking == "":
+            real_lock = False
+        else:
+            real_lock = True
 
         if real_lock:
             return FileLock(self._get_lock_file())

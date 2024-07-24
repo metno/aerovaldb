@@ -1,8 +1,9 @@
+import os
 import pytest
 from multiprocessing import Process
 
 import asyncio
-from aerovaldb.lock.lock import FileLock
+from aerovaldb.lock.lock import FileLock, FakeLock
 import aerovaldb
 from pathlib import Path
 import logging
@@ -10,6 +11,18 @@ import logging
 pytest_plugins = ("pytest_asyncio",)
 
 logger = logging.getLogger(__name__)
+
+
+def test_fake_lock():
+    os.environ["AVDB_USE_LOCKING"] = "0"
+    with aerovaldb.open("json_files:tests/test-db/json") as db:
+        assert isinstance(db.lock(), FakeLock)
+
+
+def test_file_lock():
+    os.environ["AVDB_USE_LOCKING"] = "1"
+    with aerovaldb.open("json_files:tests/test-db/json") as db:
+        assert isinstance(db.lock(), FileLock)
 
 
 @pytest.mark.asyncio
