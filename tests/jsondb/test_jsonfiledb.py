@@ -1,11 +1,11 @@
 import asyncio
+import math
 import os
 import random
 
 import pytest
-
+import simplejson  # type: ignore
 import aerovaldb
-import orjson
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -348,6 +348,17 @@ def test_setters_sync(fun: str, args: list, kwargs: dict, tmp_path):
         assert data["data"] == expected
 
 
+def test_write_and_read_of_nan(tmp_path):
+    with aerovaldb.open(f"json_files:{tmp_path}") as db:
+        data = dict(value=float("nan"))
+
+        db.put_by_uri(data, "./test")
+
+        read = db.get_by_uri("./test")
+
+        assert math.isnan(read["value"])
+
+
 def test_exception_on_unexpected_args():
     """
     https://github.com/metno/aerovaldb/issues/19
@@ -427,5 +438,5 @@ def test_getter_with_default():
 
 def test_getter_with_default_error():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        with pytest.raises(orjson.JSONDecodeError):
+        with pytest.raises(simplejson.errors.JSONDecodeError):
             db.get_by_uri("./invalid-json.json", default={"data": "data"})

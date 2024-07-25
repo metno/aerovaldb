@@ -5,7 +5,6 @@ import shutil
 from pathlib import Path
 from typing import Callable, Awaitable, Any, Generator
 
-import orjson
 from async_lru import alru_cache
 from packaging.version import Version
 from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
@@ -239,7 +238,7 @@ class AerovalJsonFileDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        except orjson.JSONDecodeError:
+        except simplejson.errors.JSONDecodeError:
             # Work around for https://github.com/metno/aerovaldb/issues/28
             return Version("0.14.0")
 
@@ -347,7 +346,7 @@ class AerovalJsonFileDB(AerovalDB):
         if filter_func is not None:
             if access_type in (AccessType.JSON_STR, AccessType.OBJ):
                 if isinstance(data, str):
-                    data = orjson.loads(data)
+                    data = simplejson.loads(data, allow_nan=True)
 
                 data = filter_func(data, **filter_vars)
 
@@ -624,7 +623,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         raw = await self._cache.get_json(uri, no_cache=not cache)
 
-        return orjson.loads(raw)
+        return simplejson.loads(raw, allow_nan=True)
 
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
