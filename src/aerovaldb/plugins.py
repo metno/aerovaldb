@@ -57,12 +57,19 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
     :return: an implementation-object of AerovalDB openend to a location
     """
 
-    parts = resource.split(":")
-    if len(parts) > 1:
-        name = parts[0]
-        path = ":".join(parts[1:])
+    if ":" in resource:
+        parts = resource.split(":")
+        if len(parts) > 1:
+            name = parts[0]
+            path = ":".join(parts[1:])
+        else:
+            # TODO check if path contains a aerovaldb cfg file
+            name = "json_files"
+            path = resource
     else:
-        # TODO check if path contains a aerovaldb cfg file
+        # Assume directory and json.
+        # TODO: In the future this should differentiate based on file path, eg. folder->json_files
+        # .sqlite-> SqliteDB, etc.
         name = "json_files"
         path = resource
 
