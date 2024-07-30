@@ -356,6 +356,8 @@ def test_write_and_read_of_nan(tmp_path):
 
         read = db.get_by_uri("./test")
 
+        # See Additional Notes on #59
+        # https://github.com/metno/aerovaldb/pull/59
         assert read["value"] is None
 
 
