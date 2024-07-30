@@ -51,7 +51,6 @@ def put_method(route):
     def wrap(wrapped):
         @functools.wraps(wrapped)
         async def wrapper(self, obj, *args, **kwargs):
-            print(obj, args)
             sig = inspect.signature(wrapped)
             route_args = {}
             for pos, par in enumerate(sig.parameters):
