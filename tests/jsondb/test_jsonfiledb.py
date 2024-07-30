@@ -356,7 +356,7 @@ def test_write_and_read_of_nan(tmp_path):
 
         read = db.get_by_uri("./test")
 
-        assert math.isnan(read["value"])
+        assert read["value"] is None
 
 
 def test_exception_on_unexpected_args():
