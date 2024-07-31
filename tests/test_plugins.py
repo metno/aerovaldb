@@ -42,3 +42,9 @@ def test_open_sqlite_2(tmp_path, fext):
     with aerovaldb.open(path) as db:
         assert isinstance(db, AerovalSqliteDB)
         assert db._dbfile == path
+
+
+def test_open_sqlite_3():
+    with aerovaldb.open(":memory:") as db:
+        assert isinstance(db, AerovalSqliteDB)
+        assert db._dbfile == ":memory:"

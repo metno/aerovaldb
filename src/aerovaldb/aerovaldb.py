@@ -1170,3 +1170,31 @@ class AerovalDB(abc.ABC):
         See also: https://aerovaldb.readthedocs.io/en/latest/locking.html
         """
         raise NotImplementedError
+
+    def _normalize_access_type(
+        self, access_type: AccessType | str | None, default: AccessType = AccessType.OBJ
+    ) -> AccessType:
+        """Normalizes the access_type to an instance of AccessType enum.
+
+        :param access_type: AccessType instance or string convertible to AccessType
+        :param default: The type to return if access_type is None. Defaults to AccessType.OBJ
+        :raises ValueError: If str access_type can't be converted to AccessType.
+        :raises ValueError: If access_type is not str or AccessType
+        :return: The normalized AccessType.
+        """
+        if isinstance(access_type, AccessType):
+            return access_type
+
+        if isinstance(access_type, str):
+            try:
+                return AccessType[access_type]
+            except:
+                raise ValueError(
+                    f"String '{access_type}' can not be converted to AccessType."
+                )
+        if access_type is None:
+            return default
+
+        raise ValueError(
+            f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
+        )

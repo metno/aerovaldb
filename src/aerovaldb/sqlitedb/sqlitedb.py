@@ -1,8 +1,12 @@
 import sqlite3
+
+import simplejson
 import aerovaldb
+from aerovaldb.exceptions import UnsupportedOperation
 from ..aerovaldb import AerovalDB
 from ..routes import *
 from .utils import extract_substitutions
+from ..types import AccessType
 import os
 
 
@@ -106,8 +110,68 @@ class AerovalSqliteDB(AerovalDB):
                 """
             )
 
+    def _get_column_list_and_substitution_list(self, kwargs: dict) -> tuple[str, str]:
+        keys = list(kwargs.keys())
+
+        columnlist = ", ".join(keys)
+        substitutionlist = ", ".join([f":{k}" for k in keys])
+
+        return (columnlist, substitutionlist)
+
     async def _get(self, route, route_args, *args, **kwargs):
-        pass
+        assert len(args) == 0
+        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+
+        if access_type in [AccessType.FILE_PATH]:
+            raise UnsupportedOperation(
+                f"sqlitedb does not support access_mode FILE_PATH."
+            )
+
+        cur = self._con.cursor()
+
+        table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
+
+        columnlist, substitutionlist = self._get_column_list_and_substitution_list(
+            route_args
+        )
+
+        cur.execute(
+            f"""
+            SELECT json FROM {table_name}
+            WHERE
+                ({columnlist}) = ({substitutionlist})
+            """,
+            route_args,
+        )
+        fetched = cur.fetchone()[0]
+        if access_type == AccessType.JSON_STR:
+            return fetched
+
+        if access_type == AccessType.OBJ:
+            return simplejson.loads(fetched)
+
+        assert False  # Should never happen.
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
-        pass
+        assert len(args) == 0
+
+        cur = self._con.cursor()
+
+        table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
+
+        columnlist, substitutionlist = self._get_column_list_and_substitution_list(
+            route_args
+        )
+
+        json = obj
+        if not isinstance(json, str):
+            json = simplejson.dumps(json)
+
+        route_args.update(json=json)
+        cur.execute(
+            f"""
+            INSERT OR REPLACE INTO {table_name}({columnlist}, json)
+            VALUES({substitutionlist}, :json)
+            """,
+            route_args,
+        )

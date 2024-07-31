@@ -301,14 +301,29 @@ set_parametrization = pytest.mark.parametrize(
 )
 
 
+@pytest.fixture
+def tmpdb(tmp_path, dbtype: str) -> aerovaldb.AerovalDB:
+    """Fixture encapsulating logic for each tested database connection to create
+    a temporary database and connect to it."""
+    if dbtype == "json_files":
+        return aerovaldb.open(f"json_files:{str(tmp_path)}")
+    elif dbtype == "sqlitedb":
+        return aerovaldb.open(":memory:")
+
+    assert False
+
+
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
 @set_parametrization
-async def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
+async def test_setters(dbtype: str, fun: str, args: list, kwargs: dict, tmpdb):
     """
     This test tests that you read back the expected data, once you have written
     to a fresh db, assuming the same arguments.
     """
-    with aerovaldb.open(f"json_files:{os.path.join(tmp_path, fun)}") as db:
+    with tmpdb as db:
         get = getattr(db, f"get_{fun}")
         put = getattr(db, f"put_{fun}")
 
@@ -325,13 +340,16 @@ async def test_setters(fun: str, args: list, kwargs: dict, tmp_path):
         assert data["data"] == expected
 
 
+@pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
 @set_parametrization
-def test_setters_sync(fun: str, args: list, kwargs: dict, tmp_path):
+def test_setters_sync(fun: str, args: list, kwargs: dict, tmpdb):
     """
     This test tests that you read back the expected data, once you have written
     to a fresh db, assuming the same arguments.
     """
-    with aerovaldb.open(f"json_files:{os.path.join(tmp_path, fun)}") as db:
+    with tmpdb as db:
         get = getattr(db, f"get_{fun}")
         put = getattr(db, f"put_{fun}")
 

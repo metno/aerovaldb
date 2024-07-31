@@ -58,8 +58,12 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         synchronously.
     :return: an implementation-object of AerovalDB openend to a location
     """
+    if resource == ":memory:":
+        # Special case for sqlite in memory database.
+        name = "sqlitedb"
+        path = ":memory:"
 
-    if ":" in resource:
+    elif ":" in resource:
         parts = resource.split(":")
         if len(parts) > 1:
             name = parts[0]
