@@ -1,4 +1,5 @@
 import functools
+import os
 import sys
 import warnings
 
@@ -68,11 +69,15 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
             name = "json_files"
             path = resource
     else:
-        # Assume directory and json.
-        # TODO: In the future this should differentiate based on file path, eg. folder->json_files
-        # .sqlite-> SqliteDB, etc.
-        name = "json_files"
-        path = resource
+        fileextension = os.path.splitext(resource)[1]
+        if fileextension in [".db", ".sqlite"]:
+            # Sqlite file.
+            name = "sqlitedb"
+            path = resource
+        else:
+            # Assume directory and json.
+            name = "json_files"
+            path = resource
 
     aerodb = list_engines()[name]
 
