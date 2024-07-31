@@ -1,6 +1,6 @@
 import sqlite3
 
-import simplejson
+import simplejson  # type: ignore
 import aerovaldb
 from aerovaldb.exceptions import UnsupportedOperation
 from ..aerovaldb import AerovalDB
@@ -15,6 +15,26 @@ class AerovalSqliteDB(AerovalDB):
     Allows reading and writing from sqlite3 database files.
     """
 
+    # When creating a table it works to extract the substitution template
+    # names from the route, as this constitutes all arguments. For the ones
+    # which have extra arguments (currently only time) the following table
+    # defines the override. Currently this only applies to map which has
+    # an extra time argument.
+    ROUTE_COLUMN_NAME_OVERRIDE = {
+        ROUTE_MAP: (
+            "project",
+            "experiment",
+            "network",
+            "obsvar",
+            "layer",
+            "model",
+            "modvar",
+            "time",
+        )
+    }
+
+    # This lookup table stores the name of the table in which json
+    # for a specific route is stored.
     TABLE_NAME_LOOKUP = {
         ROUTE_GLOB_STATS: "glob_stats",
         ROUTE_REG_STATS: "glob_stats",
@@ -82,6 +102,7 @@ class AerovalSqliteDB(AerovalDB):
         identifier string, initializes the database so it has the
         necessary tables.
         """
+        print("test")
         cur = self._con.cursor()
 
         # Metadata table for information used internally by aerovaldb.
@@ -98,10 +119,13 @@ class AerovalSqliteDB(AerovalDB):
 
         # Data tables. Currently one table is used per type of asset
         # stored and json blobs are stored in the json column.
-        for route, table_name in self.TABLE_NAME_LOOKUP.items():
-            route_args = extract_substitutions(route)
+        for route, table_name in AerovalSqliteDB.TABLE_NAME_LOOKUP.items():
+            args = AerovalSqliteDB.ROUTE_COLUMN_NAME_OVERRIDE.get(
+                route, extract_substitutions(route)
+            )
 
-            column_names = ",".join(route_args)
+            column_names = ",".join(args)
+
             cur.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {table_name}({column_names},json,
@@ -109,6 +133,8 @@ class AerovalSqliteDB(AerovalDB):
                 UNIQUE({column_names}))
                 """
             )
+
+        self._con.commit()
 
     def _get_column_list_and_substitution_list(self, kwargs: dict) -> tuple[str, str]:
         keys = list(kwargs.keys())
