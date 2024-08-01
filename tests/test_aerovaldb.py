@@ -370,9 +370,9 @@ def test_write_and_read_of_nan(tmpdb):
     with tmpdb as db:
         data = dict(value=float("nan"))
 
-        db.put_by_uri(data, "./test")
+        db.put_by_uri(data, "/v0/experiments/project")
 
-        read = db.get_by_uri("./test")
+        read = db.get_by_uri("/v0/experiments/project")
 
         # See Additional Notes on #59
         # https://github.com/metno/aerovaldb/pull/59

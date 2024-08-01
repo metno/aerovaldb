@@ -7,7 +7,7 @@ from ..aerovaldb import AerovalDB
 from ..routes import *
 from .utils import extract_substitutions
 from ..types import AccessType
-from ..utils import json_dumps_wrapper
+from ..utils import json_dumps_wrapper, parse_uri, async_and_sync
 import os
 
 
@@ -199,5 +199,31 @@ class AerovalSqliteDB(AerovalDB):
             INSERT OR REPLACE INTO {table_name}({columnlist}, json)
             VALUES({substitutionlist}, :json)
             """,
-            route_args,
+            route_args | kwargs,
         )
+
+    @async_and_sync
+    async def get_by_uri(
+        self,
+        uri: str,
+        /,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+    ):
+        route, route_args, kwargs = parse_uri(uri)
+
+        return await self._get(
+            route,
+            route_args,
+            access_type=access_type,
+            cache=cache,
+            default=default,
+            **kwargs,
+        )
+
+    @async_and_sync
+    async def put_by_uri(self, obj, uri: str):
+        route, route_args, kwargs = parse_uri(uri)
+
+        await self._put(obj, route, route_args, **kwargs)
