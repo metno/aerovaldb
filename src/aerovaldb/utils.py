@@ -1,6 +1,18 @@
 import asyncio
 import functools
 from typing import Callable, ParamSpec, TypeVar
+import simplejson
+
+
+def json_dumps_wrapper(obj, **kwargs) -> str:
+    """
+    Wrapper which calls simplejson.dumps with the correct options, known to work for objects
+    returned by Pyaerocom.
+
+    This ensures that nan values are serialized as null to be compliant with the json standard.
+    """
+    return simplejson.dumps(obj, ignore_nan=True, **kwargs)
+
 
 # Workaround to ensure function signature of the decorated function is shown correctly
 # Solution from here: https://stackoverflow.com/questions/74074580/how-to-avoid-losing-type-hinting-of-decorated-function

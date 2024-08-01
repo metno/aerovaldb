@@ -353,3 +353,27 @@ def test_setters_sync(fun: str, args: list, kwargs: dict, tmpdb):
             data = get(*args)
 
         assert data["data"] == expected
+
+
+@pytest.mark.parametrize(
+    "dbtype",
+    (
+        pytest.param(
+            "json_files",
+        ),
+        pytest.param(
+            "sqlitedb",
+        ),
+    ),
+)
+def test_write_and_read_of_nan(tmpdb):
+    with tmpdb as db:
+        data = dict(value=float("nan"))
+
+        db.put_by_uri(data, "./test")
+
+        read = db.get_by_uri("./test")
+
+        # See Additional Notes on #59
+        # https://github.com/metno/aerovaldb/pull/59
+        assert read["value"] is None

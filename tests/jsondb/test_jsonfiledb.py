@@ -19,19 +19,6 @@ async def test_file_does_not_exist():
             )
 
 
-def test_write_and_read_of_nan(tmp_path):
-    with aerovaldb.open(f"json_files:{tmp_path}") as db:
-        data = dict(value=float("nan"))
-
-        db.put_by_uri(data, "./test")
-
-        read = db.get_by_uri("./test")
-
-        # See Additional Notes on #59
-        # https://github.com/metno/aerovaldb/pull/59
-        assert read["value"] is None
-
-
 def test_exception_on_unexpected_args():
     """
     https://github.com/metno/aerovaldb/issues/19

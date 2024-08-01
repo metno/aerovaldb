@@ -7,6 +7,7 @@ from ..aerovaldb import AerovalDB
 from ..routes import *
 from .utils import extract_substitutions
 from ..types import AccessType
+from ..utils import json_dumps_wrapper
 import os
 
 
@@ -102,7 +103,6 @@ class AerovalSqliteDB(AerovalDB):
         identifier string, initializes the database so it has the
         necessary tables.
         """
-        print("test")
         cur = self._con.cursor()
 
         # Metadata table for information used internally by aerovaldb.
@@ -174,7 +174,7 @@ class AerovalSqliteDB(AerovalDB):
             return fetched
 
         if access_type == AccessType.OBJ:
-            return simplejson.loads(fetched)
+            return simplejson.loads(fetched, allow_nan=True)
 
         assert False  # Should never happen.
 
@@ -191,7 +191,7 @@ class AerovalSqliteDB(AerovalDB):
 
         json = obj
         if not isinstance(json, str):
-            json = simplejson.dumps(json)
+            json = json_dumps_wrapper(json)
 
         route_args.update(json=json)
         cur.execute(
