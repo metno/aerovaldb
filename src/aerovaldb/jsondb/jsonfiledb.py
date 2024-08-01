@@ -324,7 +324,7 @@ class AerovalJsonFileDB(AerovalDB):
         json = await self._cache.get_json(file_path, no_cache=not use_caching)
         obj = simplejson.loads(json, allow_nan=True)
 
-        obj = await filter_func(obj, **filter_vars)
+        obj = filter_func(obj, **filter_vars)
 
         if access_type == AccessType.OBJ:
             return obj
@@ -584,7 +584,14 @@ class AerovalJsonFileDB(AerovalDB):
 
         route, route_args, kwargs = parse_uri(uri)
 
-        return await self._get(route, route_args, **kwargs)
+        return await self._get(
+            route,
+            route_args,
+            cache=cache,
+            default=default,
+            access_type=access_type,
+            **kwargs,
+        )
         # if not isinstance(uri, str):
         #    uri = str(uri)
         # if uri.startswith("."):

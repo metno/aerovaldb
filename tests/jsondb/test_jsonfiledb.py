@@ -90,7 +90,7 @@ def test_list_glob_stats():
 def test_getter_with_default():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         data = db.get_by_uri(
-            "./project/experiment/non-existent-file.json", default={"data": "test"}
+            "/v0/experiments/non-existent-project", default={"data": "test"}
         )
 
         assert data["data"] == "test"
@@ -98,5 +98,7 @@ def test_getter_with_default():
 
 def test_getter_with_default_error():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        with pytest.raises(simplejson.errors.JSONDecodeError):
-            db.get_by_uri("./invalid-json.json", default={"data": "data"})
+        with pytest.raises(simplejson.JSONDecodeError):
+            db.get_by_uri(
+                "/v0/report/project/experiment/invalid-json", default={"data": "data"}
+            )

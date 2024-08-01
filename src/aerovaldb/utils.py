@@ -2,7 +2,7 @@ import re
 import asyncio
 import functools
 from typing import Callable, ParamSpec, TypeVar
-import simplejson
+import simplejson  # type: ignore
 from .routes import ALL_ROUTES
 import urllib
 
@@ -75,7 +75,7 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
             except Exception:
                 continue
 
-            kwargs = urllib.parse.parse_qs(split[1])
+            kwargs = urllib.parse.parse_qs(split[1])  # type: ignore
             kwargs = {k: v[0] for k, v in kwargs.items()}
 
             return (template, route_args, kwargs)
@@ -83,7 +83,7 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     raise ValueError(f"URI {uri} is not a valid URI.")
 
 
-def build_uri(route: str, route_args: dict, kwargs: dict | None = None) -> str:
+def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
     uri = route.format(**route_args)
     if not kwargs:
         queries = "&".join([f"{k}={v}" for k, v in kwargs.items()])
