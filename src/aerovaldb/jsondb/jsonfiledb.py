@@ -14,7 +14,7 @@ from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.serialization.default_serialization import default_serialization
 from aerovaldb.types import AccessType
 
-from ..utils import async_and_sync, json_dumps_wrapper
+from ..utils import async_and_sync, json_dumps_wrapper, parse_uri
 from .uri import get_uri
 from .templatemapper import (
     TemplateMapper,
@@ -292,36 +292,47 @@ class AerovalJsonFileDB(AerovalDB):
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
-        file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
+        file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
         logger.debug(f"Fetching file {file_path} as {access_type}-")
+
+        default = kwargs.pop("default", None)
 
         filter_func = self.FILTERS.get(route, None)
         filter_vars = route_args | kwargs
 
-        data = await self.get_by_uri(
-            file_path,
-            access_type=access_type,
-            cache=use_caching,
-            default=kwargs.get("default", None),
-        )
-        if "default" in kwargs:
-            # Dont want to apply filtering to default value.
-            return data
-        if filter_func is not None:
-            if access_type in (AccessType.JSON_STR, AccessType.OBJ):
-                if isinstance(data, str):
-                    data = simplejson.loads(data, allow_nan=True)
+        if not os.path.exists(file_path):
+            if default is None or access_type == AccessType.FILE_PATH:
+                raise FileNotFoundError(f"File {file_path} does not exist.")
+            return default
 
-                data = filter_func(data, **filter_vars)
+        # No filtered.
+        if filter_func is None:
+            if access_type == AccessType.FILE_PATH:
+                return file_path
 
-                if access_type == AccessType.JSON_STR:
-                    data = json_dumps_wrapper(data)
+            if access_type == AccessType.JSON_STR:
+                raw = await self._cache.get_json(file_path, no_cache=not use_caching)
+                return json_dumps_wrapper(raw)
 
-                return data
+            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
 
-            raise UnsupportedOperation("Filtered endpoints can not return a file path.")
+            return simplejson.loads(raw, allow_nan=True)
 
-        return data
+        if access_type == AccessType.FILE_PATH:
+            raise UnsupportedOperation("Filtered endpoints can not return a filepath")
+
+        json = await self._cache.get_json(file_path, no_cache=not use_caching)
+        obj = simplejson.loads(json, allow_nan=True)
+
+        obj = await filter_func(obj, **filter_vars)
+
+        if access_type == AccessType.OBJ:
+            return obj
+
+        if access_type == AccessType.JSON_STR:
+            return json_dumps_wrapper(obj)
+
+        raise UnsupportedOperation
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
@@ -338,11 +349,18 @@ class AerovalJsonFileDB(AerovalDB):
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
 
-        file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
+        file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
 
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
-        await self.put_by_uri(obj, file_path)
+        if not os.path.exists(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
+        if isinstance(obj, str):
+            json = obj
+        else:
+            json = json_dumps_wrapper(obj)
+        with open(file_path, "w") as f:
+            f.write(json)
 
     @async_and_sync
     async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
@@ -561,53 +579,64 @@ class AerovalJsonFileDB(AerovalDB):
         cache: bool = False,
         default=None,
     ):
-        if not isinstance(uri, str):
-            uri = str(uri)
-        if uri.startswith("."):
-            uri = get_uri(os.path.join(self._basedir, uri))
-
-        if not uri.startswith(self._basedir):
-            raise PermissionError(
-                f"URI {uri} is out of bounds of the current aerovaldb connection."
-            )
-
-        access_type = self._normalize_access_type(access_type)
-
-        if not os.path.exists(uri):
-            if default is None or access_type == AccessType.FILE_PATH:
-                raise FileNotFoundError(f"Object with URI {uri} does not exist.")
-
-            return default
-        if access_type == AccessType.FILE_PATH:
+        if access_type in [AccessType.URI]:
             return uri
 
-        if access_type == AccessType.JSON_STR:
-            raw = await self._cache.get_json(uri, no_cache=not cache)
-            return json_dumps_wrapper(raw)
+        route, route_args, kwargs = parse_uri(uri)
 
-        raw = await self._cache.get_json(uri, no_cache=not cache)
+        return await self._get(route, route_args, **kwargs)
+        # if not isinstance(uri, str):
+        #    uri = str(uri)
+        # if uri.startswith("."):
+        #    uri = get_uri(os.path.join(self._basedir, uri))
 
-        return simplejson.loads(raw, allow_nan=True)
+    #
+    # if not uri.startswith(self._basedir):
+    #    raise PermissionError(
+    #        f"URI {uri} is out of bounds of the current aerovaldb connection."
+    #    )
+    #
+    # access_type = self._normalize_access_type(access_type)
+    #
+    # if not os.path.exists(uri):
+    #    if default is None or access_type == AccessType.FILE_PATH:
+    #        raise FileNotFoundError(f"Object with URI {uri} does not exist.")
+    #
+    #    return default
+    # if access_type == AccessType.FILE_PATH:
+    #    return uri
+    #
+    # if access_type == AccessType.JSON_STR:
+    #    raw = await self._cache.get_json(uri, no_cache=not cache)
+    #    return json_dumps_wrapper(raw)
+
+    # raw = await self._cache.get_json(uri, no_cache=not cache)
+    #
+    # return simplejson.loads(raw, allow_nan=True)
 
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
-        if not isinstance(uri, str):
-            uri = str(uri)
-        if uri.startswith("."):
-            uri = get_uri(os.path.join(self._basedir, uri))
+        route, route_args, kwargs = parse_uri(uri)
 
-        if not uri.startswith(self._basedir):
-            raise PermissionError(
-                f"URI {uri} is out of bounds of the current aerovaldb connection."
-            )
-        if not os.path.exists(os.path.dirname(uri)):
-            os.makedirs(os.path.dirname(uri))
-        if isinstance(obj, str):
-            json = obj
-        else:
-            json = json_dumps_wrapper(obj)
-        with open(uri, "w") as f:
-            f.write(json)
+        await self._put(obj, route, route_args, **kwargs)
+        # if not isinstance(uri, str):
+        #    uri = str(uri)
+        # if uri.startswith("."):
+        #    uri = get_uri(os.path.join(self._basedir, uri))
+
+    #
+    # if not uri.startswith(self._basedir):
+    #    raise PermissionError(
+    #        f"URI {uri} is out of bounds of the current aerovaldb connection."
+    #    )
+    # if not os.path.exists(os.path.dirname(uri)):
+    #    os.makedirs(os.path.dirname(uri))
+    # if isinstance(obj, str):
+    #    json = obj
+    # else:
+    #    json = json_dumps_wrapper(obj)
+    # with open(uri, "w") as f:
+    #    f.write(json)
 
     def _get_lock_file(self) -> str:
         os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)

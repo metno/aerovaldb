@@ -83,6 +83,15 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     raise ValueError(f"URI {uri} is not a valid URI.")
 
 
+def build_uri(route: str, route_args: dict, kwargs: dict | None = None) -> str:
+    uri = route.format(**route_args)
+    if not kwargs:
+        queries = "&".join([f"{k}={v}" for k, v in kwargs.items()])
+        uri = f"{uri}?{queries}"
+
+    return uri
+
+
 # Workaround to ensure function signature of the decorated function is shown correctly
 # Solution from here: https://stackoverflow.com/questions/74074580/how-to-avoid-losing-type-hinting-of-decorated-function
 P = ParamSpec("P")

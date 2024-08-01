@@ -7,7 +7,7 @@ from ..aerovaldb import AerovalDB
 from ..routes import *
 from .utils import extract_substitutions
 from ..types import AccessType
-from ..utils import json_dumps_wrapper, parse_uri, async_and_sync
+from ..utils import json_dumps_wrapper, parse_uri, async_and_sync, build_uri
 import os
 
 
@@ -153,6 +153,9 @@ class AerovalSqliteDB(AerovalDB):
                 f"sqlitedb does not support access_mode FILE_PATH."
             )
 
+        if access_type in [AccessType.URI]:
+            return build_uri(route, route_args, kwargs)
+
         cur = self._con.cursor()
 
         table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
@@ -211,6 +214,9 @@ class AerovalSqliteDB(AerovalDB):
         cache: bool = False,
         default=None,
     ):
+        if access_type in [AccessType.URI]:
+            return uri
+
         route, route_args, kwargs = parse_uri(uri)
 
         return await self._get(
