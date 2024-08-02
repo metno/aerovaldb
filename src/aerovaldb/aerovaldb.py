@@ -1140,9 +1140,9 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        URI is implementation specific. While AerovalJsonFileDB returns
-        a file path, this behaviour should not be relied upon as other
-        implementations may not.
+        URI is intended to be consistent between implementations. Using get_by_uri()
+        to fetch an identifier which can then be written to another connector using
+        its respective put_by_uri() method.
         """
         raise NotImplementedError
 
@@ -1156,9 +1156,9 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        URI is implementation specific. While AerovalJsonFileDB returns
-        a file path as the uri, this behaviour should not be relied upon
-        as other implementations will not.
+        URI is intended to be consistent between implementations. Using get_by_uri()
+        to fetch an identifier which can then be written to another connector using
+        its respective put_by_uri() method.
         """
         raise NotImplementedError
 
@@ -1195,6 +1195,4 @@ class AerovalDB(abc.ABC):
         if access_type is None:
             return default
 
-        raise ValueError(
-            f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
-        )
+        assert False

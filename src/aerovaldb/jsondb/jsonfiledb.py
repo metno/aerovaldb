@@ -11,11 +11,15 @@ from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
-from aerovaldb.serialization.default_serialization import default_serialization
 from aerovaldb.types import AccessType
 
-from ..utils import async_and_sync, json_dumps_wrapper, parse_uri
-from .uri import get_uri
+from ..utils import (
+    async_and_sync,
+    json_dumps_wrapper,
+    parse_uri,
+    parse_formatted_string,
+    build_uri,
+)
 from .templatemapper import (
     TemplateMapper,
     DataVersionToTemplateMapper,
@@ -29,6 +33,9 @@ from ..routes import *
 from ..lock.lock import FakeLock, FileLock
 from hashlib import md5
 import simplejson  # type: ignore
+from ..sqlitedb.utils import (
+    extract_substitutions,
+)  # TODO: Move this to a more approriate location before merging PR.
 
 logger = logging.getLogger(__name__)
 
@@ -477,6 +484,32 @@ class AerovalJsonFileDB(AerovalDB):
             cache=True,
         )
 
+    @async_and_sync
+    async def _get_uri_for_file(self, file_path: str) -> str:
+        """
+        For the provided data file path, returns the corresponding
+        URI.
+
+        :param file_path : The file_path.
+        """
+        file_path = os.path.relpath(file_path, start=self._basedir)
+
+        for route in self.PATH_LOOKUP:
+            template = await self._get_template(route, {})
+            route_arg_names = extract_substitutions(template)
+
+            try:
+                all_args = parse_formatted_string(f"./{template}", file_path)
+
+                route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
+                kwargs = {
+                    k: v for k, v in all_args.items() if not (k in route_arg_names)
+                }
+            except:
+                continue
+            else:
+                return build_uri(route, route_args, kwargs)
+
     def list_glob_stats(
         self, project: str, experiment: str
     ) -> Generator[str, None, None]:
@@ -579,6 +612,7 @@ class AerovalJsonFileDB(AerovalDB):
         cache: bool = False,
         default=None,
     ):
+        access_type = self._normalize_access_type(access_type)
         if access_type in [AccessType.URI]:
             return uri
 
@@ -592,58 +626,12 @@ class AerovalJsonFileDB(AerovalDB):
             access_type=access_type,
             **kwargs,
         )
-        # if not isinstance(uri, str):
-        #    uri = str(uri)
-        # if uri.startswith("."):
-        #    uri = get_uri(os.path.join(self._basedir, uri))
-
-    #
-    # if not uri.startswith(self._basedir):
-    #    raise PermissionError(
-    #        f"URI {uri} is out of bounds of the current aerovaldb connection."
-    #    )
-    #
-    # access_type = self._normalize_access_type(access_type)
-    #
-    # if not os.path.exists(uri):
-    #    if default is None or access_type == AccessType.FILE_PATH:
-    #        raise FileNotFoundError(f"Object with URI {uri} does not exist.")
-    #
-    #    return default
-    # if access_type == AccessType.FILE_PATH:
-    #    return uri
-    #
-    # if access_type == AccessType.JSON_STR:
-    #    raw = await self._cache.get_json(uri, no_cache=not cache)
-    #    return json_dumps_wrapper(raw)
-
-    # raw = await self._cache.get_json(uri, no_cache=not cache)
-    #
-    # return simplejson.loads(raw, allow_nan=True)
 
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
 
         await self._put(obj, route, route_args, **kwargs)
-        # if not isinstance(uri, str):
-        #    uri = str(uri)
-        # if uri.startswith("."):
-        #    uri = get_uri(os.path.join(self._basedir, uri))
-
-    #
-    # if not uri.startswith(self._basedir):
-    #    raise PermissionError(
-    #        f"URI {uri} is out of bounds of the current aerovaldb connection."
-    #    )
-    # if not os.path.exists(os.path.dirname(uri)):
-    #    os.makedirs(os.path.dirname(uri))
-    # if isinstance(obj, str):
-    #    json = obj
-    # else:
-    #    json = json_dumps_wrapper(obj)
-    # with open(uri, "w") as f:
-    #    f.write(json)
 
     def _get_lock_file(self) -> str:
         os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)

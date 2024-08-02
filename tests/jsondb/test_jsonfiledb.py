@@ -1,11 +1,7 @@
-import asyncio
-import math
-import os
-import random
-
 import pytest
 import simplejson  # type: ignore
 import aerovaldb
+from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
 
 
 @pytest.mark.asyncio
@@ -102,3 +98,12 @@ def test_getter_with_default_error():
             db.get_by_uri(
                 "/v0/report/project/experiment/invalid-json", default={"data": "data"}
             )
+
+
+def test_jsonfiledb__get_uri_for_file(tmp_path):
+    with aerovaldb.open(f"json_files:{str(tmp_path)}") as db:
+        db: AerovalJsonFileDB
+        assert (
+            db._get_uri_for_file(str(tmp_path / "project/experiments.json"))
+            == "/v0/experiments/project"
+        )
