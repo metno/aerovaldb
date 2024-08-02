@@ -24,6 +24,7 @@ from .templatemapper import (
     TemplateMapper,
     DataVersionToTemplateMapper,
     PriorityDataVersionToTemplateMapper,
+    ConstantTemplateMapper,
     SkipMapper,
 )
 from .filter import filter_heatmap, filter_regional_stats
@@ -62,74 +63,52 @@ class AerovalJsonFileDB(AerovalDB):
 
         self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
             ROUTE_GLOB_STATS: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
                 )
             ],
             ROUTE_REG_STATS: [
                 # Same as glob_stats
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
                 )
             ],
             ROUTE_HEATMAP: [
                 # Same as glob_stats
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
                 )
             ],
             ROUTE_CONTOUR: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson"
                 )
             ],
             ROUTE_TIMESERIES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json"
                 )
             ],
             ROUTE_TIMESERIES_WEEKLY: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json"
                 )
             ],
-            ROUTE_EXPERIMENTS: [
-                PriorityDataVersionToTemplateMapper(["./{project}/experiments.json"])
-            ],
+            ROUTE_EXPERIMENTS: [ConstantTemplateMapper("./{project}/experiments.json")],
             ROUTE_CONFIG: [
-                PriorityDataVersionToTemplateMapper(
-                    ["./{project}/{experiment}/cfg_{project}_{experiment}.json"]
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/cfg_{project}_{experiment}.json"
                 )
             ],
-            ROUTE_MENU: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/menu.json",
-                    version_provider=self._get_version,
-                )
-            ],
+            ROUTE_MENU: [ConstantTemplateMapper("./{project}/{experiment}/menu.json")],
             ROUTE_STATISTICS: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/statistics.json",
-                    version_provider=self._get_version,
-                )
+                ConstantTemplateMapper("./{project}/{experiment}/statistics.json")
             ],
             ROUTE_RANGES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ranges.json",
-                    version_provider=self._get_version,
-                )
+                ConstantTemplateMapper("./{project}/{experiment}/ranges.json")
             ],
             ROUTE_REGIONS: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/regions.json",
-                    version_provider=self._get_version,
-                )
+                ConstantTemplateMapper("./{project}/{experiment}/regions.json")
             ],
             ROUTE_MODELS_STYLE: [
                 PriorityDataVersionToTemplateMapper(
@@ -164,9 +143,8 @@ class AerovalJsonFileDB(AerovalDB):
                 ),
             ],
             ROUTE_PROFILES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json"
                 )
             ],
             ROUTE_HEATMAP_TIMESERIES: [
@@ -188,22 +166,17 @@ class AerovalJsonFileDB(AerovalDB):
                 ),
             ],
             ROUTE_FORECAST: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json"
                 )
             ],
             ROUTE_GRIDDED_MAP: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.json",
-                    version_provider=self._get_version,
+                ConstantTemplateMapper(
+                    "./{project}/{experiment}/contour/{obsvar}_{model}.json"
                 )
             ],
             ROUTE_REPORT: [
-                DataVersionToTemplateMapper(
-                    "./reports/{project}/{experiment}/{title}.json",
-                    version_provider=self._get_version,
-                )
+                ConstantTemplateMapper("./reports/{project}/{experiment}/{title}.json")
             ],
         }
 
@@ -237,7 +210,7 @@ class AerovalJsonFileDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        except simplejson.errors.JSONDecodeError:
+        except simplejson.JSONDecodeError:
             # Work around for https://github.com/metno/aerovaldb/issues/28
             return Version("0.14.0")
 
@@ -277,6 +250,16 @@ class AerovalJsonFileDB(AerovalDB):
             raise TemplateNotFound("No template found.")
 
         return file_path_template
+
+    def _get_templates(self, route: str) -> list[str]:
+        templates = list()
+
+        for f in self.PATH_LOOKUP[route]:
+            templates.extend(f.get_templates_without_constraints())
+            if isinstance(f, ConstantTemplateMapper):
+                break
+
+        return templates
 
     async def _get(
         self,
@@ -484,8 +467,7 @@ class AerovalJsonFileDB(AerovalDB):
             cache=True,
         )
 
-    @async_and_sync
-    async def _get_uri_for_file(self, file_path: str) -> str:
+    def _get_uri_for_file(self, file_path: str) -> str:
         """
         For the provided data file path, returns the corresponding
         URI.
@@ -495,20 +477,26 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = os.path.relpath(file_path, start=self._basedir)
 
         for route in self.PATH_LOOKUP:
-            template = await self._get_template(route, {})
-            route_arg_names = extract_substitutions(template)
+            templates = self._get_templates(route)
 
-            try:
-                all_args = parse_formatted_string(f"./{template}", file_path)
+            for t in templates:
+                route_arg_names = extract_substitutions(t)
 
-                route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
-                kwargs = {
-                    k: v for k, v in all_args.items() if not (k in route_arg_names)
-                }
-            except:
-                continue
-            else:
-                return build_uri(route, route_args, kwargs)
+                try:
+                    all_args = parse_formatted_string(t, f"./{file_path}")
+
+                    route_args = {
+                        k: v for k, v in all_args.items() if k in route_arg_names
+                    }
+                    kwargs = {
+                        k: v for k, v in all_args.items() if not (k in route_arg_names)
+                    }
+                except:
+                    continue
+                else:
+                    return build_uri(route, route_args, kwargs)
+
+        raise ValueError(f"Unable to build URI for file path {file_path}")
 
     def list_glob_stats(
         self, project: str, experiment: str
@@ -527,7 +515,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         glb = glb.format(project=project, experiment=experiment)
         for f in glob.glob(glb):
-            yield f
+            yield self._get_uri_for_file(f)
 
     def list_timeseries(
         self, project: str, experiment: str
@@ -552,7 +540,7 @@ class AerovalJsonFileDB(AerovalDB):
         glb = glb.format(project=project, experiment=experiment)
 
         for f in glob.glob(glb):
-            yield f
+            yield self._get_uri_for_file(f)
 
     def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
         template = str(
@@ -577,7 +565,7 @@ class AerovalJsonFileDB(AerovalDB):
         glb = glb.format(project=project, experiment=experiment)
 
         for f in glob.glob(glb):
-            yield f
+            yield self._get_uri_for_file(f)
 
     def _list_experiments(
         self, project: str, /, has_results: bool = False
