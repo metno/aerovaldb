@@ -13,7 +13,7 @@ def extract_substitutions(template: str):
 
     For example 'blah blah {test} blah {test2}' returns [test, test2]
     """
-    return re.findall(r"\{(.*?)\}", template)
+    return re.findall(r"\{([a-zA-Z-]*?)\}", template)
 
 
 def json_dumps_wrapper(obj, **kwargs) -> str:
@@ -37,13 +37,13 @@ def parse_formatted_string(template: str, s: str) -> dict:
 
     # First split on any keyword arguments, note that the names of keyword arguments will be in the
     # 1st, 3rd, ... positions in this list
-    tokens = re.split(r"\{(.*?)\}", template)
+    tokens = re.split(r"\{([a-zA-Z-]*?)\}", template)
     # keywords = tokens[1::2]
     keywords = extract_substitutions(template)
     # Now replace keyword arguments with named groups matching them. We also escape between keyword
     # arguments so we support meta-characters there. Re-join tokens to form our regexp pattern
 
-    tokens[1::2] = map("(?P<{}>.*)".format, keywords)
+    tokens[1::2] = map("(?P<{}>[a-zA-Z-]*)".format, keywords)
     tokens[0::2] = map(re.escape, tokens[0::2])
     pattern = "".join(tokens)
 
@@ -53,7 +53,9 @@ def parse_formatted_string(template: str, s: str) -> dict:
         raise Exception("Format string did not match")
 
     # Return a dict with all of our keywords and their values
-    return {x: matches.group(x) for x in keywords}
+    result = {x: matches.group(x) for x in keywords}
+
+    return result
 
 
 def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:

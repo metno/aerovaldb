@@ -76,6 +76,8 @@ class AerovalSqliteDB(AerovalDB):
             if not self._get_metadata_by_key("created_by") == "aerovaldb":
                 ValueError(f"Database {database} is not a valid aerovaldb database.")
 
+        self._con.row_factory = sqlite3.Row
+
     def _get_metadata_by_key(self, key: str) -> str:
         """
         Returns the value associated with a key from the metadata
@@ -178,8 +180,15 @@ class AerovalSqliteDB(AerovalDB):
             """,
             route_args | kwargs,
         )
-        fetched = cur.fetchone()[0]
-        fetched = fetched.replace('\\"', '"')
+        try:
+            fetched = cur.fetchone()[0]
+        except TypeError as e:
+            # Raising file not found error to be consistent with jsondb implementation.
+            # Probably should be a custom exception used by aerovaldb.
+            raise FileNotFoundError(
+                f"No object found for route, {route}, with args {route_args}, {kwargs}"
+            ) from e
+
         if access_type == AccessType.JSON_STR:
             return fetched
 
@@ -246,4 +255,30 @@ class AerovalSqliteDB(AerovalDB):
         await self._put(obj, route, route_args, **kwargs)
 
     def list_all(self):
-        raise NotImplementedError
+        cur = self._con.cursor()
+        for route, table in AerovalSqliteDB.TABLE_NAME_LOOKUP.items():
+            cur.execute(
+                f"""
+                SELECT * FROM {table}
+                """
+            )
+            result = cur.fetchall()
+
+            for r in result:
+                arg_names = extract_substitutions(route)
+
+                route_args = {}
+                kwargs = {}
+                for k in r.keys():
+                    if k == "json":
+                        continue
+                    if k in arg_names:
+                        route_args[k] = r[k]
+                    else:
+                        kwargs[k] = r[k]
+
+                # route_args = {k: v for k, v in r.items() if k != "json" and k in arg_names}
+                # kwargs = {k: v for k, v in r.items() if k != "json" and not (k in arg_names)}
+
+                route = build_uri(route, route_args, kwargs)
+                yield route

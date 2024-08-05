@@ -12,6 +12,7 @@ from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.types import AccessType
+import re
 
 from ..utils import (
     async_and_sync,
@@ -483,9 +484,6 @@ class AerovalJsonFileDB(AerovalDB):
             else:
                 str = "/".join(file_path.split("/")[0:2])
                 subs = parse_formatted_string("{project}/{experiment}", str)
-
-            # project = args["project"]
-            # experiment = args["experiment"]
 
             template = self._get_template(route, subs)
             route_arg_names = extract_substitutions(route)
