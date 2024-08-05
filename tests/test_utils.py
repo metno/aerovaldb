@@ -1,6 +1,20 @@
-from aerovaldb.utils import parse_formatted_string, parse_uri
+from aerovaldb.utils import parse_formatted_string, parse_uri, extract_substitutions
 import pytest
 from aerovaldb.routes import *
+
+
+@pytest.mark.parametrize(
+    "template,result",
+    (
+        ("{A}{B}{C}", {"A", "B", "C"}),
+        ("{A}hello world{B} test {C}", {"A", "B", "C"}),
+        ("", set()),
+    ),
+)
+def test_extract_substitutions(template: str, result: set[str]):
+    l = extract_substitutions(template)
+
+    assert set(l) == result
 
 
 @pytest.mark.parametrize(

@@ -5,9 +5,14 @@ import aerovaldb
 from aerovaldb.exceptions import UnsupportedOperation
 from ..aerovaldb import AerovalDB
 from ..routes import *
-from .utils import extract_substitutions
 from ..types import AccessType
-from ..utils import json_dumps_wrapper, parse_uri, async_and_sync, build_uri
+from ..utils import (
+    json_dumps_wrapper,
+    parse_uri,
+    async_and_sync,
+    build_uri,
+    extract_substitutions,
+)
 import os
 
 
@@ -31,7 +36,8 @@ class AerovalSqliteDB(AerovalDB):
             "model",
             "modvar",
             "time",
-        )
+        ),
+        ROUTE_MODELS_STYLE: ("project", "experiment"),
     }
 
     # This lookup table stores the name of the table in which json
@@ -128,7 +134,7 @@ class AerovalSqliteDB(AerovalDB):
 
             cur.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {table_name}({column_names},json,
+                CREATE TABLE IF NOT EXISTS {table_name}({column_names},json TEXT,
 
                 UNIQUE({column_names}))
                 """
@@ -170,14 +176,16 @@ class AerovalSqliteDB(AerovalDB):
             WHERE
                 ({columnlist}) = ({substitutionlist})
             """,
-            route_args,
+            route_args | kwargs,
         )
         fetched = cur.fetchone()[0]
+        fetched = fetched.replace('\\"', '"')
         if access_type == AccessType.JSON_STR:
             return fetched
 
         if access_type == AccessType.OBJ:
-            return simplejson.loads(fetched, allow_nan=True)
+            dt = simplejson.loads(fetched, allow_nan=True)
+            return dt
 
         assert False  # Should never happen.
 
@@ -189,7 +197,7 @@ class AerovalSqliteDB(AerovalDB):
         table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
 
         columnlist, substitutionlist = self._get_column_list_and_substitution_list(
-            route_args
+            route_args | kwargs
         )
 
         json = obj
@@ -204,6 +212,7 @@ class AerovalSqliteDB(AerovalDB):
             """,
             route_args | kwargs,
         )
+        self._con.commit()
 
     @async_and_sync
     async def get_by_uri(
@@ -232,4 +241,9 @@ class AerovalSqliteDB(AerovalDB):
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
 
+        # if isinstance(obj, str):
+        #    obj = "".join(obj.split(r"\n"))
         await self._put(obj, route, route_args, **kwargs)
+
+    def list_all(self):
+        raise NotImplementedError

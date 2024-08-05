@@ -1196,3 +1196,10 @@ class AerovalDB(abc.ABC):
             return default
 
         assert False
+
+    def list_all(self) -> Generator[str, None, None]:
+        """Iterator to list over the URI of each object
+        stored in the current aerovaldb connection, returning
+        the URI of each.
+        """
+        raise NotImplementedError

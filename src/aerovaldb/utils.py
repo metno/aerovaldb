@@ -1,10 +1,19 @@
-import re
+import regex as re
 import asyncio
 import functools
 from typing import Callable, ParamSpec, TypeVar
 import simplejson  # type: ignore
 from .routes import ALL_ROUTES
 import urllib
+
+
+def extract_substitutions(template: str):
+    """
+    For a python template string, extracts the names between curly brackets:
+
+    For example 'blah blah {test} blah {test2}' returns [test, test2]
+    """
+    return re.findall(r"\{(.*?)\}", template)
 
 
 def json_dumps_wrapper(obj, **kwargs) -> str:
@@ -29,10 +38,11 @@ def parse_formatted_string(template: str, s: str) -> dict:
     # First split on any keyword arguments, note that the names of keyword arguments will be in the
     # 1st, 3rd, ... positions in this list
     tokens = re.split(r"\{(.*?)\}", template)
-    keywords = tokens[1::2]
-
+    # keywords = tokens[1::2]
+    keywords = extract_substitutions(template)
     # Now replace keyword arguments with named groups matching them. We also escape between keyword
     # arguments so we support meta-characters there. Re-join tokens to form our regexp pattern
+
     tokens[1::2] = map("(?P<{}>.*)".format, keywords)
     tokens[0::2] = map(re.escape, tokens[0::2])
     pattern = "".join(tokens)

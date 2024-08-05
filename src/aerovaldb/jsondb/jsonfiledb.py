@@ -19,6 +19,7 @@ from ..utils import (
     parse_uri,
     parse_formatted_string,
     build_uri,
+    extract_substitutions,
 )
 from .templatemapper import (
     TemplateMapper,
@@ -34,9 +35,6 @@ from ..routes import *
 from ..lock.lock import FakeLock, FileLock
 from hashlib import md5
 import simplejson  # type: ignore
-from ..sqlitedb.utils import (
-    extract_substitutions,
-)  # TODO: Move this to a more approriate location before merging PR.
 
 logger = logging.getLogger(__name__)
 
@@ -302,7 +300,7 @@ class AerovalJsonFileDB(AerovalDB):
 
             if access_type == AccessType.JSON_STR:
                 raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-                return json_dumps_wrapper(raw)
+                return raw
 
             raw = await self._cache.get_json(file_path, no_cache=not use_caching)
 
@@ -474,27 +472,35 @@ class AerovalJsonFileDB(AerovalDB):
 
         :param file_path : The file_path.
         """
+        file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
         for route in self.PATH_LOOKUP:
-            templates = self._get_templates(route)
+            # templates = self._get_templates(route)
+            if file_path.startswith("reports/"):
+                str = "/".join(file_path.split("/")[1:3])
+                subs = parse_formatted_string("{project}/{experiment}", str)
+            else:
+                str = "/".join(file_path.split("/")[0:2])
+                subs = parse_formatted_string("{project}/{experiment}", str)
 
-            for t in templates:
-                route_arg_names = extract_substitutions(t)
+            # project = args["project"]
+            # experiment = args["experiment"]
 
-                try:
-                    all_args = parse_formatted_string(t, f"./{file_path}")
+            template = self._get_template(route, subs)
+            route_arg_names = extract_substitutions(route)
 
-                    route_args = {
-                        k: v for k, v in all_args.items() if k in route_arg_names
-                    }
-                    kwargs = {
-                        k: v for k, v in all_args.items() if not (k in route_arg_names)
-                    }
-                except:
-                    continue
-                else:
-                    return build_uri(route, route_args, kwargs)
+            try:
+                all_args = parse_formatted_string(template, f"./{file_path}")
+
+                route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
+                kwargs = {
+                    k: v for k, v in all_args.items() if not (k in route_arg_names)
+                }
+            except Exception:
+                continue
+            else:
+                return build_uri(route, route_args, kwargs)
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
@@ -634,3 +640,16 @@ class AerovalJsonFileDB(AerovalDB):
             return FileLock(self._get_lock_file())
 
         return FakeLock()
+
+    def list_all(self):
+        # glb = glob.iglob()
+        glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
+
+        for f in glb:
+            if os.path.isfile(f):
+                try:
+                    uri = self._get_uri_for_file(f)
+                except (ValueError, KeyError):
+                    continue
+                else:
+                    yield uri

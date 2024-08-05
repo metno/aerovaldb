@@ -271,7 +271,17 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
+@pytest.mark.parametrize(
+    "resource",
+    (
+        pytest.param(
+            "json_files:./tests/test-db/json",
+        ),
+        pytest.param(
+            "sqlitedb:./tests/test-db/sqlite/test.sqlite",
+        ),
+    ),
+)
 @GET_PARAMETRIZATION
 async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expected):
     """
@@ -288,7 +298,15 @@ async def test_getter(resource: str, fun: str, args: list, kwargs: dict, expecte
         assert data["path"] == expected
 
 
-@pytest.mark.parametrize("resource", (("json_files:./tests/test-db/json",)))
+@pytest.mark.parametrize(
+    "resource",
+    (
+        pytest.param(
+            "json_files:./tests/test-db/json",
+        ),
+        pytest.param("sqlitedb:./tests/test-db/sqlite/test.sqlite"),
+    ),
+)
 @GET_PARAMETRIZATION
 def test_getter_sync(resource: str, fun: str, args: list, kwargs: dict, expected):
     with aerovaldb.open(resource, use_async=False) as db:
