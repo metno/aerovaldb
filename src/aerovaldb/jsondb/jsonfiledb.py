@@ -477,15 +477,30 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = os.path.relpath(file_path, start=self._basedir)
 
         for route in self.PATH_LOOKUP:
-            # templates = self._get_templates(route)
-            if file_path.startswith("reports/"):
-                str = "/".join(file_path.split("/")[1:3])
-                subs = parse_formatted_string("{project}/{experiment}", str)
-            else:
-                str = "/".join(file_path.split("/")[0:2])
-                subs = parse_formatted_string("{project}/{experiment}", str)
+            if not (route == ROUTE_MODELS_STYLE):
+                if file_path.startswith("reports/"):
+                    str = "/".join(file_path.split("/")[1:3])
+                    subs = parse_formatted_string("{project}/{experiment}", str)
+                else:
+                    str = "/".join(file_path.split("/")[0:2])
+                    subs = parse_formatted_string("{project}/{experiment}", str)
 
-            template = self._get_template(route, subs)
+                template = self._get_template(route, subs)
+            else:
+                try:
+                    subs = parse_formatted_string(
+                        "{project}/{experiment}/models-style.json", file_path
+                    )
+                except Exception:
+                    try:
+                        subs = parse_formatted_string(
+                            "{project}/models-style.json", file_path
+                        )
+                    except:
+                        continue
+
+                template = self._get_template(route, subs)
+
             route_arg_names = extract_substitutions(route)
 
             try:

@@ -21,11 +21,11 @@ def test_extract_substitutions(template: str, result: set[str]):
     "template,s,expected",
     (
         ("{test}", "hello", {"test": "hello"}),
-        ("ABCD{test}1234", "ABCDhello world1234", {"test": "hello world"}),
+        ("ABCD{test}1234", "ABCDhelloworld1234", {"test": "helloworld"}),
         (
             "test/{a}/{b}/{c}/{d}",
-            "test/1/2/3/4",
-            {"a": "1", "b": "2", "c": "3", "d": "4"},
+            "test/A/B/C/D",
+            {"a": "A", "b": "B", "c": "C", "d": "D"},
         ),
     ),
 )

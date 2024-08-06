@@ -153,6 +153,8 @@ class AerovalSqliteDB(AerovalDB):
         return (columnlist, substitutionlist)
 
     async def _get(self, route, route_args, *args, **kwargs):
+        cache = kwargs.pop("cache", False)
+        default = kwargs.pop("default", None)
         assert len(args) == 0
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
@@ -168,20 +170,28 @@ class AerovalSqliteDB(AerovalDB):
 
         table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
 
-        columnlist, substitutionlist = self._get_column_list_and_substitution_list(
-            route_args
-        )
-
+        args = route_args | kwargs
+        columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
         cur.execute(
             f"""
-            SELECT json FROM {table_name}
+            SELECT * FROM {table_name}
             WHERE
                 ({columnlist}) = ({substitutionlist})
             """,
-            route_args | kwargs,
+            args,
         )
         try:
-            fetched = cur.fetchone()[0]
+            fetched = cur.fetchall()
+            for r in fetched:
+                for k in r.keys():
+                    if k == "json":
+                        continue
+                    if not (k in route_args | kwargs) and r[k] is not None:
+                        break
+                else:
+                    fetched = r
+                    break
+
         except TypeError as e:
             # Raising file not found error to be consistent with jsondb implementation.
             # Probably should be a custom exception used by aerovaldb.
@@ -190,10 +200,10 @@ class AerovalSqliteDB(AerovalDB):
             ) from e
 
         if access_type == AccessType.JSON_STR:
-            return fetched
+            return fetched["json"]
 
         if access_type == AccessType.OBJ:
-            dt = simplejson.loads(fetched, allow_nan=True)
+            dt = simplejson.loads(fetched["json"], allow_nan=True)
             return dt
 
         assert False  # Should never happen.
