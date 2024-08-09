@@ -5,6 +5,7 @@
 # - json_files: tests/jsondb/test_jsonfiledb.py
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
+import simplejson
 import aerovaldb
 import pytest
 import random
@@ -13,7 +14,7 @@ import random
 @pytest.fixture
 def tmpdb(tmp_path, dbtype: str) -> aerovaldb.AerovalDB:
     """Fixture encapsulating logic for each tested database connection to create
-    a temporary database and connect to it."""
+    a fresh, temporary database and connect to it."""
     if dbtype == "json_files":
         return aerovaldb.open(f"json_files:{str(tmp_path)}")
     elif dbtype == "sqlitedb":
@@ -21,6 +22,20 @@ def tmpdb(tmp_path, dbtype: str) -> aerovaldb.AerovalDB:
 
     assert False
 
+
+TESTDB_PARAMETRIZATION = pytest.mark.parametrize(
+    # This is a parametrization which returns the correct resource string to access
+    # the prebuilt test database for each database connector.
+    "testdb",
+    (
+        pytest.param(
+            "json_files:./tests/test-db/json",
+        ),
+        pytest.param(
+            "sqlitedb:./tests/test-db/sqlite/test.sqlite",
+        ),
+    ),
+)
 
 GET_PARAMETRIZATION = pytest.mark.parametrize(
     "fun,args,kwargs,expected",
@@ -395,3 +410,43 @@ def test_write_and_read_of_nan(tmpdb):
         # See Additional Notes on #59
         # https://github.com/metno/aerovaldb/pull/59
         assert read["value"] is None
+
+
+@pytest.mark.asyncio
+@TESTDB_PARAMETRIZATION
+async def test_file_does_not_exist(testdb):
+    with aerovaldb.open(testdb) as db:
+        with pytest.raises(FileNotFoundError):
+            await db.get_config(
+                "non-existent-project",
+                "experiment",
+            )
+
+
+@TESTDB_PARAMETRIZATION
+def test_exception_on_unexpected_args(testdb):
+    """
+    https://github.com/metno/aerovaldb/issues/19
+    """
+    with aerovaldb.open(testdb) as db:
+        with pytest.raises(aerovaldb.UnusedArguments):
+            db.get_config("project", "experiment", "excessive-positional-argument")
+
+
+@TESTDB_PARAMETRIZATION
+def test_getter_with_default(testdb):
+    with aerovaldb.open(testdb) as db:
+        data = db.get_by_uri(
+            "/v0/experiments/non-existent-project", default={"data": "test"}
+        )
+
+        assert data["data"] == "test"
+
+
+@TESTDB_PARAMETRIZATION
+def test_getter_with_default_error(testdb):
+    with aerovaldb.open(testdb) as db:
+        with pytest.raises(simplejson.JSONDecodeError):
+            db.get_by_uri(
+                "/v0/report/project/experiment/invalid-json", default={"data": "data"}
+            )

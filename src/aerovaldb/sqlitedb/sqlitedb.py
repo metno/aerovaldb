@@ -2,7 +2,7 @@ import sqlite3
 
 import simplejson  # type: ignore
 import aerovaldb
-from aerovaldb.exceptions import UnsupportedOperation
+from ..exceptions import UnsupportedOperation, UnusedArguments
 from ..aerovaldb import AerovalDB
 from ..routes import *
 from ..types import AccessType
@@ -14,6 +14,8 @@ from ..utils import (
     extract_substitutions,
 )
 import os
+from ..lock import FakeLock, FileLock
+from hashlib import md5
 
 
 class AerovalSqliteDB(AerovalDB):
@@ -66,6 +68,12 @@ class AerovalSqliteDB(AerovalDB):
     }
 
     def __init__(self, database: str, /, **kwargs):
+        use_locking = os.environ.get("AVDB_USE_LOCKING", "")
+        if use_locking == "0" or use_locking == "":
+            self._use_real_lock = False
+        else:
+            self._use_real_lock = True
+
         self._dbfile = database
 
         if not os.path.exists(database):
@@ -155,7 +163,8 @@ class AerovalSqliteDB(AerovalDB):
     async def _get(self, route, route_args, *args, **kwargs):
         cache = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
-        assert len(args) == 0
+        if len(args) > 0:
+            raise UnusedArguments("Unexpected arguments.")
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         if access_type in [AccessType.FILE_PATH]:
@@ -182,6 +191,13 @@ class AerovalSqliteDB(AerovalDB):
         )
         try:
             fetched = cur.fetchall()
+            if not fetched:
+                if default is not None:
+                    return default
+                # For now, raising a FileNotFoundError, since jsondb does and we want
+                # them to be interchangeable. Probably should be a aerovaldb custom
+                # exception.
+                raise FileNotFoundError("Object not found")
             for r in fetched:
                 for k in r.keys():
                     if k == "json":
@@ -292,3 +308,17 @@ class AerovalSqliteDB(AerovalDB):
 
                 route = build_uri(route, route_args, kwargs)
                 yield route
+
+    def _get_lock_file(self) -> str:
+        os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
+        lock_file = os.path.join(
+            os.environ.get("AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/.lock/")),
+            md5(self._dbfile.encode()).hexdigest(),
+        )
+        return lock_file
+
+    def lock(self):
+        if self._use_real_lock:
+            return FileLock(self._get_lock_file())
+
+        return FakeLock()

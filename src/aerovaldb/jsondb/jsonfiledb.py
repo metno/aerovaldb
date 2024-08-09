@@ -12,7 +12,6 @@ from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.types import AccessType
-import re
 
 from ..utils import (
     async_and_sync,
@@ -33,7 +32,7 @@ from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
 from ..routes import *
-from ..lock.lock import FakeLock, FileLock
+from ..lock import FakeLock, FileLock
 from hashlib import md5
 import simplejson  # type: ignore
 
@@ -518,8 +517,16 @@ class AerovalJsonFileDB(AerovalDB):
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
     def list_glob_stats(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
+        access_type = self._normalize_access_type(access_type)
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
+
         template = str(
             os.path.realpath(
                 os.path.join(
@@ -534,11 +541,23 @@ class AerovalJsonFileDB(AerovalDB):
 
         glb = glb.format(project=project, experiment=experiment)
         for f in glob.glob(glb):
+            if access_type == AccessType.FILE_PATH:
+                yield f
+                continue
+
             yield self._get_uri_for_file(f)
 
     def list_timeseries(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
+        access_type = self._normalize_access_type(access_type)
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
+
         template = str(
             os.path.realpath(
                 os.path.join(
@@ -559,9 +578,23 @@ class AerovalJsonFileDB(AerovalDB):
         glb = glb.format(project=project, experiment=experiment)
 
         for f in glob.glob(glb):
+            if access_type == AccessType.FILE_PATH:
+                yield f
+                continue
+
             yield self._get_uri_for_file(f)
 
-    def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
+    def list_map(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ) -> Generator[str, None, None]:
+        access_type = self._normalize_access_type(access_type)
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
+
         template = str(
             os.path.realpath(
                 os.path.join(
@@ -584,6 +617,10 @@ class AerovalJsonFileDB(AerovalDB):
         glb = glb.format(project=project, experiment=experiment)
 
         for f in glob.glob(glb):
+            if access_type == AccessType.FILE_PATH:
+                yield f
+                continue
+
             yield self._get_uri_for_file(f)
 
     def _list_experiments(
@@ -654,12 +691,20 @@ class AerovalJsonFileDB(AerovalDB):
 
         return FakeLock()
 
-    def list_all(self):
-        # glb = glob.iglob()
+    def list_all(self, access_type: str | AccessType = AccessType.URI):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            UnsupportedOperation(f"Accesstype {access_type} not supported.")
+
         glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
 
         for f in glb:
             if os.path.isfile(f):
+                if access_type == AccessType.FILE_PATH:
+                    yield f
+                    continue
+
                 try:
                     uri = self._get_uri_for_file(f)
                 except (ValueError, KeyError):

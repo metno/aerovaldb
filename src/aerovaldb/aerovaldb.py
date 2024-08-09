@@ -5,6 +5,7 @@ from typing import Generator
 from .types import AccessType
 from .utils import async_and_sync
 from .routes import *
+from .lock import FakeLock, FileLock
 
 
 def get_method(route):
@@ -211,7 +212,11 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     def list_glob_stats(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
         """Generator that lists the URI for each glob_stats object.
 
@@ -339,7 +344,11 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     def list_timeseries(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
@@ -761,7 +770,13 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
+    def list_map(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ) -> Generator[str, None, None]:
         """Lists all map files for a given project / experiment combination.
 
         :param project: The project ID.
@@ -1197,9 +1212,16 @@ class AerovalDB(abc.ABC):
 
         assert False
 
-    def list_all(self) -> Generator[str, None, None]:
+    def list_all(
+        self, access_type: str | AccessType = AccessType.URI
+    ) -> Generator[str, None, None]:
         """Iterator to list over the URI of each object
         stored in the current aerovaldb connection, returning
         the URI of each.
+
+        :param access_type : What to return (This is implementation specific, but in general
+        each implementation should support URI).
+        :raises : UnsupportedOperation
+            For non-supported acces types.
         """
         raise NotImplementedError
