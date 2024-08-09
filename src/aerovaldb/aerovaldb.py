@@ -5,6 +5,7 @@ from typing import Generator
 from .types import AccessType
 from .utils import async_and_sync
 from .routes import *
+from .lock import FakeLock, FileLock
 
 
 def get_method(route):
@@ -211,7 +212,11 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     def list_glob_stats(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
         """Generator that lists the URI for each glob_stats object.
 
@@ -339,7 +344,11 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     def list_timeseries(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
@@ -761,7 +770,13 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
+    def list_map(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ) -> Generator[str, None, None]:
         """Lists all map files for a given project / experiment combination.
 
         :param project: The project ID.
@@ -1140,9 +1155,9 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        URI is implementation specific. While AerovalJsonFileDB returns
-        a file path, this behaviour should not be relied upon as other
-        implementations may not.
+        URI is intended to be consistent between implementations. Using get_by_uri()
+        to fetch an identifier which can then be written to another connector using
+        its respective put_by_uri() method.
         """
         raise NotImplementedError
 
@@ -1156,9 +1171,9 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        URI is implementation specific. While AerovalJsonFileDB returns
-        a file path as the uri, this behaviour should not be relied upon
-        as other implementations will not.
+        URI is intended to be consistent between implementations. Using get_by_uri()
+        to fetch an identifier which can then be written to another connector using
+        its respective put_by_uri() method.
         """
         raise NotImplementedError
 
@@ -1168,5 +1183,45 @@ class AerovalDB(abc.ABC):
         manager.
 
         See also: https://aerovaldb.readthedocs.io/en/latest/locking.html
+        """
+        raise NotImplementedError
+
+    def _normalize_access_type(
+        self, access_type: AccessType | str | None, default: AccessType = AccessType.OBJ
+    ) -> AccessType:
+        """Normalizes the access_type to an instance of AccessType enum.
+
+        :param access_type: AccessType instance or string convertible to AccessType
+        :param default: The type to return if access_type is None. Defaults to AccessType.OBJ
+        :raises ValueError: If str access_type can't be converted to AccessType.
+        :raises ValueError: If access_type is not str or AccessType
+        :return: The normalized AccessType.
+        """
+        if isinstance(access_type, AccessType):
+            return access_type
+
+        if isinstance(access_type, str):
+            try:
+                return AccessType[access_type]
+            except:
+                raise ValueError(
+                    f"String '{access_type}' can not be converted to AccessType."
+                )
+        if access_type is None:
+            return default
+
+        assert False
+
+    def list_all(
+        self, access_type: str | AccessType = AccessType.URI
+    ) -> Generator[str, None, None]:
+        """Iterator to list over the URI of each object
+        stored in the current aerovaldb connection, returning
+        the URI of each.
+
+        :param access_type : What to return (This is implementation specific, but in general
+        each implementation should support URI).
+        :raises : UnsupportedOperation
+            For non-supported acces types.
         """
         raise NotImplementedError

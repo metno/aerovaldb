@@ -129,7 +129,7 @@ class JSONLRUCache:
                 return await f.read()
 
         with open(abspath, "r") as f:
-            return f.read()
+            return f.read().replace("\n", "")
 
     def _get(self, abspath: str) -> str:
         """Returns an element from the cache."""
@@ -140,7 +140,7 @@ class JSONLRUCache:
 
     def _put(self, abspath: str, *, json: str, modified: float):
         self._cache[abspath] = {
-            "json": json,
+            "json": "".join(json.split(r"\n")),
             "last_modified": os.path.getmtime(abspath),
         }
         while self.size > self._max_size:

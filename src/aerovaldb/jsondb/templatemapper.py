@@ -31,6 +31,9 @@ class TemplateMapper(abc.ABC):
     async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
         raise NotImplementedError
 
+    def get_templates_without_constraints(self) -> list[str]:
+        raise NotImplementedError
+
 
 class DataVersionToTemplateMapper(TemplateMapper):
     """
@@ -68,6 +71,9 @@ class DataVersionToTemplateMapper(TemplateMapper):
         self.template = template
 
         self.version_provider = version_provider
+
+    def get_templates_without_constraints(self):
+        return [self.template]
 
     @async_and_sync
     async def __call__(self, *args, **kwargs) -> str:
@@ -112,3 +118,18 @@ class PriorityDataVersionToTemplateMapper(TemplateMapper):
             raise SkipMapper
 
         return selected_template
+
+    def get_templates_without_constraints(self):
+        return self.templates
+
+
+class ConstantTemplateMapper(TemplateMapper):
+    def __init__(self, template: str):
+        self.template = template
+
+    @async_and_sync
+    async def __call__(self, *args, **kwargs) -> str:
+        return self.template
+
+    def get_templates_without_constraints(self):
+        return [self.template]
