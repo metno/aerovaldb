@@ -3,7 +3,7 @@ import logging
 import fcntl
 import asyncio
 import pathlib
-from ..utils import _has_async_loop
+from ..utils import has_async_loop
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ class FileLock(AerovaldbLock):
     def acquire(self):
         logger.debug("Acquiring lock with lockfile %s", self._lock_file)
 
-        if _has_async_loop():
+        if has_async_loop():
             task = asyncio.ensure_future(self._aiolock.acquire())
             asyncio.wait(task)
 
