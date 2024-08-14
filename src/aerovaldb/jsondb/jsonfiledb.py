@@ -51,8 +51,10 @@ class AerovalJsonFileDB(AerovalDB):
         """
         use_locking = os.environ.get("AVDB_USE_LOCKING", "")
         if use_locking == "0" or use_locking == "":
+            logger.info("Locking disabled.")
             self._use_real_lock = False
         else:
+            logger.info("Locking enabled.")
             self._use_real_lock = True
 
         self._asyncio = use_async
