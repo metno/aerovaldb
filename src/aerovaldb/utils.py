@@ -48,14 +48,11 @@ def parse_formatted_string(template: str, s: str) -> dict:
     pattern = "".join(tokens)
 
     # Use our pattern to match the given string, raise if it doesn't match
-    matches = re.match(pattern, s)
-    if not matches:
+    if not (match := re.match(pattern, s)):
         raise Exception("Format string did not match")
 
     # Return a dict with all of our keywords and their values
-    result = {x: matches.group(x) for x in keywords}
-
-    return result
+    return {x: match.group(x) for x in keywords}
 
 
 def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:

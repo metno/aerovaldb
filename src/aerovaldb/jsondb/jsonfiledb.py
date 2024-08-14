@@ -208,9 +208,9 @@ class AerovalJsonFileDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        except simplejson.JSONDecodeError:
-            # Work around for https://github.com/metno/aerovaldb/issues/28
-            return Version("0.14.0")
+        # except simplejson.JSONDecodeError:
+        #    # Work around for https://github.com/metno/aerovaldb/issues/28
+        #    return Version("0.14.0")
 
         try:
             version_str = config["exp_info"]["pyaerocom_version"]
@@ -503,7 +503,7 @@ class AerovalJsonFileDB(AerovalDB):
             route_arg_names = extract_substitutions(route)
 
             try:
-                all_args = parse_formatted_string(template, f"./{file_path}")
+                all_args = parse_formatted_string(template, f"./{file_path}")  # type: ignore
 
                 route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
                 kwargs = {

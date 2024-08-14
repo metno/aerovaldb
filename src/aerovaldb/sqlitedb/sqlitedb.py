@@ -25,9 +25,8 @@ class AerovalSqliteDB(AerovalDB):
 
     # When creating a table it works to extract the substitution template
     # names from the route, as this constitutes all arguments. For the ones
-    # which have extra arguments (currently only time) the following table
-    # defines the override. Currently this only applies to map which has
-    # an extra time argument.
+    # which have extra arguments the following table defines the override.
+    # Currently this only applies to map which has an extra time argument.
     ROUTE_COLUMN_NAME_OVERRIDE = {
         ROUTE_MAP: (
             "project",
@@ -144,9 +143,32 @@ class AerovalSqliteDB(AerovalDB):
 
             cur.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {table_name}({column_names},json TEXT,
+                CREATE TABLE IF NOT EXISTS {table_name}(
+                    {column_names},
+                    ctime TEXT,
+                    mtime TEXT,
+                    json TEXT,
 
                 UNIQUE({column_names}))
+                """
+            )
+
+            cur.execute(
+                f"""
+                CREATE TRIGGER IF NOT EXISTS insert_Timestamp_Trigger_{table_name}
+                AFTER INSERT ON {table_name}
+                BEGIN
+                   UPDATE {table_name} SET ctime =STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW') WHERE ROWID = NEW.ROWID;
+                END;
+                """
+            )
+            cur.execute(
+                f"""
+                CREATE TRIGGER IF NOT EXISTS update_Timestamp_Trigger_{table_name}
+                AFTER UPDATE On {table_name}
+                BEGIN
+                   UPDATE {table_name} SET mtime = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW') WHERE ROWID = NEW.ROWID;
+                END;
                 """
             )
 
@@ -200,7 +222,7 @@ class AerovalSqliteDB(AerovalDB):
                 raise FileNotFoundError("Object not found")
             for r in fetched:
                 for k in r.keys():
-                    if k == "json":
+                    if k in ("json", "ctime", "mtime"):
                         continue
                     if not (k in route_args | kwargs) and r[k] is not None:
                         break
@@ -247,6 +269,10 @@ class AerovalSqliteDB(AerovalDB):
             """,
             route_args | kwargs,
         )
+
+        self._set_metadata_by_key(
+            "last_modified_by", f"aerovaldb_{aerovaldb.__version__}"
+        )
         self._con.commit()
 
     @async_and_sync
@@ -276,8 +302,6 @@ class AerovalSqliteDB(AerovalDB):
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
 
-        # if isinstance(obj, str):
-        #    obj = "".join(obj.split(r"\n"))
         await self._put(obj, route, route_args, **kwargs)
 
     def list_all(self):
@@ -302,9 +326,6 @@ class AerovalSqliteDB(AerovalDB):
                         route_args[k] = r[k]
                     else:
                         kwargs[k] = r[k]
-
-                # route_args = {k: v for k, v in r.items() if k != "json" and k in arg_names}
-                # kwargs = {k: v for k, v in r.items() if k != "json" and not (k in arg_names)}
 
                 route = build_uri(route, route_args, kwargs)
                 yield route
