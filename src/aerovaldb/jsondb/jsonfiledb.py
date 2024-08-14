@@ -52,10 +52,9 @@ class AerovalJsonFileDB(AerovalDB):
         self._use_real_lock = str_to_bool(
             os.environ.get("AVDB_USE_LOCKING", ""), default=False
         )
-        if self._use_real_lock:
-            logger.info("Locking enabled.")
-        else:
-            logger.info("Locking disabled.")
+        logger.info(
+            f"Initializing aerovaldb for '{basedir}' with locking {self._use_real_lock}"
+        )
 
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
