@@ -14,7 +14,7 @@ from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.serialization.default_serialization import default_serialization
 from aerovaldb.types import AccessType
 
-from ..utils import async_and_sync
+from ..utils import async_and_sync, str_to_bool
 from .uri import get_uri
 from .templatemapper import (
     TemplateMapper,
@@ -49,13 +49,13 @@ class AerovalJsonFileDB(AerovalDB):
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
         """
-        use_locking = os.environ.get("AVDB_USE_LOCKING", "")
-        if use_locking == "0" or use_locking == "":
-            logger.info("Locking disabled.")
-            self._use_real_lock = False
-        else:
+        self._use_real_lock = str_to_bool(
+            os.environ.get("AVDB_USE_LOCKING", ""), default=False
+        )
+        if self._use_real_lock:
             logger.info("Locking enabled.")
-            self._use_real_lock = True
+        else:
+            logger.info("Locking disabled.")
 
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
