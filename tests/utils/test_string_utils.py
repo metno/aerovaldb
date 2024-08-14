@@ -1,5 +1,5 @@
 import pytest
-from aerovaldb.utils import str_to_bool
+from aerovaldb.utils import str_to_bool, validate_filename_component
 
 
 @pytest.mark.parametrize(
@@ -34,3 +34,37 @@ def test_str_to_bool_exception_2():
 def test_str_to_bool_default():
     assert str_to_bool("blah", default=True)
     assert not str_to_bool("blah", default=False)
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        pytest.param(
+            "test1234_",
+        ),
+        pytest.param(
+            "test-1234",
+        ),
+    ),
+)
+def test_validate_filename_component_valid(value: str):
+    validate_filename_component(value)
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        pytest.param(
+            "%",
+        ),
+        pytest.param(
+            "/",
+        ),
+        pytest.param(
+            None,
+        ),
+    ),
+)
+def test_validate_filename_component_invalid(value):
+    with pytest.raises(ValueError):
+        validate_filename_component(value)
