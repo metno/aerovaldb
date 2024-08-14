@@ -325,7 +325,7 @@ class AerovalJsonFileDB(AerovalDB):
             )
         logger.debug(f"Fetching data for {route}.")
         substitutions = route_args | kwargs
-        map(validate_filename_component, substitutions)
+        map(validate_filename_component, substitutions.values())
 
         path_template = await self._get_template(route, substitutions)
         logger.debug(f"Using template string {path_template}")
@@ -377,7 +377,7 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         substitutions = route_args | kwargs
-        map(validate_filename_component, substitutions)
+        map(validate_filename_component, substitutions.values())
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
 
