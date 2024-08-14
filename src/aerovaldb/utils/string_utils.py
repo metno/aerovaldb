@@ -1,6 +1,9 @@
 import re
 
 
+PATH_COMPONENT_PATTERN = re.compile(r"[\w.-]+")
+
+
 def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> bool:
     """
     Parses a string as a boolean, supporting various values. It is intended
@@ -48,5 +51,5 @@ def validate_filename_component(value: str) -> None:
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")
 
-    if not re.match("[\w.-]+", value):
+    if not re.match(PATH_COMPONENT_PATTERN, value):
         raise ValueError(f"'{value}' is not a valid file name component.")
