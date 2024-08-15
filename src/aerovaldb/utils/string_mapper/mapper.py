@@ -1,12 +1,11 @@
-import abc
-from aerovaldb.utils import async_and_sync
-from packaging.version import Version
-from typing import Callable, Awaitable
 import logging
+from typing import Awaitable, Callable, Mapping
+from abc import ABC
+from packaging.version import Version
+
+logger = logging.getLogger()
 
 VersionProvider = Callable[[str, str], Awaitable[Version]]
-
-logger = logging.getLogger(__name__)
 
 
 class SkipMapper(Exception):
@@ -18,7 +17,73 @@ class SkipMapper(Exception):
     pass
 
 
-class TemplateMapper(abc.ABC):
+class StringMapper:
+    """
+    Class for mapping one type of string to the appropriate other
+    type of string. It is used by jsonfiledb to map from route to
+    the appropriate template string, and in sqlitedb to map from
+    route to the correct table name.
+
+    It supports delivering different value strings based on
+    additional constraints (such as version).
+    """
+
+    def __init__(self, lookup_table: Mapping, /, version_provider: VersionProvider):
+        """
+        :param lookup_table : A configuration lookuptable.
+        """
+        self._lookuptable = lookup_table
+        for k in self._lookuptable:
+            # A single string will always be returned for that key.
+            if isinstance(self._lookuptable[k], str):
+                self._lookuptable[k] = ConstantMapper(self._lookuptable[k])
+
+            # Make sure value is a list.
+            if not isinstance(self._lookuptable[k], list):
+                self._lookuptable[k] = [self._lookuptable[k]]
+
+            # If stringlist of len > 1, treat it as a priority order.
+            if len(self._lookuptable[k]) > 1 and all(
+                [isinstance(x, str) for x in self._lookuptable[k]]
+            ):
+                self._lookuptable[k] = [PriorityMapper(self._lookuptable[k])]
+
+        self._version_provider = version_provider
+
+    async def lookup(self, key: str, **kwargs) -> str:
+        """
+        Performs a lookup of the value for the given key.
+
+        :param key : The key for which to lookup a value.
+        :param kwargs : Additional values which will be used for constraint
+        matching.
+        :raises KeyError
+            If no entry exists for the key in the lookup table.
+        :return
+            The looked up string value.
+        """
+        try:
+            values = self._lookuptable[key]
+        except KeyError as e:
+            raise KeyError(f"Key '{key}' does not exist in lookup table.") from e
+
+        kwargs = kwargs | {"version_provider": self._version_provider}
+        return_value = None
+        for v in values:
+            try:
+                return_value = await v(**kwargs)
+            except SkipMapper:
+                continue
+
+            break
+
+        if not return_value:
+            raise ValueError(f"No valid value found for key '{key}'")
+
+        return return_value
+
+
+class Mapper(ABC):
     """
     This class is a base class for objects that implement a
     file path template selection algorithm. Inheriting
@@ -27,15 +92,11 @@ class TemplateMapper(abc.ABC):
     won't handle the request.
     """
 
-    @async_and_sync
-    async def __call__(self, *args, version_provider: VersionProvider, **kwargs) -> str:
-        raise NotImplementedError
-
-    def get_templates_without_constraints(self) -> list[str]:
+    async def __call__(self, *args, **kwargs) -> str:
         raise NotImplementedError
 
 
-class DataVersionToTemplateMapper(TemplateMapper):
+class VersionConstraintMapper(Mapper):
     """
     This class returns its provided template if the data version read
     from a config file matches the configured bounds of this class.
@@ -50,7 +111,6 @@ class DataVersionToTemplateMapper(TemplateMapper):
         *,
         min_version: str | None = None,
         max_version: str | None = None,
-        version_provider: VersionProvider,
     ):
         """
         :param template : The template string to return.
@@ -70,15 +130,13 @@ class DataVersionToTemplateMapper(TemplateMapper):
 
         self.template = template
 
-        self.version_provider = version_provider
-
-    def get_templates_without_constraints(self):
-        return [self.template]
-
-    @async_and_sync
     async def __call__(self, *args, **kwargs) -> str:
+        version_provider = kwargs.pop("version_provider")
+        version = await version_provider(kwargs["project"], kwargs["experiment"])
+        if not version:
+            raise ValueError("No version provided")
         logger.debug(f"Trying template string {self.template}")
-        version = await self.version_provider(kwargs["project"], kwargs["experiment"])
+
         if self.min_version is not None and version < self.min_version:
             logging.debug(
                 f"Skipping due to version mismatch. {version} < {self.min_version}"
@@ -93,7 +151,7 @@ class DataVersionToTemplateMapper(TemplateMapper):
         return self.template
 
 
-class PriorityDataVersionToTemplateMapper(TemplateMapper):
+class PriorityMapper(Mapper):
     """
     This class takes a list of templates, trying them in turn
     and returning the first template that fits the provided
@@ -103,7 +161,6 @@ class PriorityDataVersionToTemplateMapper(TemplateMapper):
     def __init__(self, templates: list[str]):
         self.templates = templates
 
-    @async_and_sync
     async def __call__(self, *args, **kwargs) -> str:
         selected_template = None
         for t in self.templates:
@@ -119,17 +176,10 @@ class PriorityDataVersionToTemplateMapper(TemplateMapper):
 
         return selected_template
 
-    def get_templates_without_constraints(self):
-        return self.templates
 
-
-class ConstantTemplateMapper(TemplateMapper):
+class ConstantMapper(Mapper):
     def __init__(self, template: str):
         self.template = template
 
-    @async_and_sync
     async def __call__(self, *args, **kwargs) -> str:
         return self.template
-
-    def get_templates_without_constraints(self):
-        return [self.template]

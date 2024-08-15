@@ -10,8 +10,9 @@ from packaging.version import Version
 from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 
 from aerovaldb.aerovaldb import AerovalDB
-from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
+from aerovaldb.exceptions import UnusedArguments
 from aerovaldb.types import AccessType
+from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 
 from ..utils import (
     async_and_sync,
@@ -22,13 +23,6 @@ from ..utils import (
     parse_formatted_string,
     build_uri,
     extract_substitutions,
-)
-from .templatemapper import (
-    TemplateMapper,
-    DataVersionToTemplateMapper,
-    PriorityDataVersionToTemplateMapper,
-    ConstantTemplateMapper,
-    SkipMapper,
 )
 from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
@@ -62,124 +56,66 @@ class AerovalJsonFileDB(AerovalDB):
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
 
-        self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
-            ROUTE_GLOB_STATS: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
-                )
-            ],
-            ROUTE_REG_STATS: [
-                # Same as glob_stats
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
-                )
-            ],
-            ROUTE_HEATMAP: [
-                # Same as glob_stats
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json"
-                )
-            ],
-            ROUTE_CONTOUR: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson"
-                )
-            ],
-            ROUTE_TIMESERIES: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json"
-                )
-            ],
-            ROUTE_TIMESERIES_WEEKLY: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json"
-                )
-            ],
-            ROUTE_EXPERIMENTS: [ConstantTemplateMapper("./{project}/experiments.json")],
-            ROUTE_CONFIG: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/cfg_{project}_{experiment}.json"
-                )
-            ],
-            ROUTE_MENU: [ConstantTemplateMapper("./{project}/{experiment}/menu.json")],
-            ROUTE_STATISTICS: [
-                ConstantTemplateMapper("./{project}/{experiment}/statistics.json")
-            ],
-            ROUTE_RANGES: [
-                ConstantTemplateMapper("./{project}/{experiment}/ranges.json")
-            ],
-            ROUTE_REGIONS: [
-                ConstantTemplateMapper("./{project}/{experiment}/regions.json")
-            ],
-            ROUTE_MODELS_STYLE: [
-                PriorityDataVersionToTemplateMapper(
-                    [
-                        "./{project}/{experiment}/models-style.json",
-                        "./{project}/models-style.json",
-                    ]
-                )
-            ],
-            ROUTE_MAP: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
-                    min_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-                    max_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-            ],
-            ROUTE_SCATTER: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
-                    min_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-                    max_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-            ],
-            ROUTE_PROFILES: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json"
-                )
-            ],
-            ROUTE_HEATMAP_TIMESERIES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
-                    min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
-                    min_version="0.12.2",
-                    max_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/stats_ts.json",
-                    max_version="0.12.2",
-                    version_provider=self._get_version,
-                ),
-            ],
-            ROUTE_FORECAST: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json"
-                )
-            ],
-            ROUTE_GRIDDED_MAP: [
-                ConstantTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.json"
-                )
-            ],
-            ROUTE_REPORT: [
-                ConstantTemplateMapper("./reports/{project}/{experiment}/{title}.json")
-            ],
-        }
+        self.PATH_LOOKUP = StringMapper(
+            {
+                ROUTE_GLOB_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_EXPERIMENTS: "./{project}/experiments.json",
+                ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
+                ROUTE_MENU: "./{project}/{experiment}/menu.json",
+                ROUTE_STATISTICS: "./{project}/{experiment}/statistics.json",
+                ROUTE_RANGES: "./{project}/{experiment}/ranges.json",
+                ROUTE_REGIONS: "./{project}/{experiment}/regions.json",
+                ROUTE_MODELS_STYLE: [
+                    "./{project}/{experiment}/models-style.json",
+                    "./{project}/models-style.json",
+                ],
+                ROUTE_MAP: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                        min_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+                        max_version="0.13.2",
+                    ),
+                ],
+                ROUTE_SCATTER: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                        min_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+                        max_version="0.13.2",
+                    ),
+                ],
+                ROUTE_PROFILES: "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
+                ROUTE_HEATMAP_TIMESERIES: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
+                        min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
+                        min_version="0.12.2",
+                        max_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/stats_ts.json",
+                        max_version="0.12.2",
+                    ),
+                ],
+                ROUTE_FORECAST: "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
+                ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
+            },
+            version_provider=self._get_version,
+        )
 
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
@@ -238,29 +174,7 @@ class AerovalJsonFileDB(AerovalDB):
         :raises TemplateNotFound :
             If no valid template was found.
         """
-        file_path_template = None
-        for f in self.PATH_LOOKUP[route]:
-            try:
-                file_path_template = await f(**substitutions)
-            except SkipMapper:
-                continue
-
-            break
-
-        if file_path_template is None:
-            raise TemplateNotFound("No template found.")
-
-        return file_path_template
-
-    def _get_templates(self, route: str) -> list[str]:
-        templates = list()
-
-        for f in self.PATH_LOOKUP[route]:
-            templates.extend(f.get_templates_without_constraints())
-            if isinstance(f, ConstantTemplateMapper):
-                break
-
-        return templates
+        return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
     async def _get(
         self,
@@ -483,7 +397,7 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
-        for route in self.PATH_LOOKUP:
+        for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
                 if file_path.startswith("reports/"):
                     str = "/".join(file_path.split("/")[1:3])
