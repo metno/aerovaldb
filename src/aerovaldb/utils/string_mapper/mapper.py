@@ -50,6 +50,9 @@ class StringMapper:
 
         self._version_provider = version_provider
 
+    def __iter__(self):
+        return iter(self._lookuptable.keys())
+
     async def lookup(self, key: str, **kwargs) -> str:
         """
         Performs a lookup of the value for the given key.

@@ -1,5 +1,7 @@
 import sqlite3
 
+from async_lru import alru_cache
+from pkg_resources import DistributionNotFound, get_distribution
 import simplejson  # type: ignore
 import aerovaldb
 from ..exceptions import UnsupportedOperation, UnusedArguments
@@ -13,9 +15,11 @@ from ..utils import (
     build_uri,
     extract_substitutions,
 )
+from aerovaldb.utils.string_mapper import StringMapper, VersionConstraintMapper
 import os
 from ..lock import FakeLock, FileLock
 from hashlib import md5
+from packaging.version import Version
 
 
 class AerovalSqliteDB(AerovalDB):
@@ -23,12 +27,20 @@ class AerovalSqliteDB(AerovalDB):
     Allows reading and writing from sqlite3 database files.
     """
 
-    # When creating a table it works to extract the substitution template
-    # names from the route, as this constitutes all arguments. For the ones
-    # which have extra arguments the following table defines the override.
-    # Currently this only applies to map which has an extra time argument.
-    ROUTE_COLUMN_NAME_OVERRIDE = {
-        ROUTE_MAP: (
+    TABLE_COLUMN_NAMES = {
+        "glob_stats": extract_substitutions(ROUTE_GLOB_STATS),
+        "contour": extract_substitutions(ROUTE_CONTOUR),
+        "timeseries": extract_substitutions(ROUTE_TIMESERIES),
+        "timeseries_weekly": extract_substitutions(ROUTE_TIMESERIES_WEEKLY),
+        "experiments": extract_substitutions(ROUTE_EXPERIMENTS),
+        "config": extract_substitutions(ROUTE_CONFIG),
+        "menu": extract_substitutions(ROUTE_MENU),
+        "statistics": extract_substitutions(ROUTE_STATISTICS),
+        "ranges": extract_substitutions(ROUTE_RANGES),
+        "regions": extract_substitutions(ROUTE_REGIONS),
+        "models_style0": ["project", "experiment"],
+        "models_style1": ["project"],
+        "map0": [
             "project",
             "experiment",
             "network",
@@ -37,33 +49,39 @@ class AerovalSqliteDB(AerovalDB):
             "model",
             "modvar",
             "time",
-        ),
-        ROUTE_MODELS_STYLE: ("project", "experiment"),
-    }
-
-    # This lookup table stores the name of the table in which json
-    # for a specific route is stored.
-    TABLE_NAME_LOOKUP = {
-        ROUTE_GLOB_STATS: "glob_stats",
-        ROUTE_REG_STATS: "glob_stats",
-        ROUTE_HEATMAP: "glob_stats",
-        ROUTE_CONTOUR: "contour",
-        ROUTE_TIMESERIES: "timeseries",
-        ROUTE_TIMESERIES_WEEKLY: "timeseries_weekly",
-        ROUTE_EXPERIMENTS: "experiments",
-        ROUTE_CONFIG: "config",
-        ROUTE_MENU: "menu",
-        ROUTE_STATISTICS: "statistics",
-        ROUTE_RANGES: "ranges",
-        ROUTE_REGIONS: "regions",
-        ROUTE_MODELS_STYLE: "models_style",
-        ROUTE_MAP: "map",
-        ROUTE_SCATTER: "scatter",
-        ROUTE_PROFILES: "profiles",
-        ROUTE_HEATMAP_TIMESERIES: "heatmap_timeseries",
-        ROUTE_FORECAST: "forecast",
-        ROUTE_GRIDDED_MAP: "gridded_map",
-        ROUTE_REPORT: "report",
+        ],
+        "map1": [
+            "project",
+            "experiment",
+            "network",
+            "obsvar",
+            "layer",
+            "model",
+            "modvar",
+        ],
+        "scatter0": [
+            "project",
+            "experiment",
+            "network",
+            "obsvar",
+            "layer",
+            "model",
+            "modvar",
+            "time",
+        ],
+        "scatter1": [
+            "project",
+            "experiment",
+            "network",
+            "obsvar",
+            "layer",
+            "model",
+            "modvar",
+        ],
+        "profiles": extract_substitutions(ROUTE_PROFILES),
+        "heatmap_timeseries": extract_substitutions(ROUTE_HEATMAP_TIMESERIES),
+        "forecast": extract_substitutions(ROUTE_FORECAST),
+        "report": extract_substitutions(ROUTE_REPORT),
     }
 
     def __init__(self, database: str, /, **kwargs):
@@ -84,6 +102,87 @@ class AerovalSqliteDB(AerovalDB):
                 ValueError(f"Database {database} is not a valid aerovaldb database.")
 
         self._con.row_factory = sqlite3.Row
+
+        self.TABLE_NAME_LOOKUP = StringMapper(
+            {
+                ROUTE_GLOB_STATS: "glob_stats",
+                ROUTE_REG_STATS: "glob_stats",
+                ROUTE_HEATMAP: "glob_stats",
+                ROUTE_CONTOUR: "contour",
+                ROUTE_TIMESERIES: "timeseries",
+                ROUTE_TIMESERIES_WEEKLY: "timeseries_weekly",
+                ROUTE_EXPERIMENTS: "experiments",
+                ROUTE_CONFIG: "config",
+                ROUTE_MENU: "menu",
+                ROUTE_STATISTICS: "statistics",
+                ROUTE_RANGES: "ranges",
+                ROUTE_REGIONS: "regions",
+                ROUTE_MODELS_STYLE: ["models_style0", "models_style1"],
+                ROUTE_MAP: [
+                    VersionConstraintMapper(
+                        "map0",
+                        min_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "map1",
+                        max_version="0.13.2",
+                    ),
+                ],
+                ROUTE_SCATTER: [
+                    VersionConstraintMapper(
+                        "scatter0",
+                        min_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "scatter1",
+                        max_version="0.13.2",
+                    ),
+                ],
+                ROUTE_PROFILES: "profiles",
+                ROUTE_HEATMAP_TIMESERIES: "heatmap_timeseries",
+                ROUTE_FORECAST: "forecast",
+                ROUTE_GRIDDED_MAP: "gridded_map",
+                ROUTE_REPORT: "report",
+            },
+            version_provider=self._get_version,
+        )
+
+    @async_and_sync
+    @alru_cache(maxsize=2048)
+    async def _get_version(self, project: str, experiment: str) -> Version:
+        """
+        Returns the version of pyaerocom used to generate the files for a given project
+        and experiment.
+
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+
+        :return : A Version object.
+        """
+        try:
+            config = await self.get_config(project, experiment)
+        except FileNotFoundError:
+            try:
+                # If pyaerocom is installed in the current environment, but no config has
+                # been written, we use the version of the installed pyaerocom. This is
+                # important for tests to work correctly, and for files to be written
+                # correctly if the config file happens to be written after data files.
+                version = Version(get_distribution("pyaerocom").version)
+            except DistributionNotFound:
+                version = Version("0.0.1")
+            finally:
+                return version
+        # except simplejson.JSONDecodeError:
+        #    # Work around for https://github.com/metno/aerovaldb/issues/28
+        #    return Version("0.14.0")
+
+        try:
+            version_str = config["exp_info"]["pyaerocom_version"]
+            version = Version(version_str)
+        except KeyError:
+            version = Version("0.0.1")
+
+        return version
 
     def _get_metadata_by_key(self, key: str) -> str:
         """
@@ -134,10 +233,8 @@ class AerovalSqliteDB(AerovalDB):
 
         # Data tables. Currently one table is used per type of asset
         # stored and json blobs are stored in the json column.
-        for route, table_name in AerovalSqliteDB.TABLE_NAME_LOOKUP.items():
-            args = AerovalSqliteDB.ROUTE_COLUMN_NAME_OVERRIDE.get(
-                route, extract_substitutions(route)
-            )
+        for table_name in AerovalSqliteDB.TABLE_COLUMN_NAMES:
+            args = AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
 
             column_names = ",".join(args)
 
@@ -199,9 +296,17 @@ class AerovalSqliteDB(AerovalDB):
 
         cur = self._con.cursor()
 
-        table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
+        table_name = await self.TABLE_NAME_LOOKUP.lookup(route)
 
         args = route_args | kwargs
+        args = {
+            k: v
+            for k, v in args.items()
+            if k in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
+        }
+        # for a in args:
+        #    if not (args in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]):
+        #        args.pop(a)
         columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
         cur.execute(
             f"""
@@ -251,23 +356,28 @@ class AerovalSqliteDB(AerovalDB):
 
         cur = self._con.cursor()
 
-        table_name = AerovalSqliteDB.TABLE_NAME_LOOKUP[route]
+        table_name = await self.TABLE_NAME_LOOKUP.lookup(route, **(route_args | kwargs))
 
-        columnlist, substitutionlist = self._get_column_list_and_substitution_list(
-            route_args | kwargs
-        )
+        args = route_args | kwargs
+        args = {
+            k: v
+            for k, v in args.items()
+            if k in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
+        }
+
+        columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
 
         json = obj
         if not isinstance(json, str):
             json = json_dumps_wrapper(json)
 
-        route_args.update(json=json)
+        args.update(json=json)
         cur.execute(
             f"""
             INSERT OR REPLACE INTO {table_name}({columnlist}, json)
             VALUES({substitutionlist}, :json)
             """,
-            route_args | kwargs,
+            args,
         )
 
         self._set_metadata_by_key(
@@ -306,7 +416,7 @@ class AerovalSqliteDB(AerovalDB):
 
     def list_all(self):
         cur = self._con.cursor()
-        for route, table in AerovalSqliteDB.TABLE_NAME_LOOKUP.items():
+        for route in self.TABLE_NAME_LOOKUP:
             cur.execute(
                 f"""
                 SELECT * FROM {table}

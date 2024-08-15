@@ -1,5 +1,4 @@
 import pytest
-import simplejson  # type: ignore
 import aerovaldb
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
 
