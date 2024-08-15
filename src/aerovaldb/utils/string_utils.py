@@ -51,5 +51,5 @@ def validate_filename_component(value: str) -> None:
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")
 
-    if not re.match(PATH_COMPONENT_PATTERN, value):
+    if not PATH_COMPONENT_PATTERN.match(value):
         raise ValueError(f"'{value}' is not a valid file name component.")
