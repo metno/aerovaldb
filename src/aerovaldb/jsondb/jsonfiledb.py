@@ -14,7 +14,7 @@ from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
 from aerovaldb.serialization.default_serialization import default_serialization
 from aerovaldb.types import AccessType
 
-from ..utils import async_and_sync
+from ..utils import async_and_sync, str_to_bool, validate_filename_component
 from .uri import get_uri
 from .templatemapper import (
     TemplateMapper,
@@ -49,11 +49,12 @@ class AerovalJsonFileDB(AerovalDB):
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
         """
-        use_locking = os.environ.get("AVDB_USE_LOCKING", "")
-        if use_locking == "0" or use_locking == "":
-            self._use_real_lock = False
-        else:
-            self._use_real_lock = True
+        self._use_real_lock = str_to_bool(
+            os.environ.get("AVDB_USE_LOCKING", ""), default=False
+        )
+        logger.info(
+            f"Initializing aerovaldb for '{basedir}' with locking {self._use_real_lock}"
+        )
 
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
@@ -323,6 +324,8 @@ class AerovalJsonFileDB(AerovalDB):
             )
         logger.debug(f"Fetching data for {route}.")
         substitutions = route_args | kwargs
+        map(validate_filename_component, substitutions.values())
+
         path_template = await self._get_template(route, substitutions)
         logger.debug(f"Using template string {path_template}")
 
@@ -373,6 +376,7 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         substitutions = route_args | kwargs
+        map(validate_filename_component, substitutions.values())
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
 

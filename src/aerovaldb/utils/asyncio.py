@@ -8,7 +8,7 @@ P = ParamSpec("P")
 T = TypeVar("T")
 
 
-def _has_async_loop():
+def has_async_loop():
     is_async = False
     try:
         loop = asyncio.get_running_loop()
@@ -31,7 +31,7 @@ def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
 
     @functools.wraps(function)
     def async_and_sync_wrap(*args, **kwargs):
-        if _has_async_loop():
+        if has_async_loop():
             return function(*args, **kwargs)
         else:
             return asyncio.run(function(*args, **kwargs))
