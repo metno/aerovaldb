@@ -60,3 +60,11 @@ def test_jsonfiledb__get_uri_for_file(tmp_path):
             db._get_uri_for_file(str(tmp_path / "project/experiments.json"))
             == "/v0/experiments/project"
         )
+
+
+def test_jsonfiledb_invalid_parameter_values():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        with pytest.raises(ValueError) as e:
+            db.get_config("/%&/())()", "test")
+
+        assert "is not a valid file name component" in str(e.value)

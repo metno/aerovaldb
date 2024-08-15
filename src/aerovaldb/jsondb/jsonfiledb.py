@@ -269,26 +269,27 @@ class AerovalJsonFileDB(AerovalDB):
         *args,
         **kwargs,
     ):
-        use_caching = kwargs.get("cache", False)
+        use_caching = kwargs.pop("cache", False)
+        default = kwargs.pop("default", None)
+        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
             )
-        logger.debug(f"Fetching data for {route}.")
+
         substitutions = route_args | kwargs
-        map(validate_filename_component, substitutions.values())
+        [validate_filename_component(x) for x in substitutions.values()]
+
+        logger.debug(f"Fetching data for {route}.")
 
         path_template = await self._get_template(route, substitutions)
         logger.debug(f"Using template string {path_template}")
 
         relative_path = path_template.format(**substitutions)
 
-        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-
         file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
         logger.debug(f"Fetching file {file_path} as {access_type}-")
-
-        default = kwargs.pop("default", None)
 
         filter_func = self.FILTERS.get(route, None)
         filter_vars = route_args | kwargs
@@ -339,7 +340,8 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         substitutions = route_args | kwargs
-        map(validate_filename_component, substitutions.values())
+        [validate_filename_component(x) for x in substitutions.values()]
+
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
 
