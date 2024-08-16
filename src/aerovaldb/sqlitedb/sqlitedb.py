@@ -1,9 +1,11 @@
 import sqlite3
+from typing import Any, Awaitable, Callable
 
 from async_lru import alru_cache
-from pkg_resources import DistributionNotFound, get_distribution
+from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 import simplejson  # type: ignore
 import aerovaldb
+from aerovaldb.utils.filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation, UnusedArguments
 from ..aerovaldb import AerovalDB
 from ..routes import *
@@ -210,6 +212,11 @@ class AerovalSqliteDB(AerovalDB):
             version_provider=self._get_version,
         )
 
+        self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
+            ROUTE_REG_STATS: filter_regional_stats,
+            ROUTE_HEATMAP: filter_heatmap,
+        }
+
     @async_and_sync
     @alru_cache(maxsize=2048)
     async def _get_version(self, project: str, experiment: str) -> Version:
@@ -377,6 +384,7 @@ class AerovalSqliteDB(AerovalDB):
             """,
             args,
         )
+        filter_func = self.FILTERS.get(route, None)
         try:
             fetched = cur.fetchall()
             if not fetched:
@@ -403,14 +411,29 @@ class AerovalSqliteDB(AerovalDB):
                 f"No object found for route, {route}, with args {route_args}, {kwargs}"
             ) from e
 
-        if access_type == AccessType.JSON_STR:
-            return fetched["json"]
+        json = fetched["json"]
+        # No filtered.
+        if filter_func is None:
+            if access_type == AccessType.JSON_STR:
+                return json
 
-        if access_type == AccessType.OBJ:
-            dt = simplejson.loads(fetched["json"], allow_nan=True)
+            if access_type == AccessType.OBJ:
+                dt = simplejson.loads(json, allow_nan=True)
+
             return dt
 
-        assert False  # Should never happen.
+        # Filtered.
+        if filter_func is not None:
+            obj = simplejson.loads(fetched["json"], allow_nan=True)
+
+            obj = filter_func(obj, **route_args)
+            if access_type == AccessType.OBJ:
+                return obj
+
+            if access_type == AccessType.JSON_STR:
+                return json_dumps_wrapper(obj)
+
+        raise UnsupportedOperation
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         assert len(args) == 0

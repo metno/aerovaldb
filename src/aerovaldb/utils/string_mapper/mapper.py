@@ -28,7 +28,7 @@ class StringMapper:
     additional constraints (such as version).
     """
 
-    def __init__(self, lookup_table: Mapping, /, version_provider: VersionProvider):
+    def __init__(self, lookup_table: dict, /, version_provider: VersionProvider):
         """
         :param lookup_table : A configuration lookuptable.
         """

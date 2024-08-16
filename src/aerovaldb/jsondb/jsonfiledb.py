@@ -25,7 +25,7 @@ from ..utils import (
     extract_substitutions,
     run_until_finished,
 )
-from .filter import filter_heatmap, filter_regional_stats
+from ..utils.filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
 from ..routes import *
