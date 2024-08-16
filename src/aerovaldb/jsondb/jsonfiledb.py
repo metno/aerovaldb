@@ -169,7 +169,7 @@ class AerovalJsonFileDB(AerovalDB):
             ],
             ROUTE_PROFILES: [
                 DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/profiles/{location}_{network}-{obsvar}.json",
+                    "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
                     version_provider=self._get_version,
                 )
             ],
