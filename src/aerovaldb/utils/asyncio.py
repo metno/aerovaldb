@@ -38,3 +38,10 @@ def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
             return asyncio.run(function(*args, **kwargs))
 
     return async_and_sync_wrap
+
+
+@async_and_sync
+async def run_until_finished(coroutine):
+    task = asyncio.create_task(coroutine)
+    await asyncio.wait(task)
+    return task.result()

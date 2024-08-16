@@ -29,14 +29,12 @@ ROUTE_MODELS_STYLE = "/v0/model_style/{project}"
 ROUTE_MAP = "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
 
 ROUTE_SCATTER = (
-    "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}"
+    "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
 )
 
 ROUTE_PROFILES = "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}"
 
-ROUTE_HEATMAP_TIMESERIES = (
-    "/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
-)
+ROUTE_HEATMAP_TIMESERIES = "/v0/hm_ts/{project}/{experiment}"
 
 ROUTE_FORECAST = (
     "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"

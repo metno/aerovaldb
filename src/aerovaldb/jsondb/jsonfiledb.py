@@ -23,6 +23,7 @@ from ..utils import (
     parse_formatted_string,
     build_uri,
     extract_substitutions,
+    run_until_finished,
 )
 from .filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
@@ -422,6 +423,12 @@ class AerovalJsonFileDB(AerovalDB):
 
                 template = self._get_template(route, subs)
 
+            try:
+                version = run_until_finished(
+                    self._get_version(subs["project"], subs["experiment"])
+                )
+            except TypeError:
+                version = self._get_version(subs["project"], subs["experiment"])
             route_arg_names = extract_substitutions(route)
 
             try:
@@ -434,7 +441,7 @@ class AerovalJsonFileDB(AerovalDB):
             except Exception:
                 continue
             else:
-                return build_uri(route, route_args, kwargs)
+                return build_uri(route, route_args, kwargs | {"version": version})
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 

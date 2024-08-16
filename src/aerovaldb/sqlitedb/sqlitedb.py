@@ -14,6 +14,7 @@ from ..utils import (
     async_and_sync,
     build_uri,
     extract_substitutions,
+    validate_filename_component,
 )
 from aerovaldb.utils.string_mapper import StringMapper, VersionConstraintMapper
 import os
@@ -79,9 +80,48 @@ class AerovalSqliteDB(AerovalDB):
             "modvar",
         ],
         "profiles": extract_substitutions(ROUTE_PROFILES),
-        "heatmap_timeseries": extract_substitutions(ROUTE_HEATMAP_TIMESERIES),
+        "heatmap_timeseries0": [
+            "project",
+            "experiment",
+            "region",
+            "network",
+            "obsvar",
+            "layer",
+        ],
+        "heatmap_timeseries1": ["project", "experiment", "network", "obsvar", "layer"],
+        "heatmap_timeseries2": [
+            "project",
+            "experiment",
+        ],
         "forecast": extract_substitutions(ROUTE_FORECAST),
+        "gridded_map": extract_substitutions(ROUTE_GRIDDED_MAP),
         "report": extract_substitutions(ROUTE_REPORT),
+    }
+
+    TABLE_NAME_TO_ROUTE = {
+        "glob_stats": ROUTE_GLOB_STATS,
+        "contour": ROUTE_CONTOUR,
+        "timeseries": ROUTE_TIMESERIES,
+        "timeseries_weekly": ROUTE_TIMESERIES_WEEKLY,
+        "experiments": ROUTE_EXPERIMENTS,
+        "config": ROUTE_CONFIG,
+        "menu": ROUTE_MENU,
+        "statistics": ROUTE_STATISTICS,
+        "ranges": ROUTE_RANGES,
+        "regions": ROUTE_REGIONS,
+        "models_style0": ROUTE_MODELS_STYLE,
+        "models_style1": ROUTE_MODELS_STYLE,
+        "map0": ROUTE_MAP,
+        "map1": ROUTE_MAP,
+        "scatter0": ROUTE_SCATTER,
+        "scatter1": ROUTE_SCATTER,
+        "profiles": ROUTE_PROFILES,
+        "heatmap_timeseries0": ROUTE_HEATMAP_TIMESERIES,
+        "heatmap_timeseries1": ROUTE_HEATMAP_TIMESERIES,
+        "heatmap_timeseries2": ROUTE_HEATMAP_TIMESERIES,
+        "forecast": ROUTE_FORECAST,
+        "gridded_map": ROUTE_GRIDDED_MAP,
+        "report": ROUTE_REPORT,
     }
 
     def __init__(self, database: str, /, **kwargs):
@@ -139,7 +179,21 @@ class AerovalSqliteDB(AerovalDB):
                     ),
                 ],
                 ROUTE_PROFILES: "profiles",
-                ROUTE_HEATMAP_TIMESERIES: "heatmap_timeseries",
+                ROUTE_HEATMAP_TIMESERIES: [
+                    VersionConstraintMapper(
+                        "heatmap_timeseries0",
+                        min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                    ),
+                    VersionConstraintMapper(
+                        "heatmap_timeseries1",
+                        min_version="0.12.2",
+                        max_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "heatmap_timeseries2",
+                        max_version="0.12.2",
+                    ),
+                ],
                 ROUTE_FORECAST: "forecast",
                 ROUTE_GRIDDED_MAP: "gridded_map",
                 ROUTE_REPORT: "report",
@@ -294,19 +348,17 @@ class AerovalSqliteDB(AerovalDB):
         if access_type in [AccessType.URI]:
             return build_uri(route, route_args, kwargs)
 
-        cur = self._con.cursor()
-
-        table_name = await self.TABLE_NAME_LOOKUP.lookup(route)
-
         args = route_args | kwargs
+        cur = self._con.cursor()
+        table_name = await self.TABLE_NAME_LOOKUP.lookup(route, **args)
         args = {
             k: v
             for k, v in args.items()
             if k in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
         }
-        # for a in args:
-        #    if not (args in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]):
-        #        args.pop(a)
+
+        [validate_filename_component(x) for x in args.values()]
+
         columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
         cur.execute(
             f"""
@@ -416,10 +468,11 @@ class AerovalSqliteDB(AerovalDB):
 
     def list_all(self):
         cur = self._con.cursor()
-        for route in self.TABLE_NAME_LOOKUP:
+        for table_name in self.TABLE_COLUMN_NAMES.keys():
+            route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE[table_name]
             cur.execute(
                 f"""
-                SELECT * FROM {table}
+                SELECT * FROM {table_name}
                 """
             )
             result = cur.fetchall()

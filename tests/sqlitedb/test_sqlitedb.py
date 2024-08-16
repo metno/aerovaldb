@@ -21,7 +21,7 @@ def test_db_initialization(tmp_path):
 
         # Check that all tables are properly initialized.
         cur = db._con.cursor()
-        for table in AerovalSqliteDB.TABLE_NAME_LOOKUP.values():
+        for table in AerovalSqliteDB.TABLE_COLUMN_NAMES:
             cur.execute(
                 f"""
                 PRAGMA table_info({table})

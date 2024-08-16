@@ -65,12 +65,21 @@ class StringMapper:
         :return
             The looked up string value.
         """
+        if (version := kwargs.pop("version", None)) is None:
+            version_provider = self._version_provider
+        else:
+
+            async def version_helper(p, e):
+                return Version(version)
+
+            version_provider = version_helper
+
         try:
             values = self._lookuptable[key]
         except KeyError as e:
             raise KeyError(f"Key '{key}' does not exist in lookup table.") from e
 
-        kwargs = kwargs | {"version_provider": self._version_provider}
+        kwargs = kwargs | {"version_provider": version_provider}
         return_value = None
         for v in values:
             try:
