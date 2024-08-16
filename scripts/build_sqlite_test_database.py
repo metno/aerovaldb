@@ -18,18 +18,17 @@ for i, uri in enumerate(list(jsondb.list_all())):
     )
     sqlitedb.put_by_uri(data, uri)
 
-# json_list = list(jsondb.list_all())
-# sqlite_list = list(sqlitedb.list_all())
-# print("The following URIs exist in jsondb but not sqlitedb")
-# for x in json_list:
-#    if not (x in sqlite_list):
-#        print(x)
-#
-# print("The following URIs exist in sqlitedb but not jsondb")
-#
-# for x in sqlite_list:
-#    if not (x in json_list):
-#        print(x)
+json_list = list(jsondb.list_all())
+sqlite_list = list(sqlitedb.list_all())
+print("The following URIs exist in jsondb but not sqlitedb")
+for x in json_list:
+    if not (x in sqlite_list):
+        print(x)
+
+print("The following URIs exist in sqlitedb but not jsondb")
+for x in sqlite_list:
+    if not (x in json_list):
+        print(x)
 
 print(f"jsondb number of assets: {len(list(jsondb.list_all()))}")
 print(f"sqlite number of assets: {len(list(sqlitedb.list_all()))}")
