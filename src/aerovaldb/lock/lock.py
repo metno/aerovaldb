@@ -79,8 +79,6 @@ class FileLock(AerovaldbLock):
 
         if has_async_loop():
             run_until_finished(self._aiolock.acquire)
-            # task = asyncio.ensure_future(self._aiolock.acquire())
-            # asyncio.wait(task)
 
         fcntl.lockf(self._lock_handle, fcntl.LOCK_EX)
         self._acquired = True

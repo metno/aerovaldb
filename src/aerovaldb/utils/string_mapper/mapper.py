@@ -171,6 +171,16 @@ class PriorityMapper(Mapper):
     """
 
     def __init__(self, templates: list[str] | dict):
+        """
+        :param templates
+            If list, a list of template strings which will
+            be matched in order.
+            If dict, a mapping between the template string
+            and an alternative string to match against is
+            expected (i. e. {"test", "{a}"} would try matching
+            against "{a}" during lookup, but return "test" if
+            match.)
+        """
         if isinstance(templates, list):
             self.templates = templates
             self.match = templates

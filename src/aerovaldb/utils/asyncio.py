@@ -42,6 +42,13 @@ def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
 
 @async_and_sync
 async def run_until_finished(coroutine):
+    """
+    Takes a aio coroutine, runs it and waits for it to finish.
+
+    :param coroutine : The coroutine to be ran.
+    :return
+        The result from running coroutine.
+    """
     task = asyncio.create_task(coroutine)
     await asyncio.wait(task)
     return task.result()
