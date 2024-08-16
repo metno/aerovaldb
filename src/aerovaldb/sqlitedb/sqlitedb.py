@@ -16,7 +16,11 @@ from ..utils import (
     extract_substitutions,
     validate_filename_component,
 )
-from aerovaldb.utils.string_mapper import StringMapper, VersionConstraintMapper
+from aerovaldb.utils.string_mapper import (
+    StringMapper,
+    VersionConstraintMapper,
+    PriorityMapper,
+)
 import os
 from ..lock import FakeLock, FileLock
 from hashlib import md5
@@ -157,7 +161,12 @@ class AerovalSqliteDB(AerovalDB):
                 ROUTE_STATISTICS: "statistics",
                 ROUTE_RANGES: "ranges",
                 ROUTE_REGIONS: "regions",
-                ROUTE_MODELS_STYLE: ["models_style0", "models_style1"],
+                ROUTE_MODELS_STYLE: PriorityMapper(
+                    {
+                        "models_style0": "{project}/{experiment}",
+                        "models_style1": "{project}",
+                    }
+                ),
                 ROUTE_MAP: [
                     VersionConstraintMapper(
                         "map0",

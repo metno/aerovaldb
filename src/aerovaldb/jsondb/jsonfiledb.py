@@ -423,12 +423,15 @@ class AerovalJsonFileDB(AerovalDB):
 
                 template = self._get_template(route, subs)
 
+            # TODO: Ugly hack need to fix
             try:
                 version = run_until_finished(
                     self._get_version(subs["project"], subs["experiment"])
                 )
             except TypeError:
                 version = self._get_version(subs["project"], subs["experiment"])
+            except KeyError:
+                version = Version("0.0.1")
             route_arg_names = extract_substitutions(route)
 
             try:

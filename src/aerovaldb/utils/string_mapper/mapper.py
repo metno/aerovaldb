@@ -170,14 +170,22 @@ class PriorityMapper(Mapper):
     parameters.
     """
 
-    def __init__(self, templates: list[str]):
-        self.templates = templates
+    def __init__(self, templates: list[str] | dict):
+        if isinstance(templates, list):
+            self.templates = templates
+            self.match = templates
+        elif isinstance(templates, dict):
+            self.templates = []
+            self.match = []
+            for k, v in templates.items():
+                self.templates.append(k)
+                self.match.append(v)
 
     async def __call__(self, *args, **kwargs) -> str:
         selected_template = None
-        for t in self.templates:
+        for t, m in zip(self.templates, self.match):
             try:
-                t.format(**kwargs)
+                m.format(**kwargs)
                 selected_template = t
                 break
             except:
