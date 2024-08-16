@@ -3,18 +3,6 @@ import aerovaldb
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
 
 
-def test_version1():
-    """ """
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        assert str(db._get_version("project", "experiment")) == "0.13.5"
-
-
-def test_version2():
-    """ """
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        assert str(db._get_version("project", "experiment-old")) == "0.0.5"
-
-
 def test_list_experiments():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         experiments = db._list_experiments("project")
@@ -36,20 +24,6 @@ def test_get_experiments():
         assert experiments == {
             "experiment": {"public": True},
         }
-
-
-def test_list_timeseries():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        timeseries = db.list_timeseries("project", "experiment")
-
-        assert len(list(timeseries)) == 1
-
-
-def test_list_glob_stats():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        glob_stats = list(db.list_glob_stats("project", "experiment"))
-
-        assert len(glob_stats) == 1
 
 
 def test_jsonfiledb__get_uri_for_file(tmp_path):

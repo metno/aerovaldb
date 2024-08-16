@@ -515,15 +515,15 @@ class AerovalSqliteDB(AerovalDB):
                 route_args = {}
                 kwargs = {}
                 for k in r.keys():
-                    if k == "json":
+                    if k in ["json", "ctime", "mtime"]:
                         continue
                     if k in arg_names:
                         route_args[k] = r[k]
                     else:
                         kwargs[k] = r[k]
 
-                route = build_uri(route, route_args, kwargs)
-                yield route
+                uri = build_uri(route, route_args, kwargs)
+                yield uri
 
     def _get_lock_file(self) -> str:
         os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
@@ -538,3 +538,81 @@ class AerovalSqliteDB(AerovalDB):
             return FileLock(self._get_lock_file())
 
         return FakeLock()
+
+    def list_glob_stats(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ):
+        if access_type != AccessType.URI:
+            raise ValueError(
+                f"Invalid access_type. Got {access_type}, expected AccessType.URI"
+            )
+
+        cur = self._con.cursor()
+        cur.execute(
+            f"""
+            SELECT * FROM glob_stats
+            WHERE project=? AND experiment=?
+            """,
+            (project, experiment),
+        )
+        result = cur.fetchall()
+
+        route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["glob_stats"]
+        for r in result:
+            arg_names = extract_substitutions(route)
+            route_args = {}
+            kwargs = {}
+            for k in r.keys():
+                if k in ["json", "ctime", "mtime"]:
+                    continue
+
+                if k in arg_names:
+                    route_args[k] = r[k]
+                else:
+                    kwargs[k] = r[k]
+
+            uri = build_uri(route, route_args, kwargs)
+            yield uri
+
+    def list_timeseries(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ):
+        if access_type != AccessType.URI:
+            raise ValueError(
+                f"Invalid access_type. Got {access_type}, expected AccessType.URI"
+            )
+
+        cur = self._con.cursor()
+        cur.execute(
+            f"""
+            SELECT * FROM timeseries
+            WHERE project=? AND experiment=?
+            """,
+            (project, experiment),
+        )
+        result = cur.fetchall()
+
+        route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["timeseries"]
+        for r in result:
+            arg_names = extract_substitutions(route)
+            route_args = {}
+            kwargs = {}
+            for k in r.keys():
+                if k in ["json", "ctime", "mtime"]:
+                    continue
+
+                if k in arg_names:
+                    route_args[k] = r[k]
+                else:
+                    kwargs[k] = r[k]
+
+            uri = build_uri(route, route_args, kwargs)
+            yield uri

@@ -5,7 +5,7 @@
 # - json_files: tests/jsondb/test_jsonfiledb.py
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
-import simplejson
+import simplejson  # type: ignore
 import aerovaldb
 import pytest
 import random
@@ -432,3 +432,33 @@ def test_getter_with_default_error(testdb):
             db.get_by_uri(
                 "/v0/report/project/experiment/invalid-json", default={"data": "data"}
             )
+
+
+@TESTDB_PARAMETRIZATION
+def test_version1(testdb):
+    """ """
+    with aerovaldb.open(testdb) as db:
+        assert str(db._get_version("project", "experiment")) == "0.13.5"
+
+
+@TESTDB_PARAMETRIZATION
+def test_version2(testdb):
+    """ """
+    with aerovaldb.open(testdb) as db:
+        assert str(db._get_version("project", "experiment-old")) == "0.0.5"
+
+
+@TESTDB_PARAMETRIZATION
+def test_list_glob_stats(testdb):
+    with aerovaldb.open(testdb) as db:
+        glob_stats = list(db.list_glob_stats("project", "experiment"))
+
+        assert len(glob_stats) == 1
+
+
+@TESTDB_PARAMETRIZATION
+def test_list_timeseries(testdb):
+    with aerovaldb.open(testdb) as db:
+        timeseries = db.list_timeseries("project", "experiment")
+
+        assert len(list(timeseries)) == 1
