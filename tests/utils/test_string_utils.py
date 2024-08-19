@@ -58,7 +58,6 @@ def test_validate_filename_component_valid(value: str):
 @pytest.mark.parametrize(
     "value",
     (
-        pytest.param("%", marks=pytest.mark.xfail),
         pytest.param(
             "/",
         ),
