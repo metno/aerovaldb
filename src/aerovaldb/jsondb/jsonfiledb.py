@@ -4,10 +4,10 @@ import os
 import shutil
 from pathlib import Path
 from typing import Callable, Awaitable, Any, Generator
+import importlib.metadata
 
 from async_lru import alru_cache
 from packaging.version import Version
-from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
@@ -236,8 +236,8 @@ class AerovalJsonFileDB(AerovalDB):
                 # been written, we use the version of the installed pyaerocom. This is
                 # important for tests to work correctly, and for files to be written
                 # correctly if the config file happens to be written after data files.
-                version = Version(get_distribution("pyaerocom").version)
-            except DistributionNotFound:
+                version = Version(importlib.metadata.version("pyaerocom"))
+            except importlib.metadata.PackageNotFoundError:
                 version = Version("0.0.1")
             finally:
                 return version
