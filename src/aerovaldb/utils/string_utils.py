@@ -1,7 +1,8 @@
 import regex as re
 
 
-PATH_COMPONENT_PATTERN = re.compile(r"^[a-zA-Z0-9.\-_ æøåÆØÅ]+$", flags=re.UNICODE)
+# PATH_COMPONENT_PATTERN = re.compile(r"^[a-zA-Z0-9.\-_ æøåÆØÅ]+$", flags=re.UNICODE)
+PATH_COMPONENT_PATTERN = re.compile(r"^[^/]+$", flags=re.UNICODE)
 
 
 def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> bool:
