@@ -32,6 +32,7 @@ def test_str_to_bool_exception_2():
 
 
 def test_str_to_bool_default():
+    assert not str_to_bool("blah")
     assert str_to_bool("blah", default=True)
     assert not str_to_bool("blah", default=False)
 
