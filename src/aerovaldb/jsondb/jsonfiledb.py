@@ -610,7 +610,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         if not uri.startswith(self._basedir):
             raise PermissionError(
-                f"URI {uri} is out of bounds of the current aerovaldb connection."
+                f"URI {uri} is out of bounds {self._basedir} of the current aerovaldb connection."
             )
 
         access_type = self._normalize_access_type(access_type)
@@ -640,7 +640,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         if not uri.startswith(self._basedir):
             raise PermissionError(
-                f"URI {uri} is out of bounds of the current aerovaldb connection."
+                f"URI {uri} is out of bounds {self._basedir} of the current aerovaldb connection."
             )
         if not os.path.exists(os.path.dirname(uri)):
             os.makedirs(os.path.dirname(uri))
