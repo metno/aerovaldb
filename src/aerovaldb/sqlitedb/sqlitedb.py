@@ -436,7 +436,10 @@ class AerovalSqliteDB(AerovalDB):
         raise UnsupportedOperation
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
-        assert len(args) == 0
+        if len(args) > 0:
+            raise UnusedArguments(
+                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
+            )
 
         cur = self._con.cursor()
 

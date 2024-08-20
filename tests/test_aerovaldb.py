@@ -444,13 +444,22 @@ async def test_file_does_not_exist(testdb):
 
 
 @TESTDB_PARAMETRIZATION
-def test_exception_on_unexpected_args(testdb):
+def test_exception_on_unexpected_args_get(testdb):
     """
     https://github.com/metno/aerovaldb/issues/19
     """
     with aerovaldb.open(testdb) as db:
         with pytest.raises(aerovaldb.UnusedArguments):
             db.get_config("project", "experiment", "excessive-positional-argument")
+
+
+@pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
+def test_exception_on_unexpected_args_put(tmpdb):
+    with tmpdb as db:
+        with pytest.raises(aerovaldb.UnusedArguments):
+            db.put_config({}, "project", "experiment", "excessive-positional-argument")
 
 
 @TESTDB_PARAMETRIZATION
