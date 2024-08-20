@@ -508,3 +508,19 @@ def test_list_timeseries(testdb):
         timeseries = db.list_timeseries("project", "experiment")
 
         assert len(list(timeseries)) == 1
+
+
+@pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
+def test_rm_experiment_data(tmpdb):
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        for i, uri in enumerate(db.list_all()):
+            data = db.get_by_uri(uri, access_type=aerovaldb.AccessType.JSON_STR)
+            tmpdb.put_by_uri(data, uri)
+
+        assert len(list(db.list_all())) == len(list(tmpdb.list_all()))
+
+        tmpdb.rm_experiment_data("project", "experiment")
+
+        assert len(list(tmpdb.list_all())) == 23

@@ -619,3 +619,34 @@ class AerovalSqliteDB(AerovalDB):
 
             uri = build_uri(route, route_args, kwargs)
             yield uri
+
+    def rm_experiment_data(self, project: str, experiment: str) -> None:
+        cur = self._con.cursor()
+        for table in [
+            "glob_stats",
+            "contour",
+            "timeseries",
+            "timeseries_weekly",
+            "config",
+            "menu",
+            "statistics",
+            "ranges",
+            "regions",
+            "models_style0",
+            "map0",
+            "map1",
+            "scatter0",
+            "scatter1",
+            "profiles",
+            "heatmap_timeseries0",
+            "heatmap_timeseries1",
+            "heatmap_timeseries2",
+            "forecast",
+            "gridded_map",
+        ]:
+            cur.execute(
+                f"""
+                DELETE FROM {table} WHERE project=? AND experiment=?
+                """,
+                (project, experiment),
+            )
