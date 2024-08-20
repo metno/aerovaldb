@@ -45,6 +45,10 @@ def test_str_to_bool_default():
         pytest.param(
             "test-1234",
         ),
+        pytest.param(
+            "test 1234",
+        ),
+        pytest.param("æøåÆØÅ"),
     ),
 )
 def test_validate_filename_component_valid(value: str):
@@ -55,10 +59,10 @@ def test_validate_filename_component_valid(value: str):
     "value",
     (
         pytest.param(
-            "%",
+            "/",
         ),
         pytest.param(
-            "/",
+            "abcd/alkfh",
         ),
         pytest.param(
             None,

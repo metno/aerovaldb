@@ -1,7 +1,7 @@
-import re
+import regex as re
 
 
-PATH_COMPONENT_PATTERN = re.compile(r"[\w.-]+")
+PATH_COMPONENT_PATTERN = re.compile(r"^[^/]+$", flags=re.UNICODE)
 
 
 def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> bool:
