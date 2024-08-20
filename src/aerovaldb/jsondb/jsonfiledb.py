@@ -273,47 +273,6 @@ class AerovalJsonFileDB(AerovalDB):
         with open(file_path, "w") as f:
             f.write(json)
 
-    @async_and_sync
-    async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
-        # If an experiments.json file exists, read it.
-        try:
-            access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-            experiments = await self._get(
-                ROUTE_EXPERIMENTS,
-                {"project": project},
-                access_type=access_type,
-            )
-        except FileNotFoundError:
-            pass
-        else:
-            return experiments
-
-        # Otherwise generate it based on config and expinfo.public information.
-        experiments = {}
-        for exp in self._list_experiments(project, has_results=True):
-            public = False
-            try:
-                config = await self.get_config(project, exp)
-            except FileNotFoundError:
-                pass
-            else:
-                public = config.get("exp_info", {}).get("public", False)
-            experiments[exp] = {"public": public}
-
-        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-
-        experiments = dict(experiments.items())
-        if access_type == AccessType.FILE_PATH:
-            raise UnsupportedOperation(
-                f"get_experiments() does not support access_type {access_type}."
-            )
-
-        if access_type == AccessType.JSON_STR:
-            json = json_dumps_wrapper(experiments)
-            return json
-
-        return experiments
-
     def rm_experiment_data(self, project: str, experiment: str) -> None:
         """Deletes ALL data associated with an experiment.
 
@@ -554,30 +513,6 @@ class AerovalJsonFileDB(AerovalDB):
                 continue
 
             yield self._get_uri_for_file(f)
-
-    def _list_experiments(
-        self, project: str, /, has_results: bool = False
-    ) -> list[str]:
-        project_path = os.path.join(self._basedir, project)
-        experiments = []
-
-        if not os.path.exists(project_path):
-            return []
-
-        for f in os.listdir(project_path):
-            if not has_results:
-                if os.path.isdir(os.path.join(project_path, f)):
-                    experiments.append(f)
-            else:
-                if not os.path.isdir(os.path.join(project_path, f)):
-                    continue
-                glb = os.path.join(project_path, f, "map", "*.json")
-                if len(glob.glob(glb)) == 0:
-                    continue
-
-                experiments.append(f)
-
-        return experiments
 
     @async_and_sync
     async def get_by_uri(
