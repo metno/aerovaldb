@@ -317,6 +317,21 @@ def test_getter_sync(testdb: str, fun: str, args: list, kwargs: dict, expected):
         assert data["path"] == expected
 
 
+@TESTDB_PARAMETRIZATION
+@GET_PARAMETRIZATION
+def test_getter_json_str(testdb: str, fun: str, args: list, kwargs: dict, expected):
+    with aerovaldb.open(testdb, use_async=False) as db:
+        f = getattr(db, fun)
+
+        if kwargs is not None:
+            data = f(*args, access_type=aerovaldb.AccessType.JSON_STR, **kwargs)
+        else:
+            data = f(*args, access_type=aerovaldb.AccessType.JSON_STR)
+
+        data = simplejson.loads(data)
+        assert data["path"] == expected
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
@@ -358,6 +373,29 @@ def test_setters_sync(fun: str, args: list, kwargs: dict, tmpdb):
         put = getattr(db, f"put_{fun}")
 
         expected = fun + str(random.randint(0, 100000))
+        if kwargs is not None:
+            put({"data": expected}, *args, **kwargs)
+
+            data = get(*args, **kwargs)
+        else:
+            put({"data": expected}, *args)
+
+            data = get(*args)
+
+        assert data["data"] == expected
+
+
+@pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
+@PUT_PARAMETRIZATION
+def test_setters_json_str(fun: str, args: list, kwargs: dict, tmpdb):
+    with tmpdb as db:
+        get = getattr(db, f"get_{fun}")
+        put = getattr(db, f"put_{fun}")
+
+        expected = fun + str(random.randint(0, 100000))
+        expected = aerovaldb.utils.json_dumps_wrapper(expected)
         if kwargs is not None:
             put({"data": expected}, *args, **kwargs)
 
