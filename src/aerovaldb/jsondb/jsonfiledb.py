@@ -59,7 +59,7 @@ class AerovalJsonFileDB(AerovalDB):
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
-        self._basedir = os.path.realpath(basedir)
+        self._basedir = os.path.abspath(basedir)
 
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
@@ -505,7 +505,7 @@ class AerovalJsonFileDB(AerovalDB):
         self, project: str, experiment: str
     ) -> Generator[str, None, None]:
         template = str(
-            os.path.realpath(
+            os.path.abspath(
                 os.path.join(
                     self._basedir,
                     self._get_template(
@@ -524,7 +524,7 @@ class AerovalJsonFileDB(AerovalDB):
         self, project: str, experiment: str
     ) -> Generator[str, None, None]:
         template = str(
-            os.path.realpath(
+            os.path.abspath(
                 os.path.join(
                     self._basedir,
                     self._get_template(
@@ -547,7 +547,7 @@ class AerovalJsonFileDB(AerovalDB):
 
     def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
         template = str(
-            os.path.realpath(
+            os.path.abspath(
                 os.path.join(
                     self._basedir,
                     self._get_template(

@@ -14,10 +14,10 @@ def test_plugins():
 def test_open_1():
     with aerovaldb.open("json_files:.") as db:
         assert isinstance(db, AerovalJsonFileDB)
-        assert os.path.realpath(db._basedir) == os.path.realpath(".")
+        assert os.path.abspath(db._basedir) == os.path.abspath(".")
 
 
 def test_open_2():
     with aerovaldb.open(".") as db:
         assert isinstance(db, AerovalJsonFileDB)
-        assert os.path.realpath(db._basedir) == os.path.realpath(".")
+        assert os.path.abspath(db._basedir) == os.path.abspath(".")
