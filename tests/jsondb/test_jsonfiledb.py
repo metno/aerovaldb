@@ -6,6 +6,7 @@ import random
 import pytest
 import simplejson  # type: ignore
 import aerovaldb
+from aerovaldb.exceptions import TemplateNotFound
 
 pytest_plugins = ("pytest_asyncio",)
 
@@ -442,3 +443,9 @@ def test_getter_with_default_error():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(simplejson.errors.JSONDecodeError):
             db.get_by_uri("./invalid-json.json", default={"data": "data"})
+
+
+def test__get_template_error():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        with pytest.raises(TemplateNotFound):
+            db._get_template(aerovaldb.routes.ROUTE_MODELS_STYLE, {})
