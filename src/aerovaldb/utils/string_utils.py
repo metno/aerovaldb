@@ -40,9 +40,6 @@ def validate_filename_component(value: str) -> None:
     Checks if a file name component contains characters which should
     not be included in the file path.
 
-    This is stricter than strictly speaking necessary but is suitable
-    for aerovaldb's use case.
-
     :param value : The component to be validated.
 
     :raises ValueError :
