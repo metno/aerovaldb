@@ -29,14 +29,12 @@ ROUTE_MODELS_STYLE = "/v0/model_style/{project}"
 ROUTE_MAP = "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
 
 ROUTE_SCATTER = (
-    "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}/{time}"
+    "/v0/scat/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
 )
 
 ROUTE_PROFILES = "/v0/profiles/{project}/{experiment}/{location}/{network}/{obsvar}"
 
-ROUTE_HEATMAP_TIMESERIES = (
-    "/v0/hm_ts/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
-)
+ROUTE_HEATMAP_TIMESERIES = "/v0/hm_ts/{project}/{experiment}"
 
 ROUTE_FORECAST = (
     "/v0/forecast/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
@@ -45,3 +43,27 @@ ROUTE_FORECAST = (
 ROUTE_GRIDDED_MAP = "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}"
 
 ROUTE_REPORT = "/v0/report/{project}/{experiment}/{title}"
+
+
+ALL_ROUTES = [
+    ROUTE_GLOB_STATS,
+    ROUTE_REG_STATS,
+    ROUTE_HEATMAP,
+    ROUTE_CONTOUR,
+    ROUTE_TIMESERIES,
+    ROUTE_TIMESERIES_WEEKLY,
+    ROUTE_EXPERIMENTS,
+    ROUTE_CONFIG,
+    ROUTE_MENU,
+    ROUTE_STATISTICS,
+    ROUTE_RANGES,
+    ROUTE_REGIONS,
+    ROUTE_MODELS_STYLE,
+    ROUTE_MAP,
+    ROUTE_SCATTER,
+    ROUTE_PROFILES,
+    ROUTE_HEATMAP_TIMESERIES,
+    ROUTE_FORECAST,
+    ROUTE_GRIDDED_MAP,
+    ROUTE_REPORT,
+]

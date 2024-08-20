@@ -1,4 +1,5 @@
 import functools
+import os
 import sys
 import warnings
 
@@ -57,8 +58,12 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         synchronously.
     :return: an implementation-object of AerovalDB openend to a location
     """
+    if resource == ":memory:":
+        # Special case for sqlite in memory database.
+        name = "sqlitedb"
+        path = ":memory:"
 
-    if ":" in resource:
+    elif ":" in resource:
         parts = resource.split(":")
         if len(parts) > 1:
             name = parts[0]
@@ -68,11 +73,15 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
             name = "json_files"
             path = resource
     else:
-        # Assume directory and json.
-        # TODO: In the future this should differentiate based on file path, eg. folder->json_files
-        # .sqlite-> SqliteDB, etc.
-        name = "json_files"
-        path = resource
+        fileextension = os.path.splitext(resource)[1]
+        if fileextension in [".db", ".sqlite"]:
+            # Sqlite file.
+            name = "sqlitedb"
+            path = resource
+        else:
+            # Assume directory and json.
+            name = "json_files"
+            path = resource
 
     aerodb = list_engines()[name]
 
