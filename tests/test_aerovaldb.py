@@ -395,13 +395,12 @@ def test_setters_json_str(fun: str, args: list, kwargs: dict, tmpdb):
         put = getattr(db, f"put_{fun}")
 
         expected = fun + str(random.randint(0, 100000))
-        expected = aerovaldb.utils.json_dumps_wrapper(expected)
         if kwargs is not None:
-            put({"data": expected}, *args, **kwargs)
+            put(aerovaldb.utils.json_dumps_wrapper({"data": expected}), *args, **kwargs)
 
             data = get(*args, **kwargs)
         else:
-            put({"data": expected}, *args)
+            put(aerovaldb.utils.json_dumps_wrapper({"data": expected}), *args)
 
             data = get(*args)
 
