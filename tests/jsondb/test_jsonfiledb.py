@@ -442,3 +442,10 @@ def test_getter_with_default_error():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         with pytest.raises(simplejson.errors.JSONDecodeError):
             db.get_by_uri("./invalid-json.json", default={"data": "data"})
+
+
+def test_with_symlink():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        data = db.get_config("linked-json-project", "experiment")
+
+        assert data["path"] == "link"

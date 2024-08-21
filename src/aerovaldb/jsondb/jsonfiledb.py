@@ -333,7 +333,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
-        file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
+        file_path = Path(os.path.join(self._basedir, relative_path))
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
