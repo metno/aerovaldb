@@ -3,7 +3,7 @@ from typing import Awaitable, Callable, Mapping
 from abc import ABC
 from packaging.version import Version
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
 VersionProvider = Callable[[str, str], Awaitable[Version]]
 

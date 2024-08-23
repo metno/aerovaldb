@@ -52,7 +52,7 @@ class AerovalJsonFileDB(AerovalDB):
         self._asyncio = use_async
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
-        self._basedir = os.path.realpath(basedir)
+        self._basedir = os.path.abspath(basedir)
 
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
@@ -148,9 +148,6 @@ class AerovalJsonFileDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        # except simplejson.JSONDecodeError:
-        #    # Work around for https://github.com/metno/aerovaldb/issues/28
-        #    return Version("0.14.0")
 
         try:
             version_str = config["exp_info"]["pyaerocom_version"]
@@ -203,7 +200,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         relative_path = path_template.format(**substitutions)
 
-        file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
+        file_path = str(Path(os.path.join(self._basedir, relative_path)))
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
@@ -419,7 +416,7 @@ class AerovalJsonFileDB(AerovalDB):
             raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
 
         template = str(
-            os.path.realpath(
+            os.path.abspath(
                 os.path.join(
                     self._basedir,
                     self._get_template(
@@ -450,7 +447,7 @@ class AerovalJsonFileDB(AerovalDB):
             raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
 
         template = str(
-            os.path.realpath(
+            os.path.abspath(
                 os.path.join(
                     self._basedir,
                     self._get_template(
@@ -487,7 +484,7 @@ class AerovalJsonFileDB(AerovalDB):
             raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
 
         template = str(
-            os.path.realpath(
+            os.path.abspath(
                 os.path.join(
                     self._basedir,
                     self._get_template(
