@@ -12,13 +12,14 @@ def str_to_bool(value: str, /, default: bool | None = None) -> bool:
     Supports 1/0, true/false, t/f, yes/no, y/n (Case insensitive).
 
     :param value : The string value to be converted.
-    :param strict : If true, ValueError is raised if an unrecognized value is encountered,
-    otherwise default is returned.
-    :param default : Returned if strict is disabled, for unrecognized values.
+    :param default : If None, a string value not explicitly matching one of the
+        above values for true/false will raise a ValueError. Otherwise this default
+        will be returned instead.
+
     :raises ValueError
         If value is not a string
     :raises ValueError
-        If strict is true, and value does not match expected values.
+        If default is None, and value does not match one of the above templates.
     """
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")
