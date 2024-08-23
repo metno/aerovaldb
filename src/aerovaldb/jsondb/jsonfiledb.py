@@ -211,7 +211,6 @@ class AerovalJsonFileDB(AerovalDB):
                 raise FileNotFoundError(f"File {file_path} does not exist.")
             return default
 
-        # No filtered.
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
                 return file_path
