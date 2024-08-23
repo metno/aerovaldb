@@ -10,37 +10,30 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
-from aerovaldb.exceptions import UnusedArguments, TemplateNotFound
-from aerovaldb.serialization.default_serialization import default_serialization
+from aerovaldb.exceptions import UnusedArguments
 from aerovaldb.types import AccessType
+from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 
-from ..utils import async_and_sync, str_to_bool, validate_filename_component
-from .uri import get_uri
-from .templatemapper import (
-    TemplateMapper,
-    DataVersionToTemplateMapper,
-    PriorityDataVersionToTemplateMapper,
-    SkipMapper,
+from ..utils import (
+    async_and_sync,
+    str_to_bool,
+    validate_filename_component,
+    json_dumps_wrapper,
+    parse_uri,
+    parse_formatted_string,
+    build_uri,
+    extract_substitutions,
+    run_until_finished,
 )
-from .filter import filter_heatmap, filter_regional_stats
+from ..utils.filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
 from .cache import JSONLRUCache
 from ..routes import *
-from ..lock.lock import FakeLock, FileLock
+from ..lock import FakeLock, FileLock
 from hashlib import md5
 import simplejson  # type: ignore
 
 logger = logging.getLogger(__name__)
-
-
-def json_dumps_wrapper(obj, **kwargs) -> str:
-    """
-    Wrapper which calls simplejson.dumps with the correct options, known to work for objects
-    returned by Pyaerocom.
-
-    This ensures that nan values are serialized as null to be compliant with the json standard.
-    """
-    return simplejson.dumps(obj, ignore_nan=True, **kwargs)
 
 
 class AerovalJsonFileDB(AerovalDB):
@@ -64,152 +57,66 @@ class AerovalJsonFileDB(AerovalDB):
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
 
-        self.PATH_LOOKUP: dict[str, list[TemplateMapper]] = {
-            ROUTE_GLOB_STATS: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_REG_STATS: [
-                # Same as glob_stats
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_HEATMAP: [
-                # Same as glob_stats
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_CONTOUR: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_TIMESERIES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_TIMESERIES_WEEKLY: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_EXPERIMENTS: [
-                PriorityDataVersionToTemplateMapper(["./{project}/experiments.json"])
-            ],
-            ROUTE_CONFIG: [
-                PriorityDataVersionToTemplateMapper(
-                    ["./{project}/{experiment}/cfg_{project}_{experiment}.json"]
-                )
-            ],
-            ROUTE_MENU: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/menu.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_STATISTICS: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/statistics.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_RANGES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/ranges.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_REGIONS: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/regions.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_MODELS_STYLE: [
-                PriorityDataVersionToTemplateMapper(
-                    [
-                        "./{project}/{experiment}/models-style.json",
-                        "./{project}/models-style.json",
-                    ]
-                )
-            ],
-            ROUTE_MAP: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
-                    min_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-                    max_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-            ],
-            ROUTE_SCATTER: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
-                    min_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
-                    max_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-            ],
-            ROUTE_PROFILES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_HEATMAP_TIMESERIES: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
-                    min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
-                    min_version="0.12.2",
-                    max_version="0.13.2",
-                    version_provider=self._get_version,
-                ),
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/hm/ts/stats_ts.json",
-                    max_version="0.12.2",
-                    version_provider=self._get_version,
-                ),
-            ],
-            ROUTE_FORECAST: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_GRIDDED_MAP: [
-                DataVersionToTemplateMapper(
-                    "./{project}/{experiment}/contour/{obsvar}_{model}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-            ROUTE_REPORT: [
-                DataVersionToTemplateMapper(
-                    "./reports/{project}/{experiment}/{title}.json",
-                    version_provider=self._get_version,
-                )
-            ],
-        }
+        self.PATH_LOOKUP = StringMapper(
+            {
+                ROUTE_GLOB_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_EXPERIMENTS: "./{project}/experiments.json",
+                ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
+                ROUTE_MENU: "./{project}/{experiment}/menu.json",
+                ROUTE_STATISTICS: "./{project}/{experiment}/statistics.json",
+                ROUTE_RANGES: "./{project}/{experiment}/ranges.json",
+                ROUTE_REGIONS: "./{project}/{experiment}/regions.json",
+                ROUTE_MODELS_STYLE: [
+                    "./{project}/{experiment}/models-style.json",
+                    "./{project}/models-style.json",
+                ],
+                ROUTE_MAP: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                        min_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+                        max_version="0.13.2",
+                    ),
+                ],
+                ROUTE_SCATTER: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
+                        min_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
+                        max_version="0.13.2",
+                    ),
+                ],
+                ROUTE_PROFILES: "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
+                ROUTE_HEATMAP_TIMESERIES: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
+                        min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
+                        min_version="0.12.2",
+                        max_version="0.13.2",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/stats_ts.json",
+                        max_version="0.12.2",
+                    ),
+                ],
+                ROUTE_FORECAST: "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
+                ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
+            },
+            version_provider=self._get_version,
+        )
 
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
@@ -241,9 +148,6 @@ class AerovalJsonFileDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        except simplejson.errors.JSONDecodeError:
-            # Work around for https://github.com/metno/aerovaldb/issues/28
-            return Version("0.14.0")
 
         try:
             version_str = config["exp_info"]["pyaerocom_version"]
@@ -252,34 +156,6 @@ class AerovalJsonFileDB(AerovalDB):
             version = Version("0.0.1")
 
         return version
-
-    def _normalize_access_type(
-        self, access_type: AccessType | str | None, default: AccessType = AccessType.OBJ
-    ) -> AccessType:
-        """Normalizes the access_type to an instance of AccessType enum.
-
-        :param access_type: AccessType instance or string convertible to AccessType
-        :param default: The type to return if access_type is None. Defaults to AccessType.OBJ
-        :raises ValueError: If str access_type can't be converted to AccessType.
-        :raises ValueError: If access_type is not str or AccessType
-        :return: The normalized AccessType.
-        """
-        if isinstance(access_type, AccessType):
-            return access_type
-
-        if isinstance(access_type, str):
-            try:
-                return AccessType[access_type]
-            except:
-                raise ValueError(
-                    f"String '{access_type}' can not be converted to AccessType."
-                )
-        if access_type is None:
-            return default
-
-        raise ValueError(
-            f"Access_type, {access_type}, could not be normalized. This is probably due to input that is not a str or AccessType instance."
-        )
 
     @async_and_sync
     async def _get_template(self, route: str, substitutions: dict) -> str:
@@ -296,19 +172,7 @@ class AerovalJsonFileDB(AerovalDB):
         :raises TemplateNotFound :
             If no valid template was found.
         """
-        file_path_template = None
-        for f in self.PATH_LOOKUP[route]:
-            try:
-                file_path_template = await f(**substitutions)
-            except SkipMapper:
-                continue
-
-            break
-
-        if file_path_template is None:
-            raise TemplateNotFound("No template found.")
-
-        return file_path_template
+        return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
     async def _get(
         self,
@@ -317,52 +181,64 @@ class AerovalJsonFileDB(AerovalDB):
         *args,
         **kwargs,
     ):
-        use_caching = kwargs.get("cache", False)
+        use_caching = kwargs.pop("cache", False)
+        default = kwargs.pop("default", None)
+        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
+
         if len(args) > 0:
             raise UnusedArguments(
                 f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
             )
-        logger.debug(f"Fetching data for {route}.")
+
         substitutions = route_args | kwargs
-        map(validate_filename_component, substitutions.values())
+        [validate_filename_component(x) for x in substitutions.values()]
+
+        logger.debug(f"Fetching data for {route}.")
 
         path_template = await self._get_template(route, substitutions)
         logger.debug(f"Using template string {path_template}")
 
         relative_path = path_template.format(**substitutions)
 
-        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-
-        file_path = Path(os.path.join(self._basedir, relative_path))
+        file_path = str(Path(os.path.join(self._basedir, relative_path)))
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
         filter_vars = route_args | kwargs
 
-        data = await self.get_by_uri(
-            file_path,
-            access_type=access_type,
-            cache=use_caching,
-            default=kwargs.get("default", None),
-        )
-        if "default" in kwargs:
-            # Dont want to apply filtering to default value.
-            return data
-        if filter_func is not None:
-            if access_type in (AccessType.JSON_STR, AccessType.OBJ):
-                if isinstance(data, str):
-                    data = simplejson.loads(data, allow_nan=True)
+        if not os.path.exists(file_path):
+            if default is None or access_type == AccessType.FILE_PATH:
+                raise FileNotFoundError(f"File {file_path} does not exist.")
+            return default
 
-                data = filter_func(data, **filter_vars)
+        # No filtered.
+        if filter_func is None:
+            if access_type == AccessType.FILE_PATH:
+                return file_path
 
-                if access_type == AccessType.JSON_STR:
-                    data = json_dumps_wrapper(data)
+            if access_type == AccessType.JSON_STR:
+                raw = await self._cache.get_json(file_path, no_cache=not use_caching)
+                return raw
 
-                return data
+            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
 
-            raise UnsupportedOperation("Filtered endpoints can not return a file path.")
+            return simplejson.loads(raw, allow_nan=True)
 
-        return data
+        if access_type == AccessType.FILE_PATH:
+            raise UnsupportedOperation("Filtered endpoints can not return a filepath")
+
+        json = await self._cache.get_json(file_path, no_cache=not use_caching)
+        obj = simplejson.loads(json, allow_nan=True)
+
+        obj = filter_func(obj, **filter_vars)
+
+        if access_type == AccessType.OBJ:
+            return obj
+
+        if access_type == AccessType.JSON_STR:
+            return json_dumps_wrapper(obj)
+
+        raise UnsupportedOperation
 
     async def _put(self, obj, route, route_args, *args, **kwargs):
         """Jsondb implemention of database put operation.
@@ -376,56 +252,23 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         substitutions = route_args | kwargs
-        map(validate_filename_component, substitutions.values())
+        [validate_filename_component(x) for x in substitutions.values()]
+
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
 
-        file_path = Path(os.path.join(self._basedir, relative_path)).resolve()
+        file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
 
         logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
 
-        await self.put_by_uri(obj, file_path)
-
-    @async_and_sync
-    async def get_experiments(self, project: str, /, *args, exp_order=None, **kwargs):
-        # If an experiments.json file exists, read it.
-        try:
-            access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-            experiments = await self._get(
-                ROUTE_EXPERIMENTS,
-                {"project": project},
-                access_type=access_type,
-            )
-        except FileNotFoundError:
-            pass
+        if not os.path.exists(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
+        if isinstance(obj, str):
+            json = obj
         else:
-            return experiments
-
-        # Otherwise generate it based on config and expinfo.public information.
-        experiments = {}
-        for exp in self._list_experiments(project, has_results=True):
-            public = False
-            try:
-                config = await self.get_config(project, exp)
-            except FileNotFoundError:
-                pass
-            else:
-                public = config.get("exp_info", {}).get("public", False)
-            experiments[exp] = {"public": public}
-
-        access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-
-        experiments = dict(experiments.items())
-        if access_type == AccessType.FILE_PATH:
-            raise UnsupportedOperation(
-                f"get_experiments() does not support access_type {access_type}."
-            )
-
-        if access_type == AccessType.JSON_STR:
-            json = json_dumps_wrapper(experiments)
-            return json
-
-        return experiments
+            json = json_dumps_wrapper(obj)
+        with open(file_path, "w") as f:
+            f.write(json)
 
     def rm_experiment_data(self, project: str, experiment: str) -> None:
         """Deletes ALL data associated with an experiment.
@@ -501,9 +344,77 @@ class AerovalJsonFileDB(AerovalDB):
             cache=True,
         )
 
+    def _get_uri_for_file(self, file_path: str) -> str:
+        """
+        For the provided data file path, returns the corresponding
+        URI.
+
+        :param file_path : The file_path.
+        """
+        file_path = os.path.join(self._basedir, file_path)
+        file_path = os.path.relpath(file_path, start=self._basedir)
+
+        for route in self.PATH_LOOKUP._lookuptable:
+            if not (route == ROUTE_MODELS_STYLE):
+                if file_path.startswith("reports/"):
+                    str = "/".join(file_path.split("/")[1:3])
+                    subs = parse_formatted_string("{project}/{experiment}", str)
+                else:
+                    str = "/".join(file_path.split("/")[0:2])
+                    subs = parse_formatted_string("{project}/{experiment}", str)
+
+                template = self._get_template(route, subs)
+            else:
+                try:
+                    subs = parse_formatted_string(
+                        "{project}/{experiment}/models-style.json", file_path
+                    )
+                except Exception:
+                    try:
+                        subs = parse_formatted_string(
+                            "{project}/models-style.json", file_path
+                        )
+                    except:
+                        continue
+
+                template = self._get_template(route, subs)
+
+            # TODO: Ugly hack need to fix
+            try:
+                version = run_until_finished(
+                    self._get_version(subs["project"], subs["experiment"])
+                )
+            except TypeError:
+                version = self._get_version(subs["project"], subs["experiment"])
+            except KeyError:
+                version = Version("0.0.1")
+            route_arg_names = extract_substitutions(route)
+
+            try:
+                all_args = parse_formatted_string(template, f"./{file_path}")  # type: ignore
+
+                route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
+                kwargs = {
+                    k: v for k, v in all_args.items() if not (k in route_arg_names)
+                }
+            except Exception:
+                continue
+            else:
+                return build_uri(route, route_args, kwargs | {"version": version})
+
+        raise ValueError(f"Unable to build URI for file path {file_path}")
+
     def list_glob_stats(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
+        access_type = self._normalize_access_type(access_type)
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
+
         template = str(
             os.path.abspath(
                 os.path.join(
@@ -518,11 +429,23 @@ class AerovalJsonFileDB(AerovalDB):
 
         glb = glb.format(project=project, experiment=experiment)
         for f in glob.glob(glb):
-            yield f
+            if access_type == AccessType.FILE_PATH:
+                yield f
+                continue
+
+            yield self._get_uri_for_file(f)
 
     def list_timeseries(
-        self, project: str, experiment: str
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
     ) -> Generator[str, None, None]:
+        access_type = self._normalize_access_type(access_type)
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
+
         template = str(
             os.path.abspath(
                 os.path.join(
@@ -543,9 +466,23 @@ class AerovalJsonFileDB(AerovalDB):
         glb = glb.format(project=project, experiment=experiment)
 
         for f in glob.glob(glb):
-            yield f
+            if access_type == AccessType.FILE_PATH:
+                yield f
+                continue
 
-    def list_map(self, project: str, experiment: str) -> Generator[str, None, None]:
+            yield self._get_uri_for_file(f)
+
+    def list_map(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ) -> Generator[str, None, None]:
+        access_type = self._normalize_access_type(access_type)
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
+
         template = str(
             os.path.abspath(
                 os.path.join(
@@ -568,31 +505,11 @@ class AerovalJsonFileDB(AerovalDB):
         glb = glb.format(project=project, experiment=experiment)
 
         for f in glob.glob(glb):
-            yield f
+            if access_type == AccessType.FILE_PATH:
+                yield f
+                continue
 
-    def _list_experiments(
-        self, project: str, /, has_results: bool = False
-    ) -> list[str]:
-        project_path = os.path.join(self._basedir, project)
-        experiments = []
-
-        if not os.path.exists(project_path):
-            return []
-
-        for f in os.listdir(project_path):
-            if not has_results:
-                if os.path.isdir(os.path.join(project_path, f)):
-                    experiments.append(f)
-            else:
-                if not os.path.isdir(os.path.join(project_path, f)):
-                    continue
-                glb = os.path.join(project_path, f, "map", "*.json")
-                if len(glob.glob(glb)) == 0:
-                    continue
-
-                experiments.append(f)
-
-        return experiments
+            yield self._get_uri_for_file(f)
 
     @async_and_sync
     async def get_by_uri(
@@ -603,53 +520,26 @@ class AerovalJsonFileDB(AerovalDB):
         cache: bool = False,
         default=None,
     ):
-        if not isinstance(uri, str):
-            uri = str(uri)
-        if uri.startswith("."):
-            uri = get_uri(os.path.join(self._basedir, uri))
-
-        if not uri.startswith(self._basedir):
-            raise PermissionError(
-                f"URI {uri} is out of bounds {self._basedir} of the current aerovaldb connection."
-            )
-
         access_type = self._normalize_access_type(access_type)
-
-        if not os.path.exists(uri):
-            if default is None or access_type == AccessType.FILE_PATH:
-                raise FileNotFoundError(f"Object with URI {uri} does not exist.")
-
-            return default
-        if access_type == AccessType.FILE_PATH:
+        if access_type in [AccessType.URI]:
             return uri
 
-        if access_type == AccessType.JSON_STR:
-            raw = await self._cache.get_json(uri, no_cache=not cache)
-            return json_dumps_wrapper(raw)
+        route, route_args, kwargs = parse_uri(uri)
 
-        raw = await self._cache.get_json(uri, no_cache=not cache)
-
-        return simplejson.loads(raw, allow_nan=True)
+        return await self._get(
+            route,
+            route_args,
+            cache=cache,
+            default=default,
+            access_type=access_type,
+            **kwargs,
+        )
 
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
-        if not isinstance(uri, str):
-            uri = str(uri)
-        if uri.startswith("."):
-            uri = get_uri(os.path.join(self._basedir, uri))
+        route, route_args, kwargs = parse_uri(uri)
 
-        if not uri.startswith(self._basedir):
-            raise PermissionError(
-                f"URI {uri} is out of bounds {self._basedir} of the current aerovaldb connection."
-            )
-        if not os.path.exists(os.path.dirname(uri)):
-            os.makedirs(os.path.dirname(uri))
-        if isinstance(obj, str):
-            json = obj
-        else:
-            json = json_dumps_wrapper(obj)
-        with open(uri, "w") as f:
-            f.write(json)
+        await self._put(obj, route, route_args, **kwargs)
 
     def _get_lock_file(self) -> str:
         os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
@@ -664,3 +554,24 @@ class AerovalJsonFileDB(AerovalDB):
             return FileLock(self._get_lock_file())
 
         return FakeLock()
+
+    def list_all(self, access_type: str | AccessType = AccessType.URI):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
+            UnsupportedOperation(f"Accesstype {access_type} not supported.")
+
+        glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
+
+        for f in glb:
+            if os.path.isfile(f):
+                if access_type == AccessType.FILE_PATH:
+                    yield f
+                    continue
+
+                try:
+                    uri = self._get_uri_for_file(f)
+                except (ValueError, KeyError):
+                    continue
+                else:
+                    yield uri

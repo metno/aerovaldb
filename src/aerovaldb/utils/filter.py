@@ -1,3 +1,8 @@
+# These filters are used to filter end points return a subset of a file / endpoint.
+# Currently this only applies to regional_stats and heatmap, which both return a
+# subset of the globstats endpoint.
+
+
 def filter_regional_stats(data, variable: str, network: str, layer: str, **kwargs):
     """
     Filters regional stats out of a glob_stats data object.
