@@ -4,7 +4,7 @@ import regex as re
 PATH_COMPONENT_PATTERN = re.compile(r"^[^/]+$", flags=re.UNICODE)
 
 
-def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> bool:
+def str_to_bool(value: str, /, default: bool | None = None) -> bool:
     """
     Parses a string as a boolean, supporting various values. It is intended
     mainly for parsing environment variables.
@@ -29,10 +29,10 @@ def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> b
     if value.lower() in ["0", "false", "f", "no", "n"]:
         return False
 
-    if not strict:
+    if default is not None:
         return default
 
-    raise ValueError("Unexpected string '{value}'")
+    raise ValueError("Could not convert string to float: '{value}'")
 
 
 def validate_filename_component(value: str) -> None:

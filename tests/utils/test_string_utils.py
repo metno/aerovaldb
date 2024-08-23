@@ -18,7 +18,7 @@ from aerovaldb.utils import str_to_bool, validate_filename_component
     ),
 )
 def test_str_to_bool(value: str, expected: bool):
-    assert str_to_bool(value, strict=True) == expected
+    assert str_to_bool(value) == expected
 
 
 def test_str_to_bool_exception_1():
@@ -28,11 +28,10 @@ def test_str_to_bool_exception_1():
 
 def test_str_to_bool_exception_2():
     with pytest.raises(ValueError):
-        str_to_bool("blah", strict=True)
+        str_to_bool("blah")
 
 
 def test_str_to_bool_default():
-    assert not str_to_bool("blah")
     assert str_to_bool("blah", default=True)
     assert not str_to_bool("blah", default=False)
 
