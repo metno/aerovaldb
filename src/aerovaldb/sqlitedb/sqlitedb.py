@@ -242,9 +242,6 @@ class AerovalSqliteDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        # except simplejson.JSONDecodeError:
-        #    # Work around for https://github.com/metno/aerovaldb/issues/28
-        #    return Version("0.14.0")
 
         try:
             version_str = config["exp_info"]["pyaerocom_version"]
@@ -349,11 +346,9 @@ class AerovalSqliteDB(AerovalDB):
 
         return (columnlist, substitutionlist)
 
-    async def _get(self, route, route_args, *args, **kwargs):
+    async def _get(self, route, route_args, **kwargs):
         cache = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
-        if len(args) > 0:
-            raise UnusedArguments("Unexpected arguments.")
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         if access_type in [AccessType.FILE_PATH]:
@@ -435,12 +430,7 @@ class AerovalSqliteDB(AerovalDB):
 
         raise UnsupportedOperation
 
-    async def _put(self, obj, route, route_args, *args, **kwargs):
-        if len(args) > 0:
-            raise UnusedArguments(
-                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
-            )
-
+    async def _put(self, obj, route, route_args, **kwargs):
         cur = self._con.cursor()
 
         table_name = await self.TABLE_NAME_LOOKUP.lookup(route, **(route_args | kwargs))
