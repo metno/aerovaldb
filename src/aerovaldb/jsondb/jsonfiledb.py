@@ -148,9 +148,6 @@ class AerovalJsonFileDB(AerovalDB):
                 version = Version("0.0.1")
             finally:
                 return version
-        # except simplejson.JSONDecodeError:
-        #    # Work around for https://github.com/metno/aerovaldb/issues/28
-        #    return Version("0.14.0")
 
         try:
             version_str = config["exp_info"]["pyaerocom_version"]
