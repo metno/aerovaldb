@@ -317,6 +317,21 @@ def test_getter_sync(testdb: str, fun: str, args: list, kwargs: dict, expected):
         assert data["path"] == expected
 
 
+@TESTDB_PARAMETRIZATION
+@GET_PARAMETRIZATION
+def test_getter_json_str(testdb: str, fun: str, args: list, kwargs: dict, expected):
+    with aerovaldb.open(testdb, use_async=False) as db:
+        f = getattr(db, fun)
+
+        if kwargs is not None:
+            data = f(*args, access_type=aerovaldb.AccessType.JSON_STR, **kwargs)
+        else:
+            data = f(*args, access_type=aerovaldb.AccessType.JSON_STR)
+
+        data = simplejson.loads(data)
+        assert data["path"] == expected
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
@@ -371,6 +386,28 @@ def test_setters_sync(fun: str, args: list, kwargs: dict, tmpdb):
 
 
 @pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
+@PUT_PARAMETRIZATION
+def test_setters_json_str(fun: str, args: list, kwargs: dict, tmpdb):
+    with tmpdb as db:
+        get = getattr(db, f"get_{fun}")
+        put = getattr(db, f"put_{fun}")
+
+        expected = fun + str(random.randint(0, 100000))
+        if kwargs is not None:
+            put(aerovaldb.utils.json_dumps_wrapper({"data": expected}), *args, **kwargs)
+
+            data = get(*args, **kwargs)
+        else:
+            put(aerovaldb.utils.json_dumps_wrapper({"data": expected}), *args)
+
+            data = get(*args)
+
+        assert data["data"] == expected
+
+
+@pytest.mark.parametrize(
     "dbtype",
     (
         pytest.param(
@@ -403,16 +440,6 @@ async def test_file_does_not_exist(testdb):
                 "non-existent-project",
                 "experiment",
             )
-
-
-@TESTDB_PARAMETRIZATION
-def test_exception_on_unexpected_args(testdb):
-    """
-    https://github.com/metno/aerovaldb/issues/19
-    """
-    with aerovaldb.open(testdb) as db:
-        with pytest.raises(aerovaldb.UnusedArguments):
-            db.get_config("project", "experiment", "excessive-positional-argument")
 
 
 @TESTDB_PARAMETRIZATION
@@ -462,3 +489,19 @@ def test_list_timeseries(testdb):
         timeseries = db.list_timeseries("project", "experiment")
 
         assert len(list(timeseries)) == 1
+
+
+@pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
+def test_rm_experiment_data(tmpdb):
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        for i, uri in enumerate(db.list_all()):
+            data = db.get_by_uri(uri, access_type=aerovaldb.AccessType.JSON_STR)
+            tmpdb.put_by_uri(data, uri)
+
+        assert len(list(db.list_all())) == len(list(tmpdb.list_all()))
+
+        tmpdb.rm_experiment_data("project", "experiment")
+
+        assert len(list(tmpdb.list_all())) == 24

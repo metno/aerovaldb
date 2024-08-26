@@ -28,7 +28,7 @@ def test_str_to_bool_exception_1():
 
 def test_str_to_bool_exception_2():
     with pytest.raises(ValueError):
-        str_to_bool("blah", strict=True)
+        str_to_bool("blah")
 
 
 def test_str_to_bool_default():

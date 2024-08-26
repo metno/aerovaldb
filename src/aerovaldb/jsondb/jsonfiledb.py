@@ -178,17 +178,11 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         route,
         route_args,
-        *args,
         **kwargs,
     ):
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
-
-        if len(args) > 0:
-            raise UnusedArguments(
-                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
-            )
 
         substitutions = route_args | kwargs
         [validate_filename_component(x) for x in substitutions.values()]
@@ -211,7 +205,6 @@ class AerovalJsonFileDB(AerovalDB):
                 raise FileNotFoundError(f"File {file_path} does not exist.")
             return default
 
-        # No filtered.
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
                 return file_path
@@ -240,17 +233,12 @@ class AerovalJsonFileDB(AerovalDB):
 
         raise UnsupportedOperation
 
-    async def _put(self, obj, route, route_args, *args, **kwargs):
+    async def _put(self, obj, route, route_args, **kwargs):
         """Jsondb implemention of database put operation.
 
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        if len(args) > 0:
-            raise UnusedArguments(
-                f"Unexpected positional arguments {args}. Jsondb does not use additional positional arguments currently."
-            )
-
         substitutions = route_args | kwargs
         [validate_filename_component(x) for x in substitutions.values()]
 

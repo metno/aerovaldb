@@ -33,7 +33,8 @@ def get_method(route):
                         raise IndexError(
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
-
+            if len(args) > 0:
+                raise IndexError(f"{len(args)} superfluous positional args provided.")
             return await self._get(route, route_args, *args, cache=False, **kwargs)
 
         return wrapper
@@ -66,8 +67,9 @@ def put_method(route):
                         raise IndexError(
                             f"{wrapped.__name__} got less parameters as expected (>= {len(route_args)+2}): {iex}"
                         )
-
-            return await self._put(obj, route, route_args, *args, **kwargs)
+            if len(args) > 0:
+                raise IndexError(f"{len(args)} superfluous positional args provided.")
+            return await self._put(obj, route, route_args, **kwargs)
 
         return wrapper
 
@@ -88,7 +90,7 @@ class AerovalDB(abc.ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    async def _get(self, route: str, route_args: dict[str, str], *args, **kwargs):
+    async def _get(self, route: str, route_args: dict[str, str], **kwargs):
         """Abstract implementation of the main getter functions. All get and put
         functions map to this function, with a corresponding route as key
         to enable key/value pair put and get functionality.
@@ -98,7 +100,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    async def _put(self, obj, route: str, route_args: dict[str, str], *args, **kwargs):
+    async def _put(self, obj, route: str, route_args: dict[str, str], **kwargs):
         """Abstract implementation of the main getter functions. All get and put
         functions map to this function, with a corresponding route as key
         to enable key/value pair put and get functionality.

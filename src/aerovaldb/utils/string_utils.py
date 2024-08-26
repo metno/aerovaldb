@@ -4,7 +4,7 @@ import regex as re
 PATH_COMPONENT_PATTERN = re.compile(r"^[^/]+$", flags=re.UNICODE)
 
 
-def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> bool:
+def str_to_bool(value: str, /, default: bool | None = None) -> bool:
     """
     Parses a string as a boolean, supporting various values. It is intended
     mainly for parsing environment variables.
@@ -12,13 +12,14 @@ def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> b
     Supports 1/0, true/false, t/f, yes/no, y/n (Case insensitive).
 
     :param value : The string value to be converted.
-    :param strict : If true, ValueError is raised if an unrecognized value is encountered,
-    otherwise default is returned.
-    :param default : Returned if strict is disabled, for unrecognized values.
+    :param default : Optional default return value (True/False) if the string
+        value doesn't match any supported value. If not set, or set to None,
+        a ValueError is raised in these cases.
+
     :raises ValueError
         If value is not a string
     :raises ValueError
-        If strict is true, and value does not match expected values.
+        Raised on unsupported input value. Suppressed if default is set to True/False.
     """
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")
@@ -29,10 +30,10 @@ def str_to_bool(value: str, /, strict: bool = False, default: bool = False) -> b
     if value.lower() in ["0", "false", "f", "no", "n"]:
         return False
 
-    if not strict:
+    if default is not None:
         return default
 
-    raise ValueError("Unexpected string '{value}'")
+    raise ValueError("Could not convert string to bool: '{value}'")
 
 
 def validate_filename_component(value: str) -> None:
