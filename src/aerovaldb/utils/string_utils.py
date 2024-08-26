@@ -12,14 +12,14 @@ def str_to_bool(value: str, /, default: bool | None = None) -> bool:
     Supports 1/0, true/false, t/f, yes/no, y/n (Case insensitive).
 
     :param value : The string value to be converted.
-    :param default : If None, a string value not explicitly matching one of the
-        above values for true/false will raise a ValueError. Otherwise this default
-        will be returned instead.
+    :param default : Optional default return value (True/False) if the string
+        value doesn't match any supported value. If not set, or set to None,
+        a ValueError is raised in these cases.
 
     :raises ValueError
         If value is not a string
     :raises ValueError
-        If default is None, and value does not match one of the above templates.
+        Raised on unsupported input value. Suppressed if default is set to True/False.
     """
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")
@@ -33,7 +33,7 @@ def str_to_bool(value: str, /, default: bool | None = None) -> bool:
     if default is not None:
         return default
 
-    raise ValueError("Could not convert string to float: '{value}'")
+    raise ValueError("Could not convert string to bool: '{value}'")
 
 
 def validate_filename_component(value: str) -> None:
