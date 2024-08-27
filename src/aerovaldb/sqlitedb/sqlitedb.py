@@ -2,7 +2,7 @@ import sqlite3
 from typing import Any, Awaitable, Callable
 
 from async_lru import alru_cache
-from pkg_resources import DistributionNotFound, get_distribution  # type: ignore
+import importlib.metadata
 import simplejson  # type: ignore
 import aerovaldb
 from aerovaldb.utils.filter import filter_heatmap, filter_regional_stats
@@ -237,8 +237,8 @@ class AerovalSqliteDB(AerovalDB):
                 # been written, we use the version of the installed pyaerocom. This is
                 # important for tests to work correctly, and for files to be written
                 # correctly if the config file happens to be written after data files.
-                version = Version(get_distribution("pyaerocom").version)
-            except DistributionNotFound:
+                version = Version(importlib.metadata.version("pyaerocom"))
+            except importlib.metadata.PackageNotFoundError:
                 version = Version("0.0.1")
             finally:
                 return version
