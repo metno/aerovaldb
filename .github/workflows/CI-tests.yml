@@ -33,7 +33,7 @@ jobs:
         tox -e py --notest
     - name: Test with tox
       run: |
-        tox -m test
+        tox -e py
 
   lint:
     runs-on: ubuntu-latest
