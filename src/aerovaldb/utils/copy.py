@@ -1,9 +1,26 @@
 from .. import AerovalDB, open, AccessType
 from ..utils import async_and_sync
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @async_and_sync
 async def copy_db_contents(source: str | AerovalDB, dest: str | AerovalDB):
+    """
+    Utility function for copying the contents of one db connection to another
+    Currently this implementation requires the destination db to be empty.
+
+    :param source : Instance of AerovalDB or resource string passed to
+        aerovaldb.open()
+    :param dest : Instance of AerovalDB or resource string passed to
+        aerovaldb.open()
+
+    :raises : ValueError
+        If destination is not empty.
+    :raises : IOError
+        Number of items in destination is not the same as the source after copy.
+    """
     if isinstance(source, str):
         source = open(source)
 
@@ -13,7 +30,8 @@ async def copy_db_contents(source: str | AerovalDB, dest: str | AerovalDB):
     if len(await dest.list_all()) > 0:
         ValueError("Destination database is not empty.")
 
-    for uri in await source.list_all():
+    for i, uri in enumerate(await source.list_all()):
+        logger.info(f"Processing item {i} of {len(await source.list_all())}")
         data = await source.get_by_uri(uri, access_type=AccessType.JSON_STR)
         await dest.put_by_uri(data, uri)
 
