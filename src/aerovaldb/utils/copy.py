@@ -1,6 +1,7 @@
 from .. import AerovalDB, open, AccessType
 from ..utils import async_and_sync
 import logging
+import argparse
 
 logger = logging.getLogger(__name__)
 
@@ -41,3 +42,25 @@ async def copy_db_contents(source: str | AerovalDB, dest: str | AerovalDB):
         raise IOError(
             f"Unexpected number of items in destination after copy. Expected {src_len}, got {dst_len}"
         )
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Utility for copying contents from one aerovaldb resource to another."
+    )
+    parser.add_argument(
+        "source", type=str, help="Resource string of the source AerovalDB instance"
+    )
+    parser.add_argument(
+        "dest", type=str, help="Resource string of the destination AerovalDB instance"
+    )
+
+    args = parser.parse_args()
+
+    source = args.source
+    dest = args.dest
+    copy_db_contents(source, dest)
+
+
+if __name__ == "__main__":
+    main()
