@@ -1227,3 +1227,19 @@ class AerovalDB(abc.ABC):
             For non-supported acces types.
         """
         raise NotImplementedError
+
+    @async_and_sync
+    @get_method(ROUTE_REPORT_IMAGE)
+    async def get_report_image(
+        self,
+        project: str,
+        experiment: str,
+        path: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        raise NotImplementedError
+
+    @async_and_sync
+    @put_method(ROUTE_REPORT_IMAGE)
+    async def put_report_image(self, obj, project: str, experiment: str, path: str):
+        raise NotImplementedError

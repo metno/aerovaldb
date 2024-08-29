@@ -18,3 +18,4 @@ class AccessType(Enum):
     FILE_PATH = auto()
     OBJ = auto()
     URI = auto()
+    BLOB = auto()

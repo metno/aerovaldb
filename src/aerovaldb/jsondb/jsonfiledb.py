@@ -113,6 +113,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_FORECAST: "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
+                ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
             },
             version_provider=self._get_version,
         )
@@ -179,12 +180,14 @@ class AerovalJsonFileDB(AerovalDB):
         route_args,
         **kwargs,
     ):
+        validate_args = kwargs.pop("validate_args", True)
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         substitutions = route_args | kwargs
-        [validate_filename_component(x) for x in substitutions.values()]
+        if validate_args:
+            [validate_filename_component(x) for x in substitutions.values()]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -576,3 +579,43 @@ class AerovalJsonFileDB(AerovalDB):
                     result.append(uri)
 
         return result
+
+    @async_and_sync
+    async def get_report_image(
+        self,
+        project: str,
+        experiment: str,
+        path: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+            raise UnsupportedOperation(
+                f"The report image endpoint does not support access type {access_type}."
+            )
+
+        file_path = await self._get(
+            route=ROUTE_REPORT_IMAGE,
+            route_args={
+                "project": project,
+                "experiment": experiment,
+                "path": path,
+            },
+            access_type=AccessType.FILE_PATH,
+            validate_args=False,
+        )
+        if access_type == AccessType.FILE_PATH:
+            return file_path
+
+        with open(file_path, "rb") as f:
+            return f.read()
+
+    @async_and_sync
+    async def put_report_image(self, obj, project: str, experiment: str, path: str):
+        template = await self._get_template(ROUTE_REPORT_IMAGE, {})
+
+        file_path = template.format(project=project, experiment=experiment, path=path)
+
+        with open(file_path) as f:
+            f.write(obj)

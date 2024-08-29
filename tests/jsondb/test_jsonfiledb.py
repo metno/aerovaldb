@@ -25,3 +25,15 @@ def test_with_symlink():
         data = db.get_config("linked-json-project", "experiment")
 
         assert data["path"] == "link"
+
+
+def test_get_image():
+    with aerovaldb.open("json_files:./tests/test-db/json") as db:
+        path = db.get_report_image(
+            "project",
+            "experiment",
+            "img/pixel.png",
+            access_type=aerovaldb.AccessType.FILE_PATH,
+        )
+        assert isinstance(path, str)
+        assert path.endswith("/reports/project/experiment/img/pixel.png")

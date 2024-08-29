@@ -44,6 +44,7 @@ ROUTE_GRIDDED_MAP = "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}"
 
 ROUTE_REPORT = "/v0/report/{project}/{experiment}/{title}"
 
+ROUTE_REPORT_IMAGE = "/v0/report/image/{project}/{experiment}:{path}"
 
 ALL_ROUTES = [
     ROUTE_GLOB_STATS,
