@@ -1,6 +1,5 @@
 import pytest
 import aerovaldb
-from aerovaldb.exceptions import TemplateNotFound
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
 
 

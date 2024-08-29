@@ -23,7 +23,6 @@ from ..utils import (
     parse_formatted_string,
     build_uri,
     extract_substitutions,
-    run_until_finished,
 )
 from ..utils.filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
@@ -332,7 +331,8 @@ class AerovalJsonFileDB(AerovalDB):
             cache=True,
         )
 
-    def _get_uri_for_file(self, file_path: str) -> str:
+    @async_and_sync
+    async def _get_uri_for_file(self, file_path: str) -> str:
         """
         For the provided data file path, returns the corresponding
         URI.
@@ -350,8 +350,6 @@ class AerovalJsonFileDB(AerovalDB):
                 else:
                     str = "/".join(file_path.split("/")[0:2])
                     subs = parse_formatted_string("{project}/{experiment}", str)
-
-                template = self._get_template(route, subs)
             else:
                 try:
                     subs = parse_formatted_string(
@@ -365,16 +363,14 @@ class AerovalJsonFileDB(AerovalDB):
                     except:
                         continue
 
-                template = self._get_template(route, subs)
+            template = await self._get_template(route, subs)
 
-            # TODO: Ugly hack need to fix
-            try:
-                version = run_until_finished(
-                    self._get_version(subs["project"], subs["experiment"])
-                )
-            except TypeError:
-                version = self._get_version(subs["project"], subs["experiment"])
-            except KeyError:
+            if "experiment" in subs:
+                version = await self._get_version(subs["project"], subs["experiment"])
+            else:
+                # Project level models style does not have a version because version is defined
+                # per experiment. version doesn't matter for models-style because it is priority
+                # based, so we set a dummy value to simplify.
                 version = Version("0.0.1")
             route_arg_names = extract_substitutions(route)
 
@@ -392,13 +388,14 @@ class AerovalJsonFileDB(AerovalDB):
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
-    def list_glob_stats(
+    @async_and_sync
+    async def list_glob_stats(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ):
         access_type = self._normalize_access_type(access_type)
         if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
             raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
@@ -407,7 +404,7 @@ class AerovalJsonFileDB(AerovalDB):
             os.path.abspath(
                 os.path.join(
                     self._basedir,
-                    self._get_template(
+                    await self._get_template(
                         ROUTE_GLOB_STATS, {"project": project, "experiment": experiment}
                     ),  # type: ignore
                 )
@@ -416,20 +413,25 @@ class AerovalJsonFileDB(AerovalDB):
         glb = template.replace("{frequency}", "*")
 
         glb = glb.format(project=project, experiment=experiment)
+
+        result = []
         for f in glob.glob(glb):
             if access_type == AccessType.FILE_PATH:
-                yield f
+                result.append(f)
                 continue
 
-            yield self._get_uri_for_file(f)
+            result.append(await self._get_uri_for_file(f))
 
-    def list_timeseries(
+        return result
+
+    @async_and_sync
+    async def list_timeseries(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ):
         access_type = self._normalize_access_type(access_type)
         if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
             raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
@@ -438,7 +440,7 @@ class AerovalJsonFileDB(AerovalDB):
             os.path.abspath(
                 os.path.join(
                     self._basedir,
-                    self._get_template(
+                    await self._get_template(
                         ROUTE_TIMESERIES,
                         {"project": project, "experiment": experiment},
                     ),  # type: ignore
@@ -453,20 +455,24 @@ class AerovalJsonFileDB(AerovalDB):
         )
         glb = glb.format(project=project, experiment=experiment)
 
+        result = []
         for f in glob.glob(glb):
             if access_type == AccessType.FILE_PATH:
-                yield f
+                result.append(f)
                 continue
 
-            yield self._get_uri_for_file(f)
+            result.append(await self._get_uri_for_file(f))
 
-    def list_map(
+        return result
+
+    @async_and_sync
+    async def list_map(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ):
         access_type = self._normalize_access_type(access_type)
         if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
             raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
@@ -492,12 +498,15 @@ class AerovalJsonFileDB(AerovalDB):
         )
         glb = glb.format(project=project, experiment=experiment)
 
+        result = []
         for f in glob.glob(glb):
             if access_type == AccessType.FILE_PATH:
-                yield f
+                result.append(f)
                 continue
 
-            yield self._get_uri_for_file(f)
+            result.append(await self._get_uri_for_file(f))
+
+        return result
 
     @async_and_sync
     async def get_by_uri(
@@ -543,7 +552,8 @@ class AerovalJsonFileDB(AerovalDB):
 
         return FakeLock()
 
-    def list_all(self, access_type: str | AccessType = AccessType.URI):
+    @async_and_sync
+    async def list_all(self, access_type: str | AccessType = AccessType.URI):
         access_type = self._normalize_access_type(access_type)
 
         if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
@@ -551,15 +561,18 @@ class AerovalJsonFileDB(AerovalDB):
 
         glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
 
+        result = []
         for f in glb:
             if os.path.isfile(f):
                 if access_type == AccessType.FILE_PATH:
-                    yield f
+                    result.append(f)
                     continue
 
                 try:
-                    uri = self._get_uri_for_file(f)
+                    uri = await self._get_uri_for_file(f)
                 except (ValueError, KeyError):
                     continue
                 else:
-                    yield uri
+                    result.append(uri)
+
+        return result

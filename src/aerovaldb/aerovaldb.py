@@ -1,11 +1,9 @@
 import abc
 import functools
 import inspect
-from typing import Generator
 from .types import AccessType
 from .utils import async_and_sync
 from .routes import *
-from .lock import FakeLock, FileLock
 
 
 def get_method(route):
@@ -213,19 +211,20 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_glob_stats(
+    @async_and_sync
+    async def list_glob_stats(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
-        """Generator that lists the URI for each glob_stats object.
+    ) -> list[str]:
+        """Lists the URI for each glob_stats object.
 
         :param project: str
         :param experiment: str
 
-        :return Generator of URIs.
+        :return List of URIs.
         """
         raise NotImplementedError
 
@@ -345,13 +344,14 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_timeseries(
+    @async_and_sync
+    async def list_timeseries(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ) -> list[str]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -772,19 +772,20 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_map(
+    @async_and_sync
+    async def list_map(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ) -> list[str]:
         """Lists all map files for a given project / experiment combination.
 
         :param project: The project ID.
         :param experiment: The experiment ID.
 
-        :return Generator with the URIs.
+        :return List with the URIs.
         """
         raise NotImplementedError
 
@@ -1214,9 +1215,8 @@ class AerovalDB(abc.ABC):
 
         assert False
 
-    def list_all(
-        self, access_type: str | AccessType = AccessType.URI
-    ) -> Generator[str, None, None]:
+    @async_and_sync
+    async def list_all(self, access_type: str | AccessType = AccessType.URI):
         """Iterator to list over the URI of each object
         stored in the current aerovaldb connection, returning
         the URI of each.
