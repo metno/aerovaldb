@@ -29,7 +29,7 @@ def parse_formatted_string(template: str, s: str) -> dict:
     # Now replace keyword arguments with named groups matching them. We also escape between keyword
     # arguments so we support meta-characters there. Re-join tokens to form our regexp pattern
 
-    tokens[1::2] = map("(?P<{}>[a-zA-Z-]*)".format, keywords)
+    tokens[1::2] = map("(?P<{}>[^/]*)".format, keywords)
     tokens[0::2] = map(re.escape, tokens[0::2])
     pattern = "".join(tokens)
 

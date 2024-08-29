@@ -526,6 +526,14 @@ class AerovalJsonFileDB(AerovalDB):
 
         route, route_args, kwargs = parse_uri(uri)
 
+        if route.startswith("/v0/reports/image/"):
+            return await self.get_report_image(
+                route_args["project"],
+                route_args["experiment"],
+                route_args["path"],
+                access_type=access_type,
+            )
+
         return await self._get(
             route,
             route_args,
@@ -538,6 +546,12 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
+
+        if route.startswith("/v0/reports/image/"):
+            await self.put_report_image(
+                obj, route_args["project"], route_args["experiment"], route_args["path"]
+            )
+            return
 
         await self._put(obj, route, route_args, **kwargs)
 
@@ -615,7 +629,10 @@ class AerovalJsonFileDB(AerovalDB):
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
         template = await self._get_template(ROUTE_REPORT_IMAGE, {})
 
-        file_path = template.format(project=project, experiment=experiment, path=path)
-
-        with open(file_path) as f:
+        file_path = os.path.join(
+            self._basedir,
+            template.format(project=project, experiment=experiment, path=path),
+        )
+        os.makedirs(Path(file_path).parent)
+        with open(file_path, "wb") as f:
             f.write(obj)

@@ -1,3 +1,4 @@
+import os
 import pytest
 import aerovaldb
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
@@ -37,3 +38,15 @@ def test_get_image():
         )
         assert isinstance(path, str)
         assert path.endswith("/reports/project/experiment/img/pixel.png")
+
+
+def test_put_image(tmp_path):
+    with open("tests/test-db/json/reports/project/experiment/img/pixel.png", "rb") as f:
+        data = f.read()
+
+    path = str(tmp_path)
+
+    with aerovaldb.open(f"json_files:{path}") as db:
+        db.put_report_image(data, "project", "experiment", "pixel.png")
+
+    assert os.path.exists(f"{path}/reports/project/experiment/pixel.png")
