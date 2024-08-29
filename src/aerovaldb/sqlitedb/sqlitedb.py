@@ -552,10 +552,11 @@ class AerovalSqliteDB(AerovalDB):
             """,
             (project, experiment),
         )
-        result = cur.fetchall()
+        fetched = cur.fetchall()
 
         route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["glob_stats"]
-        for r in result:
+        result = []
+        for r in fetched:
             arg_names = extract_substitutions(route)
             route_args = {}
             kwargs = {}
@@ -569,9 +570,12 @@ class AerovalSqliteDB(AerovalDB):
                     kwargs[k] = r[k]
 
             uri = build_uri(route, route_args, kwargs)
-            yield uri
+            result.append(uri)
 
-    def list_timeseries(
+        return result
+
+    @async_and_sync
+    async def list_timeseries(
         self,
         project: str,
         experiment: str,
@@ -591,10 +595,11 @@ class AerovalSqliteDB(AerovalDB):
             """,
             (project, experiment),
         )
-        result = cur.fetchall()
+        fetched = cur.fetchall()
 
         route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["timeseries"]
-        for r in result:
+        result = []
+        for r in fetched:
             arg_names = extract_substitutions(route)
             route_args = {}
             kwargs = {}
@@ -608,7 +613,8 @@ class AerovalSqliteDB(AerovalDB):
                     kwargs[k] = r[k]
 
             uri = build_uri(route, route_args, kwargs)
-            yield uri
+            result.append(uri)
+        return result
 
     def rm_experiment_data(self, project: str, experiment: str) -> None:
         cur = self._con.cursor()

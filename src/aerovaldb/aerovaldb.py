@@ -213,13 +213,14 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_glob_stats(
+    @async_and_sync
+    async def list_glob_stats(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ) -> list[str]:
         """Generator that lists the URI for each glob_stats object.
 
         :param project: str
@@ -345,13 +346,14 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_timeseries(
+    @async_and_sync
+    async def list_timeseries(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ) -> list[str]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -772,13 +774,14 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    def list_map(
+    @async_and_sync
+    async def list_map(
         self,
         project: str,
         experiment: str,
         /,
         access_type: str | AccessType = AccessType.URI,
-    ) -> Generator[str, None, None]:
+    ) -> list[str]:
         """Lists all map files for a given project / experiment combination.
 
         :param project: The project ID.
@@ -1214,9 +1217,8 @@ class AerovalDB(abc.ABC):
 
         assert False
 
-    def list_all(
-        self, access_type: str | AccessType = AccessType.URI
-    ) -> Generator[str, None, None]:
+    @async_and_sync
+    async def list_all(self, access_type: str | AccessType = AccessType.URI):
         """Iterator to list over the URI of each object
         stored in the current aerovaldb connection, returning
         the URI of each.
