@@ -1,11 +1,9 @@
 import abc
 import functools
 import inspect
-from typing import Generator
 from .types import AccessType
 from .utils import async_and_sync
 from .routes import *
-from .lock import FakeLock, FileLock
 
 
 def get_method(route):
@@ -221,12 +219,12 @@ class AerovalDB(abc.ABC):
         /,
         access_type: str | AccessType = AccessType.URI,
     ) -> list[str]:
-        """Generator that lists the URI for each glob_stats object.
+        """Lists the URI for each glob_stats object.
 
         :param project: str
         :param experiment: str
 
-        :return Generator of URIs.
+        :return List of URIs.
         """
         raise NotImplementedError
 
@@ -787,7 +785,7 @@ class AerovalDB(abc.ABC):
         :param project: The project ID.
         :param experiment: The experiment ID.
 
-        :return Generator with the URIs.
+        :return List with the URIs.
         """
         raise NotImplementedError
 
