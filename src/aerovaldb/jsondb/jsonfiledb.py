@@ -23,7 +23,6 @@ from ..utils import (
     parse_formatted_string,
     build_uri,
     extract_substitutions,
-    run_until_finished,
 )
 from ..utils.filter import filter_heatmap, filter_regional_stats
 from ..exceptions import UnsupportedOperation
@@ -366,7 +365,13 @@ class AerovalJsonFileDB(AerovalDB):
 
             template = await self._get_template(route, subs)
 
-            version = await self._get_version(subs["project"], subs["experiment"])
+            if "experiment" in subs:
+                version = await self._get_version(subs["project"], subs["experiment"])
+            else:
+                # Project level models style does not have a version because version is defined
+                # per experiment. version doesn't matter for models-style because it is priority
+                # based, so we set a dummy value to simplify.
+                version = Version("0.0.1")
             route_arg_names = extract_substitutions(route)
 
             try:

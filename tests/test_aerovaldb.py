@@ -510,4 +510,4 @@ def test_rm_experiment_data(tmpdb):
 
         tmpdb.rm_experiment_data("project", "experiment")
 
-        assert len(list(tmpdb.list_all())) == 23
+        assert len(list(tmpdb.list_all())) == 24
