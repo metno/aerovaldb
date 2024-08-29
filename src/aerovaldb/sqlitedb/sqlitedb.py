@@ -491,8 +491,10 @@ class AerovalSqliteDB(AerovalDB):
 
         await self._put(obj, route, route_args, **kwargs)
 
-    def list_all(self):
+    @async_and_sync
+    async def list_all(self):
         cur = self._con.cursor()
+        result = []
         for table_name in self.TABLE_COLUMN_NAMES.keys():
             route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE[table_name]
             cur.execute(
@@ -500,9 +502,9 @@ class AerovalSqliteDB(AerovalDB):
                 SELECT * FROM {table_name}
                 """
             )
-            result = cur.fetchall()
+            fetched = cur.fetchall()
 
-            for r in result:
+            for r in fetched:
                 arg_names = extract_substitutions(route)
 
                 route_args = {}
@@ -516,7 +518,8 @@ class AerovalSqliteDB(AerovalDB):
                         kwargs[k] = r[k]
 
                 uri = build_uri(route, route_args, kwargs)
-                yield uri
+                result.append(uri)
+        return result
 
     def _get_lock_file(self) -> str:
         os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)

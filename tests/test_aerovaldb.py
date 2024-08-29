@@ -484,6 +484,12 @@ def test_list_glob_stats(testdb):
 
 
 @TESTDB_PARAMETRIZATION
+def test_list_all(testdb):
+    with aerovaldb.open(testdb) as db:
+        assert len(db.list_all()) == 40
+
+
+@TESTDB_PARAMETRIZATION
 def test_list_timeseries(testdb):
     with aerovaldb.open(testdb) as db:
         timeseries = db.list_timeseries("project", "experiment")
