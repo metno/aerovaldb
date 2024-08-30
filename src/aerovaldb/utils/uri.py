@@ -62,6 +62,8 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
             except Exception:
                 continue
             else:
+                for k, v in route_args.items():
+                    route_args[k] = v.replace(":", "/")
                 return (template, route_args, dict())
 
         elif len(split) == 2:

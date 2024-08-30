@@ -487,7 +487,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 42
+        assert len(db.list_all()) == 46
 
 
 @TESTDB_PARAMETRIZATION
@@ -508,4 +508,4 @@ def test_rm_experiment_data(tmpdb):
 
         tmpdb.rm_experiment_data("project", "experiment")
 
-        assert len(list(tmpdb.list_all())) == 26
+        assert len(list(tmpdb.list_all())) == 30

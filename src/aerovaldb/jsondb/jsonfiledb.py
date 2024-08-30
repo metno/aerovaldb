@@ -11,6 +11,7 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
+from aerovaldb.const import IMG_FILE_EXTS
 from aerovaldb.exceptions import UnusedArguments
 from aerovaldb.types import AccessType
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
@@ -348,7 +349,10 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
-        if ext.lower() in [".png", ".jpg"]:
+        if ext.lower() in IMG_FILE_EXTS:
+            # TODO: Fix this.
+            # The image endpoint is the only endpoint which needs to accept an arbitrary path
+            # under the experiment directory. Treating it as a special case for now.
             split = file_path.split("/")
             project = split[1]
             experiment = split[2]
@@ -541,11 +545,6 @@ class AerovalJsonFileDB(AerovalDB):
             return uri
 
         route, route_args, kwargs = parse_uri(uri)
-        for k, v in route_args.items():
-            route_args[k] = v.replace(":", "/")
-
-        for k, v in kwargs.items():
-            route_args[k] = v.replace(":", "/")
 
         if route.startswith("/v0/report-image/"):
             return await self.get_report_image(
@@ -567,11 +566,6 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
-        for k, v in route_args.items():
-            route_args[k] = v.replace(":", "/")
-
-        for k, v in kwargs.items():
-            route_args[k] = v.replace(":", "/")
 
         if route.startswith("/v0/report-image/"):
             await self.put_report_image(
@@ -659,6 +653,6 @@ class AerovalJsonFileDB(AerovalDB):
             self._basedir,
             template.format(project=project, experiment=experiment, path=path),
         )
-        os.makedirs(Path(file_path).parent)
+        os.makedirs(Path(file_path).parent, exist_ok=True)
         with open(file_path, "wb") as f:
             f.write(obj)
