@@ -34,7 +34,7 @@ async def copy_db_contents(source: str | AerovalDB, dest: str | AerovalDB):
     for i, uri in enumerate(await source.list_all()):
         logger.info(f"Processing item {i} of {len(await source.list_all())}")
         access = AccessType.JSON_STR
-        if uri.startswith("/v0/reports/images/"):
+        if uri.startswith("/v0/report-image/"):
             access = AccessType.BLOB
         data = await source.get_by_uri(uri, access_type=access)
 

@@ -9,6 +9,7 @@ import simplejson  # type: ignore
 import aerovaldb
 import pytest
 import random
+from aerovaldb.utils.copy import copy_db_contents
 
 
 @pytest.fixture
@@ -486,7 +487,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 41
+        assert len(db.list_all()) == 42
 
 
 @TESTDB_PARAMETRIZATION
@@ -502,12 +503,9 @@ def test_list_timeseries(testdb):
 )
 def test_rm_experiment_data(tmpdb):
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        for i, uri in enumerate(db.list_all()):
-            data = db.get_by_uri(uri, access_type=aerovaldb.AccessType.JSON_STR)
-            tmpdb.put_by_uri(data, uri)
-
+        copy_db_contents(db, tmpdb)
         assert len(list(db.list_all())) == len(list(tmpdb.list_all()))
 
         tmpdb.rm_experiment_data("project", "experiment")
 
-        assert len(list(tmpdb.list_all())) == 24
+        assert len(list(tmpdb.list_all())) == 26

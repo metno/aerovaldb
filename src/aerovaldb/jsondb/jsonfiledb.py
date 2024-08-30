@@ -1,3 +1,4 @@
+from functools import cache
 import glob
 import logging
 import os
@@ -345,6 +346,19 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
+        _, ext = os.path.splitext(file_path)
+
+        if ext.lower() in [".png", ".jpg"]:
+            split = file_path.split("/")
+            project = split[1]
+            experiment = split[2]
+            path = ":".join(split[3:])
+            return build_uri(
+                ROUTE_REPORT_IMAGE,
+                {"project": project, "experiment": experiment, "path": path},
+                {},
+            )
+
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
                 if file_path.startswith("reports/"):
@@ -379,6 +393,8 @@ class AerovalJsonFileDB(AerovalDB):
 
             try:
                 all_args = parse_formatted_string(template, f"./{file_path}")  # type: ignore
+                for k, v in all_args.items():
+                    all_args[k] = v.replace("/", ":")
 
                 route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
                 kwargs = {
@@ -525,8 +541,13 @@ class AerovalJsonFileDB(AerovalDB):
             return uri
 
         route, route_args, kwargs = parse_uri(uri)
+        for k, v in route_args.items():
+            route_args[k] = v.replace(":", "/")
 
-        if route.startswith("/v0/reports/image/"):
+        for k, v in kwargs.items():
+            route_args[k] = v.replace(":", "/")
+
+        if route.startswith("/v0/report-image/"):
             return await self.get_report_image(
                 route_args["project"],
                 route_args["experiment"],
@@ -546,8 +567,13 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
+        for k, v in route_args.items():
+            route_args[k] = v.replace(":", "/")
 
-        if route.startswith("/v0/reports/image/"):
+        for k, v in kwargs.items():
+            route_args[k] = v.replace(":", "/")
+
+        if route.startswith("/v0/report-image/"):
             await self.put_report_image(
                 obj, route_args["project"], route_args["experiment"], route_args["path"]
             )

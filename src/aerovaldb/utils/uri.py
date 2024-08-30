@@ -73,6 +73,10 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
             kwargs = urllib.parse.parse_qs(split[1])  # type: ignore
             kwargs = {k: v[0] for k, v in kwargs.items()}
 
+            for k, v in route_args.items():
+                route_args[k] = v.replace(":", "/")
+            for k, v in kwargs.items():
+                kwargs[k] = v.replace(":", "/")
             return (template, route_args, kwargs)
 
     raise ValueError(f"URI {uri} is not a valid URI.")
