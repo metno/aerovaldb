@@ -639,6 +639,8 @@ class AerovalJsonFileDB(AerovalDB):
             access_type=AccessType.FILE_PATH,
             validate_args=False,
         )
+        logger.debug(f"Fetching image with path '{file_path}'")
+
         if access_type == AccessType.FILE_PATH:
             return file_path
 
