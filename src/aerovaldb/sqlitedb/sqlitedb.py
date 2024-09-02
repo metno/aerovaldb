@@ -500,6 +500,15 @@ class AerovalSqliteDB(AerovalDB):
                 route_args["project"], route_args["experiment"], route_args["path"]
             )
 
+        if route == ROUTE_MAP_OVERLAY:
+            return await self.get_map_overlay(
+                route_args["project"],
+                route_args["experiment"],
+                route_args["source"],
+                route_args["variable"],
+                route_args["date"],
+            )
+
         return await self._get(
             route,
             route_args,
@@ -515,6 +524,17 @@ class AerovalSqliteDB(AerovalDB):
         if route == ROUTE_REPORT_IMAGE:
             await self.put_report_image(
                 obj, route_args["project"], route_args["experiment"], route_args["path"]
+            )
+            return
+
+        if route == ROUTE_MAP_OVERLAY:
+            await self.put_map_overlay(
+                obj,
+                route_args["project"],
+                route_args["experiment"],
+                route_args["source"],
+                route_args["variable"],
+                route_args["date"],
             )
             return
 
@@ -677,6 +697,7 @@ class AerovalSqliteDB(AerovalDB):
             "heatmap_timeseries2",
             "forecast",
             "gridded_map",
+            "mapoverlay",
         ]:
             cur.execute(
                 f"""
@@ -784,7 +805,7 @@ class AerovalSqliteDB(AerovalDB):
 
         cur.execute(
             """
-            INSERT OR REPLACE INTO reportimages(project, experiment, source, variable, date, blob)
+            INSERT OR REPLACE INTO mapoverlay(project, experiment, source, variable, date, blob)
             VALUES(?, ?, ?, ?, ?, ?)
             """,
             (project, experiment, source, variable, date, obj),
