@@ -350,7 +350,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
-        if ext.lower() in IMG_FILE_EXTS:
+        if file_path.startswith("reports/") and ext.lower() in IMG_FILE_EXTS:
             # TODO: Fix this.
             # The image endpoint is the only endpoint which needs to accept an arbitrary path
             # under the experiment directory. Treating it as a special case for now.
@@ -555,6 +555,16 @@ class AerovalJsonFileDB(AerovalDB):
                 access_type=access_type,
             )
 
+        if route.startswith("/v0/map-overlay/"):
+            return await self.get_map_overlay(
+                route_args["project"],
+                route_args["experiment"],
+                route_args["source"],
+                route_args["variable"],
+                route_args["date"],
+                access_type=access_type,
+            )
+
         return await self._get(
             route,
             route_args,
@@ -571,6 +581,17 @@ class AerovalJsonFileDB(AerovalDB):
         if route.startswith("/v0/report-image/"):
             await self.put_report_image(
                 obj, route_args["project"], route_args["experiment"], route_args["path"]
+            )
+            return
+
+        if route.startswith("/v0/map-overlay/"):
+            await self.put_map_overlay(
+                obj,
+                route_args["project"],
+                route_args["experiment"],
+                route_args["source"],
+                route_args["variable"],
+                route_args["date"],
             )
             return
 
@@ -715,7 +736,7 @@ class AerovalJsonFileDB(AerovalDB):
         :param variable : Variable name.
         :param date : Date.
         """
-        template = await self._get_template(ROUTE_REPORT_IMAGE, {})
+        template = await self._get_template(ROUTE_MAP_OVERLAY, {})
 
         file_path = os.path.join(
             self._basedir,
