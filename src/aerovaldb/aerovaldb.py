@@ -1263,3 +1263,24 @@ class AerovalDB(abc.ABC):
             image data
         """
         raise NotImplementedError
+
+    @async_and_sync
+    @get_method(ROUTE_MAP_OVERLAY)
+    async def get_map_overlay(
+        self,
+        project: str,
+        experiment: str,
+        source: str,
+        variable: str,
+        date: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        """Getter for map overlay images.
+
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+        :param source : Data source. Can be either an observation network or a model ID.
+        :param variable : Variable name.
+        :param date : Date.
+        """
+        raise NotImplementedError
