@@ -1,1 +1,3 @@
-IMG_FILE_EXTS = set([".bmp", ".jpeg", ".jpg", ".png", ".tiff"])
+IMG_FILE_EXTS = set(
+    [".apng", ".avif", ".gif", ".jpeg", ".jpg", ".png", ".svg", ".webp"]
+)

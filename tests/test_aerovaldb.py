@@ -487,7 +487,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 45
+        assert len(db.list_all()) == 46
 
 
 @TESTDB_PARAMETRIZATION
@@ -508,18 +508,19 @@ def test_rm_experiment_data(tmpdb):
 
         tmpdb.rm_experiment_data("project", "experiment")
 
-        assert len(list(tmpdb.list_all())) == 29
+        assert len(list(tmpdb.list_all())) == 30
 
 
 @TESTDB_PARAMETRIZATION
 @pytest.mark.parametrize(
     "sub_path",
     (
-        pytest.param("img/pixel.bmp"),
+        pytest.param("img/pixel.avif"),
+        pytest.param("img/pixel.gif"),
         pytest.param("img/pixel.jpeg"),
         pytest.param("img/pixel.jpg"),
         pytest.param("img/pixel.png"),
-        pytest.param("img/pixel.tiff"),
+        pytest.param("img/pixel.webp"),
     ),
 )
 def test_get_report_image(testdb, sub_path: str):
