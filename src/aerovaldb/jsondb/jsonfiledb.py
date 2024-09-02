@@ -4,7 +4,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Callable, Awaitable, Any, Generator
+from typing import Callable, Awaitable, Any
 import importlib.metadata
 
 from async_lru import alru_cache
@@ -12,7 +12,6 @@ from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.const import IMG_FILE_EXTS
-from aerovaldb.exceptions import UnusedArguments
 from aerovaldb.types import AccessType
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 
