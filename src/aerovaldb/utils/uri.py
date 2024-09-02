@@ -1,6 +1,5 @@
 import regex as re
 
-from aerovaldb.utils.benchmark import benchmark_function
 from ..routes import ALL_ROUTES
 import urllib
 
