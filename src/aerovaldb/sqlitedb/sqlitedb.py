@@ -102,6 +102,7 @@ class AerovalSqliteDB(AerovalDB):
         "forecast": extract_substitutions(ROUTE_FORECAST),
         "gridded_map": extract_substitutions(ROUTE_GRIDDED_MAP),
         "report": extract_substitutions(ROUTE_REPORT),
+        "reportimages": extract_substitutions(ROUTE_REPORT_IMAGE),
     }
 
     TABLE_NAME_TO_ROUTE = {
@@ -128,6 +129,7 @@ class AerovalSqliteDB(AerovalDB):
         "forecast": ROUTE_FORECAST,
         "gridded_map": ROUTE_GRIDDED_MAP,
         "report": ROUTE_REPORT,
+        "reportimages": ROUTE_REPORT_IMAGE,
     }
 
     def __init__(self, database: str, /, **kwargs):
@@ -208,6 +210,7 @@ class AerovalSqliteDB(AerovalDB):
                 ROUTE_FORECAST: "forecast",
                 ROUTE_GRIDDED_MAP: "gridded_map",
                 ROUTE_REPORT: "report",
+                ROUTE_REPORT_IMAGE: "reportimages",
             },
             version_provider=self._get_version,
         )
@@ -304,18 +307,31 @@ class AerovalSqliteDB(AerovalDB):
             args = AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
 
             column_names = ",".join(args)
+            if table_name == "reportimages":
+                cur.execute(
+                    f"""
+                    CREATE TABLE IF NOT EXISTS {table_name}(
+                        {column_names},
+                        ctime TEXT,
+                        mtime TEXT,
+                        blob BLOB,
+                    
+                        UNIQUE({column_names})
+                    )
+                    """
+                )
+            else:
+                cur.execute(
+                    f"""
+                    CREATE TABLE IF NOT EXISTS {table_name}(
+                        {column_names},
+                        ctime TEXT,
+                        mtime TEXT,
+                        json TEXT,
 
-            cur.execute(
-                f"""
-                CREATE TABLE IF NOT EXISTS {table_name}(
-                    {column_names},
-                    ctime TEXT,
-                    mtime TEXT,
-                    json TEXT,
-
-                UNIQUE({column_names}))
-                """
-            )
+                    UNIQUE({column_names}))
+                    """
+                )
 
             cur.execute(
                 f"""
@@ -391,7 +407,7 @@ class AerovalSqliteDB(AerovalDB):
                 raise FileNotFoundError("Object not found")
             for r in fetched:
                 for k in r.keys():
-                    if k in ("json", "ctime", "mtime"):
+                    if k in ("json", "blob", "ctime", "mtime"):
                         continue
                     if not (k in route_args | kwargs) and r[k] is not None:
                         break
@@ -476,6 +492,11 @@ class AerovalSqliteDB(AerovalDB):
 
         route, route_args, kwargs = parse_uri(uri)
 
+        if route == ROUTE_REPORT_IMAGE:
+            return await self.get_report_image(
+                route_args["project"], route_args["experiment"], route_args["path"]
+            )
+
         return await self._get(
             route,
             route_args,
@@ -488,6 +509,11 @@ class AerovalSqliteDB(AerovalDB):
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
+        if route == ROUTE_REPORT_IMAGE:
+            await self.put_report_image(
+                obj, route_args["project"], route_args["experiment"], route_args["path"]
+            )
+            return
 
         await self._put(obj, route, route_args, **kwargs)
 
@@ -510,14 +536,20 @@ class AerovalSqliteDB(AerovalDB):
                 route_args = {}
                 kwargs = {}
                 for k in r.keys():
-                    if k in ["json", "ctime", "mtime"]:
+                    if k in ["json", "blob", "ctime", "mtime"]:
                         continue
                     if k in arg_names:
                         route_args[k] = r[k]
                     else:
                         kwargs[k] = r[k]
 
-                uri = build_uri(route, route_args, kwargs)
+                if route == ROUTE_REPORT_IMAGE:
+                    for k, v in route_args.items():
+                        route_args[k] = v.replace("/", ":")
+
+                    uri = build_uri(route, route_args, kwargs)
+                else:
+                    uri = build_uri(route, route_args, kwargs)
                 result.append(uri)
         return result
 
@@ -564,7 +596,7 @@ class AerovalSqliteDB(AerovalDB):
             route_args = {}
             kwargs = {}
             for k in r.keys():
-                if k in ["json", "ctime", "mtime"]:
+                if k in ["json", "blob", "ctime", "mtime"]:
                     continue
 
                 if k in arg_names:
@@ -607,7 +639,7 @@ class AerovalSqliteDB(AerovalDB):
             route_args = {}
             kwargs = {}
             for k in r.keys():
-                if k in ["json", "ctime", "mtime"]:
+                if k in ["json", "blob", "ctime", "mtime"]:
                     continue
 
                 if k in arg_names:
@@ -649,3 +681,49 @@ class AerovalSqliteDB(AerovalDB):
                 """,
                 (project, experiment),
             )
+
+    @async_and_sync
+    async def get_report_image(
+        self,
+        project: str,
+        experiment: str,
+        path: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type != AccessType.BLOB:
+            raise UnsupportedOperation(
+                f"Sqlitedb does not support accesstype {access_type}."
+            )
+
+        cur = self._con.cursor()
+        cur.execute(
+            """
+            SELECT * FROM reportimages
+            WHERE
+                (project, experiment, path) = (?, ?, ?)
+            """,
+            (project, experiment, path),
+        )
+        fetched = cur.fetchone()
+
+        if fetched is None:
+            raise FileNotFoundError(f"Object not found. {project, experiment, path}")
+
+        return fetched["blob"]
+
+    @async_and_sync
+    async def put_report_image(self, obj, project: str, experiment: str, path: str):
+        cur = self._con.cursor()
+
+        if not isinstance(obj, bytes):
+            raise TypeError(f"Expected bytes. Got {type(obj)}")
+
+        cur.execute(
+            """
+            INSERT OR REPLACE INTO reportimages(project, experiment, path, blob)
+            VALUES(?, ?, ?, ?)
+            """,
+            (project, experiment, path, obj),
+        )

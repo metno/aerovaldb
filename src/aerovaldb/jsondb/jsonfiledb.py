@@ -1,3 +1,4 @@
+from functools import cache
 import glob
 import logging
 import os
@@ -10,6 +11,7 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
+from aerovaldb.const import IMG_FILE_EXTS
 from aerovaldb.exceptions import UnusedArguments
 from aerovaldb.types import AccessType
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
@@ -113,6 +115,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_FORECAST: "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
+                ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
             },
             version_provider=self._get_version,
         )
@@ -179,12 +182,14 @@ class AerovalJsonFileDB(AerovalDB):
         route_args,
         **kwargs,
     ):
+        validate_args = kwargs.pop("validate_args", True)
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         substitutions = route_args | kwargs
-        [validate_filename_component(x) for x in substitutions.values()]
+        if validate_args:
+            [validate_filename_component(x) for x in substitutions.values()]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -342,6 +347,22 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
+        _, ext = os.path.splitext(file_path)
+
+        if ext.lower() in IMG_FILE_EXTS:
+            # TODO: Fix this.
+            # The image endpoint is the only endpoint which needs to accept an arbitrary path
+            # under the experiment directory. Treating it as a special case for now.
+            split = file_path.split("/")
+            project = split[1]
+            experiment = split[2]
+            path = ":".join(split[3:])
+            return build_uri(
+                ROUTE_REPORT_IMAGE,
+                {"project": project, "experiment": experiment, "path": path},
+                {},
+            )
+
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
                 if file_path.startswith("reports/"):
@@ -376,6 +397,8 @@ class AerovalJsonFileDB(AerovalDB):
 
             try:
                 all_args = parse_formatted_string(template, f"./{file_path}")  # type: ignore
+                for k, v in all_args.items():
+                    all_args[k] = v.replace("/", ":")
 
                 route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
                 kwargs = {
@@ -523,6 +546,14 @@ class AerovalJsonFileDB(AerovalDB):
 
         route, route_args, kwargs = parse_uri(uri)
 
+        if route.startswith("/v0/report-image/"):
+            return await self.get_report_image(
+                route_args["project"],
+                route_args["experiment"],
+                route_args["path"],
+                access_type=access_type,
+            )
+
         return await self._get(
             route,
             route_args,
@@ -535,6 +566,12 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
+
+        if route.startswith("/v0/report-image/"):
+            await self.put_report_image(
+                obj, route_args["project"], route_args["experiment"], route_args["path"]
+            )
+            return
 
         await self._put(obj, route, route_args, **kwargs)
 
@@ -576,3 +613,48 @@ class AerovalJsonFileDB(AerovalDB):
                     result.append(uri)
 
         return result
+
+    @async_and_sync
+    async def get_report_image(
+        self,
+        project: str,
+        experiment: str,
+        path: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+            raise UnsupportedOperation(
+                f"The report image endpoint does not support access type {access_type}."
+            )
+
+        file_path = await self._get(
+            route=ROUTE_REPORT_IMAGE,
+            route_args={
+                "project": project,
+                "experiment": experiment,
+                "path": path,
+            },
+            access_type=AccessType.FILE_PATH,
+            validate_args=False,
+        )
+        logger.debug(f"Fetching image with path '{file_path}'")
+
+        if access_type == AccessType.FILE_PATH:
+            return file_path
+
+        with open(file_path, "rb") as f:
+            return f.read()
+
+    @async_and_sync
+    async def put_report_image(self, obj, project: str, experiment: str, path: str):
+        template = await self._get_template(ROUTE_REPORT_IMAGE, {})
+
+        file_path = os.path.join(
+            self._basedir,
+            template.format(project=project, experiment=experiment, path=path),
+        )
+        os.makedirs(Path(file_path).parent, exist_ok=True)
+        with open(file_path, "wb") as f:
+            f.write(obj)

@@ -29,7 +29,7 @@ def parse_formatted_string(template: str, s: str) -> dict:
     # Now replace keyword arguments with named groups matching them. We also escape between keyword
     # arguments so we support meta-characters there. Re-join tokens to form our regexp pattern
 
-    tokens[1::2] = map("(?P<{}>[a-zA-Z-]*)".format, keywords)
+    tokens[1::2] = map("(?P<{}>[^/]*)".format, keywords)
     tokens[0::2] = map(re.escape, tokens[0::2])
     pattern = "".join(tokens)
 
@@ -62,6 +62,8 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
             except Exception:
                 continue
             else:
+                for k, v in route_args.items():
+                    route_args[k] = v.replace(":", "/")
                 return (template, route_args, dict())
 
         elif len(split) == 2:
@@ -73,6 +75,10 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
             kwargs = urllib.parse.parse_qs(split[1])  # type: ignore
             kwargs = {k: v[0] for k, v in kwargs.items()}
 
+            for k, v in route_args.items():
+                route_args[k] = v.replace(":", "/")
+            for k, v in kwargs.items():
+                kwargs[k] = v.replace(":", "/")
             return (template, route_args, kwargs)
 
     raise ValueError(f"URI {uri} is not a valid URI.")
