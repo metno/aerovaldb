@@ -1284,3 +1284,25 @@ class AerovalDB(abc.ABC):
         :param date : Date.
         """
         raise NotImplementedError
+
+    @async_and_sync
+    @put_method(ROUTE_MAP_OVERLAY)
+    async def put_map_overlay(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        source: str,
+        variable: str,
+        date: str,
+    ):
+        """Putter for map overlay images.
+
+        :param obj : The object to be stored.
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+        :param source : Data source. Can be either an observation network or a model ID.
+        :param variable : Variable name.
+        :param date : Date.
+        """
+        raise NotImplementedError

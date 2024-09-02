@@ -116,6 +116,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
                 ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}.png",
             },
             version_provider=self._get_version,
         )
@@ -655,6 +656,78 @@ class AerovalJsonFileDB(AerovalDB):
             self._basedir,
             template.format(project=project, experiment=experiment, path=path),
         )
+        os.makedirs(Path(file_path).parent, exist_ok=True)
+        with open(file_path, "wb") as f:
+            f.write(obj)
+
+    @async_and_sync
+    async def get_map_overlay(
+        self,
+        project: str,
+        experiment: str,
+        source: str,
+        variable: str,
+        date: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+            raise UnsupportedOperation(
+                f"The report image endpoint does not support access type {access_type}."
+            )
+
+        file_path = await self._get(
+            route=ROUTE_MAP_OVERLAY,
+            route_args={
+                "project": project,
+                "experiment": experiment,
+                "source": source,
+                "variable": variable,
+                "date": date,
+            },
+            access_type=AccessType.FILE_PATH,
+        )
+        logger.debug(f"Fetching image with path '{file_path}'")
+
+        if access_type == AccessType.FILE_PATH:
+            return file_path
+
+        with open(file_path, "rb") as f:
+            return f.read()
+
+    @async_and_sync
+    async def put_map_overlay(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        source: str,
+        variable: str,
+        date: str,
+    ):
+        """Putter for map overlay images.
+
+        :param obj : The object to be stored.
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+        :param source : Data source. Can be either an observation network or a model ID.
+        :param variable : Variable name.
+        :param date : Date.
+        """
+        template = await self._get_template(ROUTE_REPORT_IMAGE, {})
+
+        file_path = os.path.join(
+            self._basedir,
+            template.format(
+                project=project,
+                experiment=experiment,
+                source=source,
+                variable=variable,
+                date=date,
+            ),
+        )
+
         os.makedirs(Path(file_path).parent, exist_ok=True)
         with open(file_path, "wb") as f:
             f.write(obj)
