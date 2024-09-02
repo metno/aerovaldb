@@ -1237,9 +1237,29 @@ class AerovalDB(abc.ABC):
         path: str,
         access_type: str | AccessType = AccessType.BLOB,
     ):
+        """
+        Getter for static images that are referenced from the report json files.
+
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+        :param access_type : One of AccessType.BLOB, AccessType.FILE_PATH
+
+        :return Either a string (If file path requested) or a bytes object with the
+            image data
+        """
         raise NotImplementedError
 
     @async_and_sync
     @put_method(ROUTE_REPORT_IMAGE)
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
+        """
+        Putter for static images that are referenced from the report json files.
+
+        :param obj : A bytes object representing the image data to be written.
+        :param project : Project ID.
+        :param experiment : Experiment ID.
+
+        :return Either a string (If file path requested) or a bytes object with the
+            image data
+        """
         raise NotImplementedError
