@@ -509,3 +509,50 @@ def test_rm_experiment_data(tmpdb):
         tmpdb.rm_experiment_data("project", "experiment")
 
         assert len(list(tmpdb.list_all())) == 29
+
+
+@TESTDB_PARAMETRIZATION
+@pytest.mark.parametrize(
+    "sub_path",
+    (
+        pytest.param("img/pixel.bmp"),
+        pytest.param("img/pixel.jpeg"),
+        pytest.param("img/pixel.jpg"),
+        pytest.param("img/pixel.png"),
+        pytest.param("img/pixel.tiff"),
+    ),
+)
+def test_get_report_image(testdb, sub_path: str):
+    with aerovaldb.open(testdb) as db:
+        blob = db.get_report_image(
+            "project",
+            "experiment",
+            sub_path,
+            access_type=aerovaldb.AccessType.BLOB,
+        )
+        assert isinstance(blob, bytes)
+        assert len(blob) > 0
+
+
+@pytest.mark.parametrize(
+    "dbtype",
+    (
+        pytest.param(
+            "json_files",
+        ),
+        pytest.param(
+            "sqlitedb",
+        ),
+    ),
+)
+def test_put_report_image(tmpdb):
+    with open("tests/test-db/json/reports/project/experiment/img/pixel.png", "rb") as f:
+        data = f.read()
+
+    with tmpdb as db:
+        db.put_report_image(data, "project", "experiment", "pixel.png")
+
+        blob = db.get_report_image("project", "experiment", "pixel.png")
+
+    assert isinstance(blob, bytes)
+    assert len(blob) > 0
