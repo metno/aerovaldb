@@ -450,7 +450,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     @put_method(ROUTE_EXPERIMENTS)
     async def put_experiments(self, obj, project: str, /, *args, **kwargs):
-        """Stores a list of experiments for a project from the db.
+        """Stores a list of experiments for a project to the db.
 
         :param project: Project ID.
         """
