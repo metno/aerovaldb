@@ -53,7 +53,9 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         - 'entrypoint:path', with entrypoint being the type of database connection
         (eg. 'json_files' or 'sqlitedb') being the location where the database is
         located (eg. 'json_files:.')
+
         - 'path', a path to a json_files folder or sqlite file.
+
         - ':memory:' an sqlite in-memory database. Contents are not persistently
         stored!
 
