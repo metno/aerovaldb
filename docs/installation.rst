@@ -19,6 +19,7 @@ This will install the most recent development version from Github:
 
 From source:
 ^^^^^^^^^^^^
+
 ::
 	git clone https://github.com/metno/aerovaldb.git
 	cd aerovaldb
