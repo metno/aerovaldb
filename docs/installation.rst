@@ -3,21 +3,23 @@ Installation
 
 You can install aerovaldb via pip or from source.
 
-Via pip
-^^^^^^^
+Latest Stable Release:
+^^^^^^^^^^^^^^^^^^^^^^
 
-This will install the latest aerovaldb and all its dependencies.
+This will install the latest stable aerovaldb version from PyPi:
 ::
+	pip install aerovaldb
 
-	# install aerovaldb
-	python -m pip install aerovaldb@git+https://github.com/metno/aerovaldb@main
+Development releases
+^^^^^^^^^^^^^^^^^^^^
 
+This will install the most recent development version from Github:
+::
+	pip install git+https://github.com/metno/aerovaldb.git@main
 
 From source:
-^^^^^^^
+^^^^^^^^^^^^
 ::
-
-	# install aerovaldb on machines with numpy
 	git clone https://github.com/metno/aerovaldb.git
 	cd aerovaldb
 	python -m pip install .
