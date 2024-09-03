@@ -103,6 +103,7 @@ class AerovalSqliteDB(AerovalDB):
         "gridded_map": extract_substitutions(ROUTE_GRIDDED_MAP),
         "report": extract_substitutions(ROUTE_REPORT),
         "reportimages": extract_substitutions(ROUTE_REPORT_IMAGE),
+        "mapoverlay": extract_substitutions(ROUTE_MAP_OVERLAY),
     }
 
     TABLE_NAME_TO_ROUTE = {
@@ -130,6 +131,7 @@ class AerovalSqliteDB(AerovalDB):
         "gridded_map": ROUTE_GRIDDED_MAP,
         "report": ROUTE_REPORT,
         "reportimages": ROUTE_REPORT_IMAGE,
+        "mapoverlay": ROUTE_MAP_OVERLAY,
     }
 
     def __init__(self, database: str, /, **kwargs):
@@ -211,6 +213,7 @@ class AerovalSqliteDB(AerovalDB):
                 ROUTE_GRIDDED_MAP: "gridded_map",
                 ROUTE_REPORT: "report",
                 ROUTE_REPORT_IMAGE: "reportimages",
+                ROUTE_MAP_OVERLAY: "mapoverlay",
             },
             version_provider=self._get_version,
         )
@@ -307,7 +310,7 @@ class AerovalSqliteDB(AerovalDB):
             args = AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
 
             column_names = ",".join(args)
-            if table_name == "reportimages":
+            if table_name in ("reportimages", "mapoverlay"):
                 cur.execute(
                     f"""
                     CREATE TABLE IF NOT EXISTS {table_name}(
@@ -497,6 +500,15 @@ class AerovalSqliteDB(AerovalDB):
                 route_args["project"], route_args["experiment"], route_args["path"]
             )
 
+        if route == ROUTE_MAP_OVERLAY:
+            return await self.get_map_overlay(
+                route_args["project"],
+                route_args["experiment"],
+                route_args["source"],
+                route_args["variable"],
+                route_args["date"],
+            )
+
         return await self._get(
             route,
             route_args,
@@ -512,6 +524,17 @@ class AerovalSqliteDB(AerovalDB):
         if route == ROUTE_REPORT_IMAGE:
             await self.put_report_image(
                 obj, route_args["project"], route_args["experiment"], route_args["path"]
+            )
+            return
+
+        if route == ROUTE_MAP_OVERLAY:
+            await self.put_map_overlay(
+                obj,
+                route_args["project"],
+                route_args["experiment"],
+                route_args["source"],
+                route_args["variable"],
+                route_args["date"],
             )
             return
 
@@ -674,6 +697,7 @@ class AerovalSqliteDB(AerovalDB):
             "heatmap_timeseries2",
             "forecast",
             "gridded_map",
+            "mapoverlay",
         ]:
             cur.execute(
                 f"""
@@ -727,3 +751,63 @@ class AerovalSqliteDB(AerovalDB):
             """,
             (project, experiment, path, obj),
         )
+        self._con.commit()
+
+    @async_and_sync
+    async def get_map_overlay(
+        self,
+        project: str,
+        experiment: str,
+        source: str,
+        variable: str,
+        date: str,
+        access_type: str | AccessType = AccessType.BLOB,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        if access_type != AccessType.BLOB:
+            raise UnsupportedOperation(
+                f"Sqlitedb does not support accesstype {access_type}."
+            )
+
+        cur = self._con.cursor()
+        cur.execute(
+            """
+            SELECT * FROM mapoverlay
+            WHERE
+                (project, experiment, source, variable, date) = (?, ?, ?, ?, ?)
+            """,
+            (project, experiment, source, variable, date),
+        )
+        fetched = cur.fetchone()
+
+        if fetched is None:
+            raise FileNotFoundError(
+                f"Object not found. {project, experiment, source, variable, date}"
+            )
+
+        return fetched["blob"]
+
+    @async_and_sync
+    async def put_map_overlay(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        source: str,
+        variable: str,
+        date: str,
+    ):
+        cur = self._con.cursor()
+
+        if not isinstance(obj, bytes):
+            raise TypeError(f"Expected bytes. Got {type(obj)}")
+
+        cur.execute(
+            """
+            INSERT OR REPLACE INTO mapoverlay(project, experiment, source, variable, date, blob)
+            VALUES(?, ?, ?, ?, ?, ?)
+            """,
+            (project, experiment, source, variable, date, obj),
+        )
+        self._con.commit()
