@@ -52,6 +52,7 @@ Writing
    installation
    api
    locking
+   extending-aerovaldb
    genindex
 
 Indices and tables

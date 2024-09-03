@@ -10,8 +10,8 @@ This will install the latest stable aerovaldb version from PyPi:
 ::
 	pip install aerovaldb
 
-Development releases
-^^^^^^^^^^^^^^^^^^^^
+Development releases:
+^^^^^^^^^^^^^^^^^^^^^
 
 This will install the most recent development version from Github:
 ::
