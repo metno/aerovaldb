@@ -133,7 +133,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -193,7 +193,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -253,9 +253,9 @@ class AerovalDB(abc.ABC):
         :param access_type: How the data is to be retrieved (See AccessType for details)
         :param cache: Whether to use cache for this read.
         :param default: Default value that will be returned instead of raising FileNotFoundError
-        if not data was found (Will be returned as is and not converted to match access_type).
+            if no data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -311,9 +311,9 @@ class AerovalDB(abc.ABC):
         :param access_type: How the data is to be retrieved (See AccessType for details)
         :param cache: Whether to use cache for this read.
         :param default: Default value that will be returned instead of raising FileNotFoundError
-        if not data was found (Will be returned as is and not converted to match access_type).
+        if no data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -391,7 +391,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -443,7 +443,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -492,7 +492,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -531,7 +531,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -569,7 +569,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -609,7 +609,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -647,7 +647,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -685,7 +685,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -737,7 +737,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -824,7 +824,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -888,7 +888,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -948,7 +948,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -1010,7 +1010,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -1068,7 +1068,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -1120,7 +1120,7 @@ class AerovalDB(abc.ABC):
         :param default: Default value that will be returned instead of raising FileNotFoundError
         if not data was found (Will be returned as is and not converted to match access_type).
 
-        :returns The fetched data.
+        :returns : The fetched data.
         """
         raise NotImplementedError
 
@@ -1158,9 +1158,11 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        URI is intended to be consistent between implementations. Using get_by_uri()
+        URI is intended to be consistent between implementations but not between
+        versions of aerovaldb. Using :meth:`aerovaldb.AerovalDB.get_by_uri`
         to fetch an identifier which can then be written to another connector using
-        its respective put_by_uri() method.
+        its respective :meth:`aerovaldb.AerovalDB.put_by_uri` method is a supported
+        use case.
         """
         raise NotImplementedError
 
@@ -1174,9 +1176,11 @@ class AerovalDB(abc.ABC):
 
         Note:
         -----
-        URI is intended to be consistent between implementations. Using get_by_uri()
+        URI is intended to be consistent between implementations but not between
+        versions of aerovaldb. Using :meth:`aerovaldb.AerovalDB.get_by_uri`
         to fetch an identifier which can then be written to another connector using
-        its respective put_by_uri() method.
+        its respective :meth:`aerovaldb.AerovalDB.put_by_uri` method is a supported
+        use case.
         """
         raise NotImplementedError
 
@@ -1185,7 +1189,7 @@ class AerovalDB(abc.ABC):
         between instances of aerovaldb. Intended to be used as a context
         manager.
 
-        See also: https://aerovaldb.readthedocs.io/en/latest/locking.html
+        See also: `Locking <https://aerovaldb.readthedocs.io/en/latest/locking.html>`_
         """
         raise NotImplementedError
 
@@ -1217,12 +1221,10 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     async def list_all(self, access_type: str | AccessType = AccessType.URI):
-        """Iterator to list over the URI of each object
-        stored in the current aerovaldb connection, returning
-        the URI of each.
+        """Returns a list of identifiers for each object stored in the database
 
-        :param access_type : What to return (This is implementation specific, but in general
-        each implementation should support URI).
+        :param access_type : What to return (This is implementation specific, but
+        in general each implementation should support URI, some may support FILE_PATH).
         :raises : UnsupportedOperation
             For non-supported acces types.
         """

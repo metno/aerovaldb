@@ -49,14 +49,18 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
     """open an AerovalDB directly, sending args and kwargs
     directly to the `AervoalDB()` function
 
-    :param resource: the resource-name for the database. The resource can be
-        - 'entrypoint:path', with path being the location where the database should be generated
-        (eg. 'json_files:.')
-        - 'path', with path containing either an aerovaldb.cfg (Not yet implemented) configuration
-        or path being a json_files dabasase (for example, '.' is equivalent to 'json_files:.')
-    :param use_async : If true, aiofile will be used to read files, otherwise files will be read
-        synchronously.
-    :return: an implementation-object of AerovalDB openend to a location
+    :param resource: the resource-identifier for the database. The resource can be
+        - 'entrypoint:path', with entrypoint being the type of database connection
+        (eg. 'json_files' or 'sqlitedb') being the location where the database is
+        located (eg. 'json_files:.')
+        - 'path', a path to a json_files folder or sqlite file.
+        - ':memory:' an sqlite in-memory database. Contents are not persistently
+        stored!
+
+    :param use_async : If true, aiofile will be used to read files, otherwise
+        files will be read synchronously (Currently only used by json_files).
+    :return : an implementation-object of AerovalDB openend and initialized to a
+        location.
     """
     if resource == ":memory:":
         # Special case for sqlite in memory database.
