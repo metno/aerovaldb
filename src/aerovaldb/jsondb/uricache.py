@@ -63,7 +63,7 @@ class URICache:
 
         cur.execute(
             """
-            INSERT INTO uris(uri, file)
+            INSERT OR IGNORE INTO uris(uri, file)
             VALUES(?, ?)
             """,
             (uri, file),
@@ -82,8 +82,10 @@ class URICache:
             (file,),
         )
 
-        fetched = cur.fetchone()
-        return fetched
+        if (fetched := cur.fetchone()) is not None:
+            return fetched[0]
+
+        return None
 
     @lru_cache
     def get_file_from_uri(self, uri: str) -> str | None:
@@ -97,5 +99,7 @@ class URICache:
             (uri,),
         )
 
-        fetched = cur.fetchone()
-        return fetched
+        if (fetched := cur.fetchone()) is not None:
+            return fetched[0]
+
+        return None
