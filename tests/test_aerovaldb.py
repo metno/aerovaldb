@@ -557,3 +557,19 @@ def test_put_report_image(tmpdb):
 
     assert isinstance(blob, bytes)
     assert len(blob) > 0
+
+
+@pytest.mark.parametrize(
+    "dbtype",
+    (
+        pytest.param(
+            "json_files",
+        ),
+        pytest.param(
+            "sqlitedb",
+        ),
+    ),
+)
+def test_serialize_set(tmpdb):
+    with tmpdb as db:
+        db.put_config({"set": {"a", "b", "c"}}, "test", "test")
