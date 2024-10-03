@@ -59,9 +59,9 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         - ':memory:' an sqlite in-memory database. Contents are not persistently
         stored!
 
-    :param use_async : If true, aiofile will be used to read files, otherwise
+    :param use_async: If true, aiofile will be used to read files, otherwise
         files will be read synchronously (Currently only used by json_files).
-    :return : an implementation-object of AerovalDB openend and initialized to a
+    :return: an implementation-object of AerovalDB openend and initialized to a
         location.
     """
     if resource == ":memory:":
