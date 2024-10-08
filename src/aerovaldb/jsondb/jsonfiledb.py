@@ -32,6 +32,7 @@ from ..routes import *
 from ..lock import FakeLock, FileLock
 from hashlib import md5
 import simplejson  # type: ignore
+from .uricache import URICache
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,13 @@ class AerovalJsonFileDB(AerovalDB):
         self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
 
         self._basedir = os.path.abspath(basedir)
+
+        uricache_file = os.path.join(
+            os.path.expanduser("~"),
+            ".aerovaldb",
+            f"{md5(self._basedir.encode()).hexdigest()}.cache",
+        )
+        self._uricache = URICache(uricache_file)
 
         if not os.path.exists(self._basedir):
             os.makedirs(self._basedir)
@@ -344,8 +352,12 @@ class AerovalJsonFileDB(AerovalDB):
 
         :param file_path : The file_path.
         """
+
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
+
+        if (uri := self._uricache.get_uri_from_file(file_path)) is not None:
+            return uri
 
         _, ext = os.path.splitext(file_path)
 
@@ -407,7 +419,9 @@ class AerovalJsonFileDB(AerovalDB):
             except Exception:
                 continue
             else:
-                return build_uri(route, route_args, kwargs | {"version": version})
+                uri = build_uri(route, route_args, kwargs | {"version": version})
+                self._uricache.add_entry(uri, file_path)
+                return uri
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
