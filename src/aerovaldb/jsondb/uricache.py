@@ -2,6 +2,9 @@ import sqlite3
 import os
 from pathlib import Path
 from functools import lru_cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class URICache:
@@ -17,6 +20,7 @@ class URICache:
 
     def _initializedb(self, path: str | Path):
         path = str(path)
+        logger.debug(f"Path: {path}")
         self._con = sqlite3.connect(path)
 
         cur = self._con.cursor()
