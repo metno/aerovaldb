@@ -423,9 +423,9 @@ def test_write_and_read_of_nan(tmpdb):
     with tmpdb as db:
         data = dict(value=float("nan"))
 
-        db.put_by_uri(data, "/v0/experiments/project")
+        db.put_by_uri(data, '/v0/experiments/"project"')
 
-        read = db.get_by_uri("/v0/experiments/project")
+        read = db.get_by_uri('/v0/experiments/"project"')
 
         # See Additional Notes on #59
         # https://github.com/metno/aerovaldb/pull/59
@@ -447,7 +447,7 @@ async def test_file_does_not_exist(testdb):
 def test_getter_with_default(testdb):
     with aerovaldb.open(testdb) as db:
         data = db.get_by_uri(
-            "/v0/experiments/non-existent-project", default={"data": "test"}
+            '/v0/experiments/"non-existent-project"', default={"data": "test"}
         )
 
         assert data["data"] == "test"
@@ -458,7 +458,8 @@ def test_getter_with_default_error(testdb):
     with aerovaldb.open(testdb) as db:
         with pytest.raises(simplejson.JSONDecodeError):
             db.get_by_uri(
-                "/v0/report/project/experiment/invalid-json", default={"data": "data"}
+                '/v0/report/"project"/"experiment"/"invalid-json"',
+                default={"data": "data"},
             )
 
 

@@ -46,7 +46,9 @@ ROUTE_REPORT = "/v0/report/{project}/{experiment}/{title}"
 
 ROUTE_REPORT_IMAGE = "/v0/report-image/{project}/{experiment}/{path}"
 
-ROUTE_MAP_OVERLAY = "/v0/map-overlay/{project}/{experiment}/{source}/{variable}/{date}"
+ROUTE_MAP_OVERLAY = (
+    "/v0/map-overlay/{project}/{experiment}/{source}/{variable}/{date}/{ext}"
+)
 
 ALL_ROUTES = [
     ROUTE_GLOB_STATS,

@@ -32,6 +32,8 @@ from ..routes import *
 from ..lock import FakeLock, FileLock
 from hashlib import md5
 import simplejson  # type: ignore
+import filetype
+
 
 logger = logging.getLogger(__name__)
 
@@ -63,8 +65,8 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
-                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
                 ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
                 ROUTE_MENU: "./{project}/{experiment}/menu.json",
@@ -115,7 +117,8 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
                 ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}.png",
+                # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
             },
             version_provider=self._get_version,
         )
@@ -185,6 +188,7 @@ class AerovalJsonFileDB(AerovalDB):
         validate_args = kwargs.pop("validate_args", True)
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
+        _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         substitutions = route_args | kwargs
@@ -206,7 +210,10 @@ class AerovalJsonFileDB(AerovalDB):
 
         if not os.path.exists(file_path):
             if default is None or access_type == AccessType.FILE_PATH:
-                raise FileNotFoundError(f"File {file_path} does not exist.")
+                if _raise_file_not_found_error:
+                    raise FileNotFoundError(f"File {file_path} does not exist.")
+                else:
+                    return file_path
             return default
 
         if filter_func is None:
@@ -357,11 +364,12 @@ class AerovalJsonFileDB(AerovalDB):
             project = split[1]
             experiment = split[2]
             path = ":".join(split[3:])
-            return build_uri(
+            uri = build_uri(
                 ROUTE_REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
                 {},
             )
+            return uri
 
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
@@ -407,7 +415,8 @@ class AerovalJsonFileDB(AerovalDB):
             except Exception:
                 continue
             else:
-                return build_uri(route, route_args, kwargs | {"version": version})
+                uri = build_uri(route, route_args, kwargs | {"version": version})
+                return uri
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
@@ -688,6 +697,7 @@ class AerovalJsonFileDB(AerovalDB):
         source: str,
         variable: str,
         date: str,
+        ext: str,
         access_type: str | AccessType = AccessType.BLOB,
     ):
         access_type = self._normalize_access_type(access_type)
@@ -697,17 +707,23 @@ class AerovalJsonFileDB(AerovalDB):
                 f"The report image endpoint does not support access type {access_type}."
             )
 
-        file_path = await self._get(
-            route=ROUTE_MAP_OVERLAY,
-            route_args={
-                "project": project,
-                "experiment": experiment,
-                "source": source,
-                "variable": variable,
-                "date": date,
-            },
-            access_type=AccessType.FILE_PATH,
-        )
+        try:
+            file_path = await self._get(
+                route=ROUTE_MAP_OVERLAY,
+                route_args={
+                    "project": project,
+                    "experiment": experiment,
+                    "source": source,
+                    "variable": variable,
+                    "date": date,
+                    "ext": ext,
+                },
+                _raise_file_not_found_error=False,
+                access_type=AccessType.FILE_PATH,
+            )
+        except FileNotFoundError:
+            pass
+        file_path += ext
         logger.debug(f"Fetching image with path '{file_path}'")
 
         if access_type == AccessType.FILE_PATH:
@@ -725,6 +741,7 @@ class AerovalJsonFileDB(AerovalDB):
         source: str,
         variable: str,
         date: str,
+        ext: str,
     ):
         """Putter for map overlay images.
 
@@ -748,6 +765,8 @@ class AerovalJsonFileDB(AerovalDB):
             ),
         )
 
-        os.makedirs(Path(file_path).parent, exist_ok=True)
+        file_path += ext
+
+        Path(file_path).parent.mkdir(exist_ok=True)
         with open(file_path, "wb") as f:
             f.write(obj)
