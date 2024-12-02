@@ -64,6 +64,8 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_GLOB_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
@@ -117,8 +119,6 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
                 ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
-                # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
             },
             version_provider=self._get_version,
         )
@@ -356,6 +356,9 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
+        if "/contour/overlay/" in file_path:
+            file_path = str(Path(file_path).parent / Path(file_path).stem)
+
         if file_path.startswith("reports/") and ext.lower() in IMG_FILE_EXTS:
             # TODO: Fix this.
             # The image endpoint is the only endpoint which needs to accept an arbitrary path
@@ -374,11 +377,11 @@ class AerovalJsonFileDB(AerovalDB):
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
                 if file_path.startswith("reports/"):
-                    str = "/".join(file_path.split("/")[1:3])
-                    subs = parse_formatted_string("{project}/{experiment}", str)
+                    _str = "/".join(file_path.split("/")[1:3])
+                    subs = parse_formatted_string("{project}/{experiment}", _str)
                 else:
-                    str = "/".join(file_path.split("/")[0:2])
-                    subs = parse_formatted_string("{project}/{experiment}", str)
+                    _str = "/".join(file_path.split("/")[0:2])
+                    subs = parse_formatted_string("{project}/{experiment}", _str)
             else:
                 try:
                     subs = parse_formatted_string(
@@ -697,7 +700,6 @@ class AerovalJsonFileDB(AerovalDB):
         source: str,
         variable: str,
         date: str,
-        ext: str,
         access_type: str | AccessType = AccessType.BLOB,
     ):
         access_type = self._normalize_access_type(access_type)
@@ -707,23 +709,26 @@ class AerovalJsonFileDB(AerovalDB):
                 f"The report image endpoint does not support access type {access_type}."
             )
 
-        try:
-            file_path = await self._get(
-                route=ROUTE_MAP_OVERLAY,
-                route_args={
-                    "project": project,
-                    "experiment": experiment,
-                    "source": source,
-                    "variable": variable,
-                    "date": date,
-                    "ext": ext,
-                },
-                _raise_file_not_found_error=False,
-                access_type=AccessType.FILE_PATH,
-            )
-        except FileNotFoundError:
-            pass
-        file_path += ext
+        for ext in IMG_FILE_EXTS:
+            try:
+                file_path = await self._get(
+                    route=ROUTE_MAP_OVERLAY,
+                    route_args={
+                        "project": project,
+                        "experiment": experiment,
+                        "source": source,
+                        "variable": variable,
+                        "date": date,
+                    },
+                    _raise_file_not_found_error=False,
+                    access_type=AccessType.FILE_PATH,
+                )
+            except FileNotFoundError:
+                pass
+            file_path += ext
+            if os.path.exists(file_path):
+                break
+
         logger.debug(f"Fetching image with path '{file_path}'")
 
         if access_type == AccessType.FILE_PATH:
@@ -741,7 +746,6 @@ class AerovalJsonFileDB(AerovalDB):
         source: str,
         variable: str,
         date: str,
-        ext: str,
     ):
         """Putter for map overlay images.
 
@@ -765,8 +769,9 @@ class AerovalJsonFileDB(AerovalDB):
             ),
         )
 
+        ext = filetype.guess_extension(obj)
         file_path += ext
 
-        Path(file_path).parent.mkdir(exist_ok=True)
+        Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
             f.write(obj)

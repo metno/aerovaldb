@@ -36,7 +36,6 @@ def test_get_map_overlay():
             "source",
             "variable",
             "date",
-            ".png",
             access_type=aerovaldb.AccessType.FILE_PATH,
         )
 

@@ -1273,7 +1273,6 @@ class AerovalDB(abc.ABC):
         source: str,
         variable: str,
         date: str,
-        ext: str = ".png",
         access_type: str | AccessType = AccessType.BLOB,
     ):
         """Getter for map overlay images.

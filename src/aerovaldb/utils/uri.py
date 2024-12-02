@@ -31,7 +31,7 @@ def parse_formatted_string(template: str, s: str):
                 s = s[(len(extr) + 2) :]
             else:
                 if (len(weaved) >= 2 and weaved[1] != "") or (len(weaved) > 2):
-                    ls = []
+                    ls: list[str] = []
                     while True:
                         ls.append(s[len(ls)])
                         if s[len(ls) :].startswith(weaved[1]):
@@ -127,7 +127,8 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
 
 def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
     for k, v in route_args.items():
-        route_args[k] = f'"{v}"'
+        if not v.startswith('"'):
+            route_args[k] = f'"{v}"'
 
     uri = route.format(**route_args)
     if kwargs:
