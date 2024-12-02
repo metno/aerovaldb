@@ -1,4 +1,3 @@
-# import regex as re
 import re
 
 PATH_COMPONENT_PATTERN = re.compile(r"^[^/]+$", flags=re.UNICODE)

@@ -18,23 +18,19 @@ def parse_formatted_string(template: str, s: str):
     pattern = "(" + "|".join([re.escape("{" + k + "}") for k in keywords]) + ")"
     segments = re.split(pattern, template)
 
-    keywords = ["{" + k + "}" for k in keywords]
-    # keywords.extend([""] * (len(segments)-len(keywords)))
-    # weaved = [item for pair in zip(segments, keywords) for item in pair]
-    weaved = segments
     result = {}
-    while len(weaved) > 0:
-        token = weaved[0]
+    while len(segments) > 0:
+        token = segments[0]
         if token.startswith("{"):
             if s[0] == '"':
                 extr = s.split('"')[1]
                 s = s[(len(extr) + 2) :]
             else:
-                if (len(weaved) >= 2 and weaved[1] != "") or (len(weaved) > 2):
+                if (len(segments) >= 2 and segments[1] != "") or (len(segments) > 2):
                     ls: list[str] = []
                     while True:
                         ls.append(s[len(ls)])
-                        if s[len(ls) :].startswith(weaved[1]):
+                        if s[len(ls) :].startswith(segments[1]):
                             break
 
                     extr = "".join(ls)
@@ -47,39 +43,9 @@ def parse_formatted_string(template: str, s: str):
             if not s.startswith(token):
                 raise Exception("Format string did not match")
             s = s[len(token) :]
-            # template = template[len(token):]
 
-        weaved = weaved[1:]
+        segments = segments[1:]
     return result
-
-
-# def parse_formatted_string(template: str, s: str) -> dict:
-#    """Match s against a python format string, extracting the
-#    parameter values from the format string in a dictionary.
-#
-#    Note
-#    ----
-#    Only supports {named_parameter} style format.
-#    """
-#
-#    # First split on any keyword arguments, note that the names of keyword arguments will be in the
-#    # 1st, 3rd, ... positions in this list
-#    tokens = re.split(r"\{([a-zA-Z-]*?)\}", template)
-#    # keywords = tokens[1::2]
-#    keywords = extract_substitutions(template)
-#    # Now replace keyword arguments with named groups matching them. We also escape between keyword
-#    # arguments so we support meta-characters there. Re-join tokens to form our regexp pattern
-#
-#    tokens[1::2] = map("(?P<{}>[^/]*)".format, keywords)
-#    tokens[0::2] = map(re.escape, tokens[0::2])
-#    pattern = "".join(tokens)
-#
-#    # Use our pattern to match the given string, raise if it doesn't match
-#    if not (match := re.match(pattern, s)):
-#        raise Exception("Format string did not match")
-#
-#    # Return a dict with all of our keywords and their values
-#    return {x: match.group(x) for x in keywords}
 
 
 def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
