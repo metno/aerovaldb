@@ -1,4 +1,4 @@
-import regex as re
+import re
 from ..routes import ALL_ROUTES
 import urllib
 
