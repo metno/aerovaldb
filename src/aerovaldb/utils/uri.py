@@ -28,8 +28,18 @@ def parse_formatted_string(template: str, s: str):
             else:
                 if (len(segments) >= 2 and segments[1] != "") or (len(segments) > 2):
                     ls: list[str] = []
+                    esc_flag = False
                     while True:
-                        ls.append(s[len(ls)])
+                        char = s[len(ls)]
+                        if esc_flag == True:
+                            ls.append(char)
+                            esc_flag = False
+                            continue
+                        if char == "\\":
+                            esc_flag = True
+                            continue
+
+                        ls.append(char)
                         if s[len(ls) :].startswith(segments[1]):
                             break
 
@@ -93,8 +103,9 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
 
 def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
     for k, v in route_args.items():
+        encoded = v.replace('"', '\\"')
         if not v.startswith('"'):
-            route_args[k] = f'"{v}"'
+            route_args[k] = f'"{encoded}"'
 
     uri = route.format(**route_args)
     if kwargs:
