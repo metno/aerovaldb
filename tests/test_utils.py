@@ -34,10 +34,32 @@ def test_extract_substitutions(template: str, result: set[str]):
             "test/A/B/C/D",
             {"a": "A", "b": "B", "c": "C", "d": "D"},
         ),
+        ("{a}{b}", '"a""bcd"', {"a": "a", "b": "bcd"}),
+        ("a{b}c", r'a"bcd\""c', {"b": r'bcd"'}),
+        ("a{b}c", r'a"bcd\\\""c', {"b": 'bcd\\"'}),
     ),
 )
 def test_parse_formatted_string(template: str, s: str, expected: dict):
     assert parse_formatted_string(template, s) == expected
+
+
+@pytest.mark.parametrize(
+    "template,s,val,exception",
+    (
+        ("{a}{b}", "abcd", "can not be disambiguated", Exception),
+        (
+            "{a}b{b}",
+            'testb"hello"test"blah',
+            "did not match template string",
+            Exception,
+        ),
+    ),
+)
+def test_parse_fromatted_string_error(template: str, s: str, val: str, exception):
+    with pytest.raises(exception) as e:
+        parse_formatted_string(template, s)
+
+    assert val in str(e.value)
 
 
 @pytest.mark.parametrize(
