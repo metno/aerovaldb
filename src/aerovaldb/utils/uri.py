@@ -43,6 +43,9 @@ def parse_formatted_string(template: str, s: str):
     result = {}
     while len(segments) > 0:
         token = segments[0]
+        next_token = None
+        if len(segments) >= 2:
+            next_token = segments[1]
         if token.startswith("{"):
             # Token is a keyword, so try to extract it.
             if s[0] == '"':
@@ -58,11 +61,11 @@ def parse_formatted_string(template: str, s: str):
             ls: list[str] = []
             esc_flag = False
             offset = 0
-            if not quote_mode and len(segments) >= 2 and segments[1].startswith("{"):
+            if not quote_mode and next_token is not None and next_token.startswith("{"):
                 raise Exception(
                     f"Two successive keywords can not be disambiguated unless quotes are used (s='{original_string}; template='{template}')"
                 )
-            if (len(segments) >= 2 and segments[1] != "") or (len(segments) > 2):
+            if len(segments) >= 2:
                 esc_flag = False
                 while True:
                     char = s[len(ls) + quote_mode + offset]
@@ -81,9 +84,11 @@ def parse_formatted_string(template: str, s: str):
                         continue
                     ls.append(char)
 
-                    if not quote_mode and s[
-                        (len(ls) + quote_mode + offset) :
-                    ].startswith(segments[1]):
+                    if (
+                        not quote_mode
+                        and next_token is not None
+                        and s[(len(ls) + quote_mode + offset) :].startswith(next_token)
+                    ):
                         # Remainder of string matches next segment, quit early.
                         break
                 extr = "".join(ls)
