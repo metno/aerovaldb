@@ -458,7 +458,7 @@ def test_getter_with_default_error(testdb):
     with aerovaldb.open(testdb) as db:
         with pytest.raises(simplejson.JSONDecodeError):
             db.get_by_uri(
-                '/v0/report/"project"/"experiment"/"invalid-json"',
+                "/v0/report/project/experiment/invalid-json",
                 default={"data": "data"},
             )
 

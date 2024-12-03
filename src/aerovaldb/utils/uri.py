@@ -29,8 +29,11 @@ def parse_formatted_string(template: str, s: str):
     ----
     To allow for resolving ambiguous cases this function allows making boundaries
     explicit by using quotes.
-    For instance:
-    - template: "{a}{b}"  s: '"a""bcd" -> {'a': 'a', 'b': 'bcd'}
+
+    Example:
+    >>> from aerovaldb.utils.uri import parse_formatted_string
+    >>> parse_formatted_string("{a}/{b}", "test1/test2")
+    {'a': 'test1', b: 'test2'}
     """
     original_string = s
     keywords = extract_substitutions(template)
@@ -48,62 +51,22 @@ def parse_formatted_string(template: str, s: str):
             next_token = segments[1]
         if token.startswith("{"):
             # Token is a keyword, so try to extract it.
-            if s[0] == '"':
-                # Part to extract is delineated by quotes. Keep part until next unescaped quote
-                # as the extracted value.
-                quote_mode = True
-            else:
-                # Token is not delineated by quotes.
-                # All text will be matched until the start of the unmatched part of `s` matches
-                # the next segment.
-                quote_mode = False
-
             ls: list[str] = []
-            esc_flag = False
-            offset = 0
-            if not quote_mode and next_token is not None and next_token.startswith("{"):
-                raise Exception(
-                    f"Two successive keywords can not be disambiguated unless quotes are used (s='{original_string}; template='{template}')"
-                )
-            if len(segments) >= 2:
-                esc_flag = False
-                while True:
-                    char = s[len(ls) + quote_mode + offset]
-                    if not esc_flag and quote_mode and char == '"':
-                        # End of extracted value in quote mode.
-                        break
-                    if esc_flag == True:
-                        # Esc flag so append character no matter what it is.
-                        ls.append(char)
-                        esc_flag = False
-                        continue
-                    if char == "\\":
-                        # Escape character, so mark esc_flag and ignore.
-                        esc_flag = True
-                        offset += 1
-                        continue
-                    ls.append(char)
 
-                    if (
-                        not quote_mode
-                        and next_token is not None
-                        and s[(len(ls) + quote_mode + offset) :].startswith(next_token)
-                    ):
-                        # Remainder of string matches next segment, quit early.
-                        break
-                extr = "".join(ls)
-                s = s[(len(extr) + 2 * quote_mode + offset) :]
-            else:
-                if quote_mode and s.endswith('"'):
-                    extr = s[1:-1]
-                elif not quote_mode:
-                    extr = s
-                else:
+            if next_token is not None:
+                if next_token.startswith("{"):
                     raise Exception(
-                        f"Formatted string '{original_string}' did not match template string '{template}'"
+                        f"Two successive keywords can not be disambiguated (s='{original_string}; template='{template}')"
                     )
+                while len(ls) < len(s) and not (s[len(ls) :].startswith(next_token)):
+                    char = s[len(ls)]
+                    ls.append(char)
+                extr = "".join(ls)
+            else:
+                extr = s
 
             result[token.replace("{", "").replace("}", "")] = extr
+            s = s[len(extr) :]
         else:
             if not s.startswith(token):
                 raise Exception(
@@ -112,6 +75,10 @@ def parse_formatted_string(template: str, s: str):
             s = s[len(token) :]
 
         segments = segments[1:]
+    if len(s) > 0:
+        raise Exception(
+            f"Formatted string '{original_string}' did not match template string '{template}'"
+        )
     return result
 
 
@@ -159,11 +126,6 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
 
 
 def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
-    for k, v in route_args.items():
-        encoded = v.replace('"', '\\"')
-        if not v.startswith('"'):
-            route_args[k] = f'"{encoded}"'
-
     uri = route.format(**route_args)
     if kwargs:
         queries = "&".join([f"{k}={v}" for k, v in kwargs.items()])

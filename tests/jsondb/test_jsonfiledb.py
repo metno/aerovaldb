@@ -9,7 +9,7 @@ def test_jsonfiledb__get_uri_for_file(tmp_path):
         db: AerovalJsonFileDB
         assert (
             db._get_uri_for_file(str(tmp_path / "project/experiments.json"))
-            == '/v0/experiments/"project"?version=0.0.1'
+            == "/v0/experiments/project?version=0.0.1"
         )
 
 

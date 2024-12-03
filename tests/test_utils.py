@@ -20,13 +20,6 @@ def test_extract_substitutions(template: str, result: set[str]):
 @pytest.mark.parametrize(
     "template,s,expected",
     (
-        ("{test}", '"hello"', {"test": "hello"}),
-        ("ABCD{test}1234", 'ABCD"helloworld"1234', {"test": "helloworld"}),
-        (
-            "test/{a}/{b}/{c}/{d}",
-            'test/"A"/"B"/"C"/"D"',
-            {"a": "A", "b": "B", "c": "C", "d": "D"},
-        ),
         ("{test}", "hello", {"test": "hello"}),
         ("ABCD{test}1234", "ABCDhelloworld1234", {"test": "helloworld"}),
         (
@@ -34,9 +27,6 @@ def test_extract_substitutions(template: str, result: set[str]):
             "test/A/B/C/D",
             {"a": "A", "b": "B", "c": "C", "d": "D"},
         ),
-        ("{a}{b}", '"a""bcd"', {"a": "a", "b": "bcd"}),
-        ("a{b}c", r'a"bcd\""c', {"b": r'bcd"'}),
-        ("a{b}c", r'a"bcd\\\""c', {"b": 'bcd\\"'}),
     ),
 )
 def test_parse_formatted_string(template: str, s: str, expected: dict):
@@ -48,8 +38,8 @@ def test_parse_formatted_string(template: str, s: str, expected: dict):
     (
         ("{a}{b}", "abcd", "can not be disambiguated", Exception),
         (
-            "{a}b{b}",
-            'testb"hello"test"blah',
+            "{a}b{b}c",
+            "testbhellotestblah",
             "did not match template string",
             Exception,
         ),
@@ -66,11 +56,11 @@ def test_parse_fromatted_string_error(template: str, s: str, val: str, exception
     "uri,expected",
     (
         (
-            '/v0/experiments/"project"',
+            "/v0/experiments/project",
             (ROUTE_EXPERIMENTS, {"project": "project"}, {}),
         ),
         (
-            '/v0/map/"project"/"experiment"/"network"/"obsvar"/"layer"/"model"/"modvar"?time=time',
+            "/v0/map/project/experiment/network/obsvar/layer/model/modvar?time=time",
             (
                 ROUTE_MAP,
                 {
