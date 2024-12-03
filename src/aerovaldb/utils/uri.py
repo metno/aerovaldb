@@ -52,12 +52,15 @@ def parse_formatted_string(template: str, s: str):
         if token.startswith("{"):
             # Token is a keyword, so try to extract it.
             ls: list[str] = []
-
             if next_token is not None:
                 if next_token.startswith("{"):
                     raise Exception(
                         f"Two successive keywords can not be disambiguated (s='{original_string}; template='{template}')"
                     )
+
+                # First opportunity where the remainder of the string starts with the next token is where we stop matching.
+                # Note: This prevents some strings from being matched if the next token is also part of the string that should
+                # be matched, but it isn't causing problems for now.
                 while len(ls) < len(s) and not (s[len(ls) :].startswith(next_token)):
                     char = s[len(ls)]
                     ls.append(char)
@@ -93,6 +96,12 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     ----------
     uri :
         The uri to be parsed.
+
+    Example
+    -------
+    >>> from aerovaldb.utils.uri import parse_uri
+    >>> parse_uri('/v0/experiments/project')
+    ('/v0/experiments/{project}', {'project': 'project'}, {})
     """
     split = uri.split("?")
 
