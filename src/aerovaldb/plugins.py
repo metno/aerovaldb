@@ -57,6 +57,20 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
     :param use_async : If true, aiofile will be used to read files, otherwise files will be read
         synchronously.
     :return: an implementation-object of AerovalDB openend to a location
+
+    Examples
+
+    >>> import aerovaldb
+    >>> with aerovaldb.open(":memory:") as db:
+    ...     db.put_experiments({'test': 'test'}, 'project')
+    ...     db.get_experiments('project')
+    {'test': 'test'}
+
+    >>> import aerovaldb
+    >>> db = aerovaldb.open(":memory:")
+    >>> db.put_experiments({'test': 'test'}, 'project')
+    >>> db.get_experiments('project')
+    {'test': 'test'}
     """
     if resource == ":memory:":
         # Special case for sqlite in memory database.
