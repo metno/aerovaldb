@@ -33,7 +33,7 @@ def parse_formatted_string(template: str, s: str):
     Example:
     >>> from aerovaldb.utils.uri import parse_formatted_string
     >>> parse_formatted_string("{a}/{b}", "test1/test2")
-    {'a': 'test1', b: 'test2'}
+    {'a': 'test1', 'b': 'test2'}
     """
     original_string = s
     keywords = extract_substitutions(template)
