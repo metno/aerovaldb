@@ -40,3 +40,34 @@ def test_get_map_overlay():
         )
 
         assert os.path.exists(path)
+
+
+def test_put_map_overlay(tmp_path):
+    # http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
+    PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+    with aerovaldb.open(f"json_files:{str(tmp_path)}") as db:
+        db.put_map_overlay(
+            PNG_FILE_SIGNATURE, "project", "experiment", "source", "variable", "date"
+        )
+
+        path: str = db.get_map_overlay(
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+            access_type=aerovaldb.AccessType.FILE_PATH,
+        )
+        assert os.path.exists(path)
+        assert path.endswith(".png")
+
+        read_bytes = db.get_map_overlay(
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+            access_type=aerovaldb.AccessType.BLOB,
+        )
+
+        assert read_bytes == PNG_FILE_SIGNATURE

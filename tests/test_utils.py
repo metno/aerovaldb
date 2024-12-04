@@ -18,7 +18,7 @@ def test_extract_substitutions(template: str, result: set[str]):
 
 
 @pytest.mark.parametrize(
-    "template,s,expected",
+    "template,string,expected",
     (
         ("{test}", "hello", {"test": "hello"}),
         ("ABCD{test}1234", "ABCDhelloworld1234", {"test": "helloworld"}),
@@ -29,8 +29,27 @@ def test_extract_substitutions(template: str, result: set[str]):
         ),
     ),
 )
-def test_parse_formatted_string(template: str, s: str, expected: dict):
-    assert parse_formatted_string(template, s) == expected
+def test_parse_formatted_string(template: str, string: str, expected: dict):
+    assert parse_formatted_string(template, string) == expected
+
+
+@pytest.mark.parametrize(
+    "template,string,val,exception",
+    (
+        ("{a}{b}", "abcd", "can not be disambiguated", Exception),
+        (
+            "{a}b{b}c",
+            "testbhellotestblah",
+            "did not match template string",
+            Exception,
+        ),
+    ),
+)
+def test_parse_fromatted_string_error(template: str, string: str, val: str, exception):
+    with pytest.raises(exception) as e:
+        parse_formatted_string(template, string)
+
+    assert val in str(e.value)
 
 
 @pytest.mark.parametrize(
