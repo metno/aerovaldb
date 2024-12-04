@@ -23,12 +23,7 @@ def parse_formatted_string(template: str, s: str):
     Limitations
     -----------
     - Only works for format strings that use the named curly bracket notation.
-    In other words no %s or {}
-
-    Note
-    ----
-    To allow for resolving ambiguous cases this function allows making boundaries
-    explicit by using quotes.
+    In other words no %s or {} notation.
 
     Example:
     >>> from aerovaldb.utils.uri import parse_formatted_string
@@ -72,13 +67,12 @@ def parse_formatted_string(template: str, s: str):
             s = s[len(extr) :]
         else:
             if not s.startswith(token):
-                raise Exception(
-                    f"Formatted string '{original_string}' did not match template string '{template}'"
-                )
+                break
+
             s = s[len(token) :]
 
         segments = segments[1:]
-    if len(s) > 0:
+    if len(segments) > 0:
         raise Exception(
             f"Formatted string '{original_string}' did not match template string '{template}'"
         )
