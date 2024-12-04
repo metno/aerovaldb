@@ -770,7 +770,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
         ext = filetype.guess_extension(obj)
-        file_path += ext
+        file_path += f".{ext}"
 
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
