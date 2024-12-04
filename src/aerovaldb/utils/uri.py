@@ -12,11 +12,11 @@ def extract_substitutions(template: str):
     return re.findall(r"\{([a-zA-Z-]*?)\}", template)
 
 
-def parse_formatted_string(template: str, s: str):
+def parse_formatted_string(template: str, string: str):
     """Parse formatted string. Meant to be the inverse of str.format()
 
     :param template: Template string.
-    :param s: String to be matched.
+    :param string: String to be matched.
     :raises Exception: If unable to match `s` against template.
     :return: Dict of extracted arguments.
 
@@ -30,7 +30,7 @@ def parse_formatted_string(template: str, s: str):
     >>> parse_formatted_string("{a}/{b}", "test1/test2")
     {'a': 'test1', 'b': 'test2'}
     """
-    original_string = s
+    original_string = string
     keywords = extract_substitutions(template)
 
     pattern = "(" + "|".join([re.escape("{" + k + "}") for k in keywords]) + ")"
@@ -56,20 +56,22 @@ def parse_formatted_string(template: str, s: str):
                 # First opportunity where the remainder of the string starts with the next token is where we stop matching.
                 # Note: This prevents some strings from being matched if the next token is also part of the string that should
                 # be matched, but it isn't causing problems for now.
-                while len(ls) < len(s) and not (s[len(ls) :].startswith(next_token)):
-                    char = s[len(ls)]
+                while len(ls) < len(string) and not (
+                    string[len(ls) :].startswith(next_token)
+                ):
+                    char = string[len(ls)]
                     ls.append(char)
                 extr = "".join(ls)
             else:
-                extr = s
+                extr = string
 
             result[token.replace("{", "").replace("}", "")] = extr
-            s = s[len(extr) :]
+            string = string[len(extr) :]
         else:
-            if not s.startswith(token):
+            if not string.startswith(token):
                 break
 
-            s = s[len(token) :]
+            string = string[len(token) :]
 
         segments = segments[1:]
     if len(segments) > 0:
