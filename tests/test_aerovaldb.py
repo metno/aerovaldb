@@ -447,7 +447,7 @@ async def test_file_does_not_exist(testdb):
 def test_getter_with_default(testdb):
     with aerovaldb.open(testdb) as db:
         data = db.get_by_uri(
-            '/v0/experiments/"non-existent-project"', default={"data": "test"}
+            "/v0/experiments/non-existent-project", default={"data": "test"}
         )
 
         assert data["data"] == "test"
