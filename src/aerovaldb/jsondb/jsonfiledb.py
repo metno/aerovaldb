@@ -1,3 +1,4 @@
+import datetime
 from functools import cache
 import glob
 import logging
@@ -215,6 +216,9 @@ class AerovalJsonFileDB(AerovalDB):
                 else:
                     return file_path
             return default
+
+        if access_type in [AccessType.URI]:
+            return build_uri(route, route_args, kwargs)
 
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
@@ -775,3 +779,20 @@ class AerovalJsonFileDB(AerovalDB):
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
             f.write(obj)
+
+    @async_and_sync
+    async def get_time_by_uri(
+        self, uri: str, *, kind: str = "mtime"
+    ) -> datetime.datetime:
+        fpath = await self.get_by_uri(uri, access_type=AccessType.FILE_PATH)
+
+        if kind == "mtime":
+            return datetime.datetime.fromtimestamp(os.path.getmtime(fpath))
+        if kind == "ctime":
+            return datetime.datetime.fromtimestamp(os.path.getctime(fpath))
+        if kind == "atime":
+            return datetime.datetime.fromtimestamp(os.path.getatime(fpath))
+
+        raise UnsupportedOperation(
+            f"AerovalJsonFileDB.get_time_by_uri() does not support fetching time '{kind}' for a file."
+        )

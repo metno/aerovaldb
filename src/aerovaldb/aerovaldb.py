@@ -1,4 +1,5 @@
 import abc
+import datetime
 import functools
 import inspect
 from .types import AccessType
@@ -1306,3 +1307,26 @@ class AerovalDB(abc.ABC):
         :param date : Date.
         """
         raise NotImplementedError
+
+    @async_and_sync
+    async def get_time_by_uri(
+        self, uri: str, *, kind: str = "mtime"
+    ) -> datetime.datetime:
+        """
+        :param uri: The URI for which to fetch the time.
+        :param_uri: The time to fetch (eg. 'mtime' or 'ctime')
+
+        :return A datetime.datetime object with the resulting time.
+        """
+        raise NotImplementedError
+
+    @async_and_sync
+    async def get_experiment_mtime(
+        self, project: str, experiment: str
+    ) -> datetime.datetime:
+        """
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        """
+        uri = await self.get_config(project, experiment, access_type=AccessType.URI)
+        return await self.get_time_by_uri(uri, kind="mtime")
