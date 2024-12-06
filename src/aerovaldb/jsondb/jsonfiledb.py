@@ -666,11 +666,27 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         access_type = self._normalize_access_type(access_type)
 
-        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+        if access_type not in (
+            AccessType.FILE_PATH,
+            AccessType.BLOB,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ):
             raise UnsupportedOperation(
                 f"The report image endpoint does not support access type {access_type}."
             )
 
+        if access_type in (AccessType.MTIME, AccessType.CTIME):
+            return await self._get(
+                route=ROUTE_REPORT_IMAGE,
+                route_args={
+                    "project": project,
+                    "experiment": experiment,
+                    "path": path,
+                },
+                access_type=access_type,
+                validate_args=False,
+            )
         file_path = await self._get(
             route=ROUTE_REPORT_IMAGE,
             route_args={
@@ -713,7 +729,12 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         access_type = self._normalize_access_type(access_type)
 
-        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+        if access_type not in (
+            AccessType.FILE_PATH,
+            AccessType.BLOB,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ):
             raise UnsupportedOperation(
                 f"The report image endpoint does not support access type {access_type}."
             )
@@ -739,6 +760,11 @@ class AerovalJsonFileDB(AerovalDB):
                 break
 
         logger.debug(f"Fetching image with path '{file_path}'")
+
+        if access_type in [AccessType.MTIME]:
+            return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if access_type in [AccessType.CTIME]:
+            return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
         if access_type == AccessType.FILE_PATH:
             return file_path

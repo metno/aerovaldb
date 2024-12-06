@@ -577,18 +577,17 @@ def test_serialize_set(tmpdb):
         db.put_config({"set": {"a", "b", "c"}}, "test", "test")
 
 
-# @TESTDB_PARAMETRIZATION
-# def test_get_time_by_uri(testdb):
-#    with aerovaldb.open(testdb) as db:
-#        for uri in db.list_all():
-#            mtime = db.get_time_by_uri(uri, kind="mtime")
-#            ctime = db.get_time_by_uri(uri, kind="ctime")
-#
-#            assert isinstance(mtime, datetime.datetime)
-#            assert isinstance(ctime, datetime.datetime)
-#
-#            assert mtime.year >= 2024 and mtime < datetime.datetime.now()
-#            assert ctime.year >= 2024 and ctime < datetime.datetime.now()
+@TESTDB_PARAMETRIZATION
+def test_get_times(testdb):
+    with aerovaldb.open(testdb) as db:
+        for uri in db.list_all():
+            mtime = db.get_by_uri(uri, access_type="MTIME")
+            ctime = db.get_by_uri(uri, access_type="CTIME")
+
+            assert isinstance(mtime, datetime.datetime)
+            assert isinstance(ctime, datetime.datetime)
+            assert mtime.year >= 2024 and mtime < datetime.datetime.now()
+            assert ctime.year >= 2024 and ctime < datetime.datetime.now()
 
 
 @TESTDB_PARAMETRIZATION
