@@ -1,6 +1,7 @@
-from aerovaldb.utils import parse_formatted_string, parse_uri, extract_substitutions
 import pytest
+
 from aerovaldb.routes import *
+from aerovaldb.utils import extract_substitutions, parse_formatted_string, parse_uri
 
 
 @pytest.mark.parametrize(

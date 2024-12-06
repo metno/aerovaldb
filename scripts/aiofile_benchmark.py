@@ -1,9 +1,9 @@
-import aiofile
-import time
-import random
-import os
-import aiofile
 import asyncio
+import os
+import random
+import time
+
+import aiofile
 
 
 def generate_test_file(fp: str, /, size: int):

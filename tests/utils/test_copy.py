@@ -1,5 +1,6 @@
-import aerovaldb
 import pytest
+
+import aerovaldb
 from aerovaldb.utils.copy import copy_db_contents
 
 

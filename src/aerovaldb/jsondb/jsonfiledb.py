@@ -1,39 +1,38 @@
-from functools import cache
+import datetime
 import glob
+import importlib.metadata
 import logging
 import os
 import shutil
+from hashlib import md5
 from pathlib import Path
-from typing import Callable, Awaitable, Any
-import importlib.metadata
+from typing import Any, Awaitable, Callable
 
+import filetype
+import simplejson  # type: ignore
 from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
 from aerovaldb.const import IMG_FILE_EXTS
 from aerovaldb.types import AccessType
-from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 
+from ..exceptions import UnsupportedOperation
+from ..lock import FakeLock, FileLock
+from ..routes import *
 from ..utils import (
     async_and_sync,
-    str_to_bool,
-    validate_filename_component,
-    json_dumps_wrapper,
-    parse_uri,
-    parse_formatted_string,
     build_uri,
     extract_substitutions,
+    json_dumps_wrapper,
+    parse_formatted_string,
+    parse_uri,
+    str_to_bool,
+    validate_filename_component,
 )
 from ..utils.filter import filter_heatmap, filter_regional_stats
-from ..exceptions import UnsupportedOperation
+from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
-from ..routes import *
-from ..lock import FakeLock, FileLock
-from hashlib import md5
-import simplejson  # type: ignore
-import filetype
-
 
 logger = logging.getLogger(__name__)
 
@@ -216,6 +215,9 @@ class AerovalJsonFileDB(AerovalDB):
                     return file_path
             return default
 
+        if access_type in [AccessType.URI]:
+            return build_uri(route, route_args, kwargs)
+
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
                 return file_path
@@ -223,6 +225,11 @@ class AerovalJsonFileDB(AerovalDB):
             if access_type == AccessType.JSON_STR:
                 raw = await self._cache.get_json(file_path, no_cache=not use_caching)
                 return raw
+
+            if access_type == AccessType.MTIME:
+                return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+            if access_type == AccessType.CTIME:
+                return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
             raw = await self._cache.get_json(file_path, no_cache=not use_caching)
 
@@ -657,11 +664,27 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         access_type = self._normalize_access_type(access_type)
 
-        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+        if access_type not in (
+            AccessType.FILE_PATH,
+            AccessType.BLOB,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ):
             raise UnsupportedOperation(
                 f"The report image endpoint does not support access type {access_type}."
             )
 
+        if access_type in (AccessType.MTIME, AccessType.CTIME):
+            return await self._get(
+                route=ROUTE_REPORT_IMAGE,
+                route_args={
+                    "project": project,
+                    "experiment": experiment,
+                    "path": path,
+                },
+                access_type=access_type,
+                validate_args=False,
+            )
         file_path = await self._get(
             route=ROUTE_REPORT_IMAGE,
             route_args={
@@ -704,7 +727,12 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         access_type = self._normalize_access_type(access_type)
 
-        if access_type not in (AccessType.FILE_PATH, AccessType.BLOB):
+        if access_type not in (
+            AccessType.FILE_PATH,
+            AccessType.BLOB,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ):
             raise UnsupportedOperation(
                 f"The report image endpoint does not support access type {access_type}."
             )
@@ -730,6 +758,11 @@ class AerovalJsonFileDB(AerovalDB):
                 break
 
         logger.debug(f"Fetching image with path '{file_path}'")
+
+        if access_type in [AccessType.MTIME]:
+            return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if access_type in [AccessType.CTIME]:
+            return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
         if access_type == AccessType.FILE_PATH:
             return file_path

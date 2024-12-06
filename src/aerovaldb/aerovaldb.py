@@ -1,9 +1,11 @@
 import abc
+import datetime
 import functools
 import inspect
+
+from .routes import *
 from .types import AccessType
 from .utils import async_and_sync
-from .routes import *
 
 
 def get_method(route):
@@ -1306,3 +1308,14 @@ class AerovalDB(abc.ABC):
         :param date : Date.
         """
         raise NotImplementedError
+
+    @async_and_sync
+    async def get_experiment_mtime(
+        self, project: str, experiment: str
+    ) -> datetime.datetime:
+        """
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        """
+        uri = await self.get_config(project, experiment, access_type=AccessType.URI)
+        return await self.get_by_uri(uri, access_type=AccessType.MTIME)

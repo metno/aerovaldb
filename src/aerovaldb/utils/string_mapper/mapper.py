@@ -1,6 +1,7 @@
 import logging
-from typing import Awaitable, Callable, Mapping
 from abc import ABC
+from typing import Awaitable, Callable, Mapping
+
 from packaging.version import Version
 
 logger = logging.getLogger(__name__)
