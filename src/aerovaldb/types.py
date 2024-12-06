@@ -13,6 +13,10 @@ class AccessType(Enum):
     implementations of Aerovaldb. Can be used with `get_by_uuid()` and
     `put_by_uuid()` to read or write respectively.
     (_ROW_ID: For Internal use)
+    MTIME: The timestamp for last modification for the resource will be
+    returned (as datetime.datetime).
+    CTIME: The creation timestamp for the resource will be returned (as
+    datetime.datetime)
     """
 
     JSON_STR = auto()
