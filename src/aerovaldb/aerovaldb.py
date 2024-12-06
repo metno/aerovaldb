@@ -2,9 +2,10 @@ import abc
 import datetime
 import functools
 import inspect
+
+from .routes import *
 from .types import AccessType
 from .utils import async_and_sync
-from .routes import *
 
 
 def get_method(route):

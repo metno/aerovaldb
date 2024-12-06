@@ -1,6 +1,8 @@
-import aerovaldb
-import pytest
 import os
+
+import pytest
+
+import aerovaldb
 from aerovaldb.sqlitedb import AerovalSqliteDB
 
 

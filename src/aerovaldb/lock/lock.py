@@ -1,8 +1,9 @@
-from abc import ABC, abstractmethod
-import logging
-import fcntl
 import asyncio
+import fcntl
+import logging
 import pathlib
+from abc import ABC, abstractmethod
+
 from ..utils import has_async_loop, run_until_finished
 
 logger = logging.getLogger(__name__)

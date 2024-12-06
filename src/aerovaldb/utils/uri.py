@@ -1,6 +1,7 @@
 import re
-from ..routes import ALL_ROUTES
 import urllib
+
+from ..routes import ALL_ROUTES
 
 
 def extract_substitutions(template: str):

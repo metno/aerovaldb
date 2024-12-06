@@ -6,10 +6,12 @@
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
 import datetime
-import simplejson  # type: ignore
-import aerovaldb
-import pytest
 import random
+
+import pytest
+import simplejson  # type: ignore
+
+import aerovaldb
 from aerovaldb.utils.copy import copy_db_contents
 
 

@@ -1,11 +1,12 @@
+import asyncio
+import logging
 import os
-import pytest
 from multiprocessing import Process
 
-import asyncio
-from aerovaldb.lock.lock import FileLock, FakeLock
+import pytest
+
 import aerovaldb
-import logging
+from aerovaldb.lock.lock import FakeLock, FileLock
 
 pytest_plugins = ("pytest_asyncio",)
 
