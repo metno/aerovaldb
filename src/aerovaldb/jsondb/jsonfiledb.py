@@ -228,6 +228,11 @@ class AerovalJsonFileDB(AerovalDB):
                 raw = await self._cache.get_json(file_path, no_cache=not use_caching)
                 return raw
 
+            if access_type == AccessType.MTIME:
+                return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+            if access_type == AccessType.CTIME:
+                return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+
             raw = await self._cache.get_json(file_path, no_cache=not use_caching)
 
             return simplejson.loads(raw, allow_nan=True)
@@ -779,20 +784,3 @@ class AerovalJsonFileDB(AerovalDB):
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
             f.write(obj)
-
-    @async_and_sync
-    async def get_time_by_uri(
-        self, uri: str, *, kind: str = "mtime"
-    ) -> datetime.datetime:
-        fpath = await self.get_by_uri(uri, access_type=AccessType.FILE_PATH)
-
-        if kind == "mtime":
-            return datetime.datetime.fromtimestamp(os.path.getmtime(fpath))
-        if kind == "ctime":
-            return datetime.datetime.fromtimestamp(os.path.getctime(fpath))
-        if kind == "atime":
-            return datetime.datetime.fromtimestamp(os.path.getatime(fpath))
-
-        raise UnsupportedOperation(
-            f"AerovalJsonFileDB.get_time_by_uri() does not support fetching time '{kind}' for a file."
-        )

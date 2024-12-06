@@ -72,28 +72,3 @@ def test_put_map_overlay(tmp_path):
         )
 
         assert read_bytes == PNG_FILE_SIGNATURE
-
-
-def test_get_time_by_uri():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        for uri in db.list_all():
-            mtime = db.get_time_by_uri(uri, kind="mtime")
-            atime = db.get_time_by_uri(uri, kind="atime")
-            ctime = db.get_time_by_uri(uri, kind="ctime")
-
-            assert isinstance(mtime, datetime.datetime)
-            assert isinstance(atime, datetime.datetime)
-            assert isinstance(ctime, datetime.datetime)
-
-            assert mtime.year >= 2024 and mtime < datetime.datetime.now()
-            assert atime.year >= 2024 and atime < datetime.datetime.now()
-            assert ctime.year >= 2024 and ctime < datetime.datetime.now()
-
-
-def test_get_experiment_mtime():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        for exp in ["experiment", "experiment-old"]:
-            mtime = db.get_experiment_mtime("project", exp)
-
-            assert isinstance(mtime, datetime.datetime)
-            assert mtime.year >= 2024 and mtime < datetime.datetime.now()

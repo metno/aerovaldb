@@ -1309,18 +1309,6 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    async def get_time_by_uri(
-        self, uri: str, *, kind: str = "mtime"
-    ) -> datetime.datetime:
-        """
-        :param uri: The URI for which to fetch the time.
-        :param_uri: The time to fetch (eg. 'mtime' or 'ctime')
-
-        :return A datetime.datetime object with the resulting time.
-        """
-        raise NotImplementedError
-
-    @async_and_sync
     async def get_experiment_mtime(
         self, project: str, experiment: str
     ) -> datetime.datetime:
@@ -1329,4 +1317,4 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         """
         uri = await self.get_config(project, experiment, access_type=AccessType.URI)
-        return await self.get_time_by_uri(uri, kind="mtime")
+        return await self.get_by_uri(uri, access_type=AccessType.MTIME)
