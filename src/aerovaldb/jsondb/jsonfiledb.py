@@ -64,7 +64,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{source}_{variable}/{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
@@ -363,7 +363,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
-        if "/contour/overlay/" in file_path:
+        if "/overlay/" in file_path:
             file_path = str(Path(file_path).parent / Path(file_path).stem)
 
         if file_path.startswith("reports/") and ext.lower() in IMG_FILE_EXTS:
