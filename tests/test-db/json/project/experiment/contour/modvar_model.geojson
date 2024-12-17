@@ -1,3 +1,6 @@
 {
-    "path": "./project/experiment/contour/"
+    "path": "./project/experiment/contour/",
+    "timestep": {
+        "path": "filtered-by-timestep"
+    }
 }

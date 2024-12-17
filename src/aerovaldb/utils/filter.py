@@ -44,3 +44,10 @@ def filter_heatmap(data, region: str, time: str, **kwargs):
                                 ][region] = {time: region_data[time]}
 
     return filtered_data
+
+
+def filter_contour(data, timestep: str | None = None, **kwargs):
+    if timestep is None:
+        return data
+
+    return data[timestep]

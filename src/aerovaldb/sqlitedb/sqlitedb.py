@@ -10,7 +10,7 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 import aerovaldb
-from aerovaldb.utils.filter import filter_heatmap, filter_regional_stats
+from aerovaldb.utils.filter import filter_contour, filter_heatmap, filter_regional_stats
 from aerovaldb.utils.string_mapper import (
     PriorityMapper,
     StringMapper,
@@ -226,6 +226,7 @@ class AerovalSqliteDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_CONTOUR: filter_contour,
         }
 
     @async_and_sync
@@ -445,12 +446,24 @@ class AerovalSqliteDB(AerovalDB):
         if filter_func is not None:
             obj = simplejson.loads(fetched["json"], allow_nan=True)
 
-            obj = filter_func(obj, **route_args)
+            obj = filter_func(obj, **(route_args | kwargs))
             if access_type == AccessType.OBJ:
                 return obj
 
             if access_type == AccessType.JSON_STR:
                 return json_dumps_wrapper(obj)
+
+            if access_type == AccessType.MTIME:
+                dt = datetime.datetime.strptime(
+                    fetched["mtime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
+
+            if access_type == AccessType.CTIME:
+                dt = datetime.datetime.strptime(
+                    fetched["ctime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
+
+            return dt
 
         raise UnsupportedOperation
 
