@@ -30,7 +30,7 @@ from ..utils import (
     str_to_bool,
     validate_filename_component,
 )
-from ..utils.filter import filter_heatmap, filter_regional_stats
+from ..utils.filter import filter_contour, filter_heatmap, filter_regional_stats
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
 
@@ -64,7 +64,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{source}_{variable}/{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
@@ -125,6 +125,7 @@ class AerovalJsonFileDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_CONTOUR: filter_contour,
         }
 
     @async_and_sync
@@ -202,6 +203,7 @@ class AerovalJsonFileDB(AerovalDB):
         relative_path = path_template.format(**substitutions)
 
         file_path = str(Path(os.path.join(self._basedir, relative_path)))
+
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
@@ -241,13 +243,19 @@ class AerovalJsonFileDB(AerovalDB):
         json = await self._cache.get_json(file_path, no_cache=not use_caching)
         obj = simplejson.loads(json, allow_nan=True)
 
-        obj = filter_func(obj, **filter_vars)
+        fobj = filter_func(obj, **filter_vars)
 
         if access_type == AccessType.OBJ:
-            return obj
+            return fobj
 
         if access_type == AccessType.JSON_STR:
-            return json_dumps_wrapper(obj)
+            return json_dumps_wrapper(fobj)
+
+        if access_type == AccessType.MTIME:
+            return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+
+        if access_type == AccessType.CTIME:
+            return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
         raise UnsupportedOperation
 
@@ -363,7 +371,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
-        if "/contour/overlay/" in file_path:
+        if "/overlay/" in file_path:
             file_path = str(Path(file_path).parent / Path(file_path).stem)
 
         if file_path.startswith("reports/") and ext.lower() in IMG_FILE_EXTS:
@@ -738,21 +746,19 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         for ext in IMG_FILE_EXTS:
-            try:
-                file_path = await self._get(
-                    route=ROUTE_MAP_OVERLAY,
-                    route_args={
-                        "project": project,
-                        "experiment": experiment,
-                        "source": source,
-                        "variable": variable,
-                        "date": date,
-                    },
-                    _raise_file_not_found_error=False,
-                    access_type=AccessType.FILE_PATH,
-                )
-            except FileNotFoundError:
-                pass
+            file_path = await self._get(
+                route=ROUTE_MAP_OVERLAY,
+                route_args={
+                    "project": project,
+                    "experiment": experiment,
+                    "source": source,
+                    "variable": variable,
+                    "date": date,
+                },
+                _raise_file_not_found_error=False,
+                access_type=AccessType.FILE_PATH,
+            )
+
             file_path += ext
             if os.path.exists(file_path):
                 break

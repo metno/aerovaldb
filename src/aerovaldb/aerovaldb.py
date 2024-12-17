@@ -240,6 +240,7 @@ class AerovalDB(abc.ABC):
         model: str,
         /,
         *args,
+        timestep: str | None = None,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,
@@ -252,6 +253,7 @@ class AerovalDB(abc.ABC):
         :param obsvar: Observation variable.
         :param model: Model ID.
 
+        :param timestep: Optional timestep to filter by. If none, the entire file is returned.
         :param access_type: How the data is to be retrieved (See AccessType for details)
         :param cache: Whether to use cache for this read.
         :param default: Default value that will be returned instead of raising FileNotFoundError
