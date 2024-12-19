@@ -46,7 +46,7 @@ def list_engines() -> dict[str, AerovalDB]:
 
 
 def open(resource, /, use_async: bool = False) -> AerovalDB:
-    """open an AerovalDB directly, sending args and kwargs
+    """Open an AerovalDB instance, sending args and kwargs
     directly to the `AervoalDB()` function
 
     :param resource: the resource-identifier for the database. The resource can be
@@ -59,10 +59,19 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         - ':memory:' an sqlite in-memory database. Contents are not persistently
         stored!
 
-    :param use_async: If true, aiofile will be used to read files, otherwise
-        files will be read synchronously (Currently only used by json_files).
-    :return: an implementation-object of AerovalDB openend and initialized to a
-        location.
+    Examples
+
+    >>> import aerovaldb
+    >>> with aerovaldb.open(":memory:") as db:
+    ...     db.put_experiments({'test': 'test'}, 'project')
+    ...     db.get_experiments('project')
+    {'test': 'test'}
+
+    >>> import aerovaldb
+    >>> db = aerovaldb.open(":memory:")
+    >>> db.put_experiments({'test': 'test'}, 'project')
+    >>> db.get_experiments('project')
+    {'test': 'test'}
     """
     if resource == ":memory:":
         # Special case for sqlite in memory database.

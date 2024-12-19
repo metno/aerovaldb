@@ -1,44 +1,85 @@
-import regex as re
-from ..routes import ALL_ROUTES
+import re
 import urllib
+
+from ..routes import ALL_ROUTES
 
 
 def extract_substitutions(template: str):
     """
     For a python template string, extracts the names between curly brackets:
 
-    For example 'blah blah {test} blah {test2}' returns [test, test2]
+    For example 'blah blah {test} blah {test2}' returns ["test", "test2"]
     """
     return re.findall(r"\{([a-zA-Z-]*?)\}", template)
 
 
-def parse_formatted_string(template: str, s: str) -> dict:
-    """Match s against a python format string, extracting the
-    parameter values from the format string in a dictionary.
+def parse_formatted_string(template: str, string: str):
+    """Parse formatted string. Meant to be the inverse of str.format()
 
-    Note
-    ----
-    Only supports {named_parameter} style format.
+    :param template: Template string.
+    :param string: String to be matched.
+    :raises Exception: If unable to match `s` against template.
+    :return: Dict of extracted arguments.
+
+    Limitations
+    -----------
+    - Only works for format strings that use the named curly bracket notation.
+    In other words no %s or {} notation.
+
+    Example:
+    >>> from aerovaldb.utils.uri import parse_formatted_string
+    >>> parse_formatted_string("{a}/{b}", "test1/test2")
+    {'a': 'test1', 'b': 'test2'}
     """
-
-    # First split on any keyword arguments, note that the names of keyword arguments will be in the
-    # 1st, 3rd, ... positions in this list
-    tokens = re.split(r"\{([a-zA-Z-]*?)\}", template)
-    # keywords = tokens[1::2]
+    original_string = string
     keywords = extract_substitutions(template)
-    # Now replace keyword arguments with named groups matching them. We also escape between keyword
-    # arguments so we support meta-characters there. Re-join tokens to form our regexp pattern
 
-    tokens[1::2] = map("(?P<{}>[^/]*)".format, keywords)
-    tokens[0::2] = map(re.escape, tokens[0::2])
-    pattern = "".join(tokens)
+    pattern = "(" + "|".join([re.escape("{" + k + "}") for k in keywords]) + ")"
+    segments = [x for x in re.split(pattern, template) if x != ""]
+    # Segments is a list of constant strings and keywords (Keywords starting with '{').
+    # For instance 'a{b}c{d}' -> ['a', '{b}', 'c', '{d}']
 
-    # Use our pattern to match the given string, raise if it doesn't match
-    if not (match := re.match(pattern, s)):
-        raise Exception("Format string did not match")
+    result = {}
+    while len(segments) > 0:
+        token = segments[0]
+        next_token = None
+        if len(segments) >= 2:
+            next_token = segments[1]
+        if token.startswith("{"):
+            # Token is a keyword, so try to extract it.
+            ls: list[str] = []
+            if next_token is not None:
+                if next_token.startswith("{"):
+                    raise Exception(
+                        f"Two successive keywords can not be disambiguated (s='{original_string}; template='{template}')"
+                    )
 
-    # Return a dict with all of our keywords and their values
-    return {x: match.group(x) for x in keywords}
+                # First opportunity where the remainder of the string starts with the next token is where we stop matching.
+                # Note: This prevents some strings from being matched if the next token is also part of the string that should
+                # be matched, but it isn't causing problems for now.
+                while len(ls) < len(string) and not (
+                    string[len(ls) :].startswith(next_token)
+                ):
+                    char = string[len(ls)]
+                    ls.append(char)
+                extr = "".join(ls)
+            else:
+                extr = string
+
+            result[token.replace("{", "").replace("}", "")] = extr
+            string = string[len(extr) :]
+        else:
+            if not string.startswith(token):
+                break
+
+            string = string[len(token) :]
+
+        segments = segments[1:]
+    if len(segments) > 0:
+        raise Exception(
+            f"Formatted string '{original_string}' did not match template string '{template}'"
+        )
+    return result
 
 
 def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
@@ -52,6 +93,12 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     ----------
     uri :
         The uri to be parsed.
+
+    Example
+    -------
+    >>> from aerovaldb.utils.uri import parse_uri
+    >>> parse_uri('/v0/experiments/project')
+    ('/v0/experiments/{project}', {'project': 'project'}, {})
     """
     split = uri.split("?")
 

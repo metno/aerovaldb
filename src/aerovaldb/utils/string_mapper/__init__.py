@@ -1,6 +1,6 @@
 from .mapper import (
-    StringMapper,
     ConstantMapper,
     PriorityMapper,
+    StringMapper,
     VersionConstraintMapper,
 )

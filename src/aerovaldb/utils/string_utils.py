@@ -1,5 +1,4 @@
-import regex as re
-
+import re
 
 PATH_COMPONENT_PATTERN = re.compile(r"^[^/]+$", flags=re.UNICODE)
 
@@ -20,6 +19,14 @@ def str_to_bool(value: str, /, default: bool | None = None) -> bool:
         If value is not a string
     :raises ValueError
         Raised on unsupported input value. Suppressed if default is set to True/False.
+
+    >>> from aerovaldb.utils.string_utils import str_to_bool
+    >>> str_to_bool("y")
+    True
+    >>> str_to_bool("blah", default=True)
+    True
+    >>> str_to_bool("n")
+    False
     """
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")
@@ -45,6 +52,17 @@ def validate_filename_component(value: str) -> None:
 
     :raises ValueError :
         if value is not string or not a valid filename component
+
+    >>> from aerovaldb.utils.string_utils import validate_filename_component
+    >>> validate_filename_component("Hello world")
+    >>> validate_filename_component(5)
+    Traceback (most recent call last):
+    ...
+    ValueError: Expected str, got <class 'int'>
+    >>> validate_filename_component("/")
+    Traceback (most recent call last):
+    ...
+    ValueError: '/' is not a valid file name component.
     """
     if not isinstance(value, str):
         raise ValueError(f"Expected str, got {type(value)}")

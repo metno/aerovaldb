@@ -1,38 +1,43 @@
+import datetime
+import importlib.metadata
+import os
 import sqlite3
+from hashlib import md5
 from typing import Any, Awaitable, Callable
 
-from async_lru import alru_cache
-import importlib.metadata
 import simplejson  # type: ignore
+from async_lru import alru_cache
+from packaging.version import Version
+
 import aerovaldb
 from aerovaldb.utils.filter import filter_heatmap, filter_regional_stats
-from ..exceptions import UnsupportedOperation, UnusedArguments
+from aerovaldb.utils.string_mapper import (
+    PriorityMapper,
+    StringMapper,
+    VersionConstraintMapper,
+)
+
 from ..aerovaldb import AerovalDB
+from ..exceptions import UnsupportedOperation, UnusedArguments
+from ..lock import FakeLock, FileLock
 from ..routes import *
 from ..types import AccessType
 from ..utils import (
-    json_dumps_wrapper,
-    parse_uri,
     async_and_sync,
     build_uri,
     extract_substitutions,
+    json_dumps_wrapper,
+    parse_uri,
     validate_filename_component,
 )
-from aerovaldb.utils.string_mapper import (
-    StringMapper,
-    VersionConstraintMapper,
-    PriorityMapper,
-)
-import os
-from ..lock import FakeLock, FileLock
-from hashlib import md5
-from packaging.version import Version
 
 
 class AerovalSqliteDB(AerovalDB):
     """
     Allows reading and writing from sqlite3 database files.
     """
+
+    SQLITE_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     TABLE_COLUMN_NAMES = {
         "glob_stats": extract_substitutions(ROUTE_GLOB_STATS),
@@ -315,8 +320,8 @@ class AerovalSqliteDB(AerovalDB):
                     f"""
                     CREATE TABLE IF NOT EXISTS {table_name}(
                         {column_names},
-                        ctime TEXT,
-                        mtime TEXT,
+                        ctime TEXT DEFAULT current_timestamp,
+                        mtime TEXT DEFAULT current_timestamp,
                         blob BLOB,
                     
                         UNIQUE({column_names})
@@ -328,8 +333,8 @@ class AerovalSqliteDB(AerovalDB):
                     f"""
                     CREATE TABLE IF NOT EXISTS {table_name}(
                         {column_names},
-                        ctime TEXT,
-                        mtime TEXT,
+                        ctime TEXT DEFAULT current_timestamp,
+                        mtime TEXT DEFAULT current_timestamp,
                         json TEXT,
 
                     UNIQUE({column_names}))
@@ -338,19 +343,9 @@ class AerovalSqliteDB(AerovalDB):
 
             cur.execute(
                 f"""
-                CREATE TRIGGER IF NOT EXISTS insert_Timestamp_Trigger_{table_name}
-                AFTER INSERT ON {table_name}
+                CREATE TRIGGER IF NOT EXISTS update_Timestamp_Trigger_{table_name} AFTER UPDATE On {table_name}
                 BEGIN
-                   UPDATE {table_name} SET ctime =STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW') WHERE ROWID = NEW.ROWID;
-                END;
-                """
-            )
-            cur.execute(
-                f"""
-                CREATE TRIGGER IF NOT EXISTS update_Timestamp_Trigger_{table_name}
-                AFTER UPDATE On {table_name}
-                BEGIN
-                   UPDATE {table_name} SET mtime = STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW') WHERE ROWID = NEW.ROWID;
+                   UPDATE {table_name} SET mtime = current_timestamp WHERE rowid = NEW.rowid;
                 END;
                 """
             )
@@ -372,7 +367,7 @@ class AerovalSqliteDB(AerovalDB):
 
         if access_type in [AccessType.FILE_PATH]:
             raise UnsupportedOperation(
-                f"sqlitedb does not support access_mode FILE_PATH."
+                f"sqlitedb does not support access_type FILE_PATH."
             )
 
         if access_type in [AccessType.URI]:
@@ -434,6 +429,16 @@ class AerovalSqliteDB(AerovalDB):
             if access_type == AccessType.OBJ:
                 dt = simplejson.loads(json, allow_nan=True)
 
+            if access_type == AccessType.MTIME:
+                dt = datetime.datetime.strptime(
+                    fetched["mtime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
+
+            if access_type == AccessType.CTIME:
+                dt = datetime.datetime.strptime(
+                    fetched["ctime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
+
             return dt
 
         # Filtered.
@@ -470,7 +475,7 @@ class AerovalSqliteDB(AerovalDB):
         args.update(json=json)
         cur.execute(
             f"""
-            INSERT OR REPLACE INTO {table_name}({columnlist}, json)
+            REPLACE INTO {table_name}({columnlist}, json)
             VALUES({substitutionlist}, :json)
             """,
             args,
@@ -497,7 +502,10 @@ class AerovalSqliteDB(AerovalDB):
 
         if route == ROUTE_REPORT_IMAGE:
             return await self.get_report_image(
-                route_args["project"], route_args["experiment"], route_args["path"]
+                route_args["project"],
+                route_args["experiment"],
+                route_args["path"],
+                access_type=access_type,
             )
 
         if route == ROUTE_MAP_OVERLAY:
@@ -507,6 +515,7 @@ class AerovalSqliteDB(AerovalDB):
                 route_args["source"],
                 route_args["variable"],
                 route_args["date"],
+                access_type=access_type,
             )
 
         return await self._get(
@@ -716,7 +725,7 @@ class AerovalSqliteDB(AerovalDB):
     ):
         access_type = self._normalize_access_type(access_type)
 
-        if access_type != AccessType.BLOB:
+        if access_type not in [AccessType.BLOB, AccessType.MTIME, AccessType.CTIME]:
             raise UnsupportedOperation(
                 f"Sqlitedb does not support accesstype {access_type}."
             )
@@ -735,7 +744,18 @@ class AerovalSqliteDB(AerovalDB):
         if fetched is None:
             raise FileNotFoundError(f"Object not found. {project, experiment, path}")
 
-        return fetched["blob"]
+        if access_type == AccessType.BLOB:
+            return fetched["blob"]
+
+        if access_type == AccessType.MTIME:
+            return datetime.datetime.strptime(
+                fetched["mtime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+            )
+
+        if access_type == AccessType.CTIME:
+            return datetime.datetime.strptime(
+                fetched["ctime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+            )
 
     @async_and_sync
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
@@ -765,7 +785,7 @@ class AerovalSqliteDB(AerovalDB):
     ):
         access_type = self._normalize_access_type(access_type)
 
-        if access_type != AccessType.BLOB:
+        if access_type not in [AccessType.BLOB, AccessType.MTIME, AccessType.CTIME]:
             raise UnsupportedOperation(
                 f"Sqlitedb does not support accesstype {access_type}."
             )
@@ -786,7 +806,18 @@ class AerovalSqliteDB(AerovalDB):
                 f"Object not found. {project, experiment, source, variable, date}"
             )
 
-        return fetched["blob"]
+        if access_type == AccessType.BLOB:
+            return fetched["blob"]
+
+        if access_type == AccessType.MTIME:
+            return datetime.datetime.strptime(
+                fetched["mtime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+            )
+
+        if access_type == AccessType.CTIME:
+            return datetime.datetime.strptime(
+                fetched["ctime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+            )
 
     @async_and_sync
     async def put_map_overlay(

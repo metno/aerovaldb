@@ -1,7 +1,7 @@
 import os
+
 import aerovaldb
 from aerovaldb.utils.copy import copy_db_contents
-
 
 if os.path.exists("tests/test-db/sqlite/test.sqlite"):
     os.remove("tests/test-db/sqlite/test.sqlite")

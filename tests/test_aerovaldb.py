@@ -5,10 +5,13 @@
 # - json_files: tests/jsondb/test_jsonfiledb.py
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
-import simplejson  # type: ignore
-import aerovaldb
-import pytest
+import datetime
 import random
+
+import pytest
+import simplejson  # type: ignore
+
+import aerovaldb
 from aerovaldb.utils.copy import copy_db_contents
 
 
@@ -458,7 +461,8 @@ def test_getter_with_default_error(testdb):
     with aerovaldb.open(testdb) as db:
         with pytest.raises(simplejson.JSONDecodeError):
             db.get_by_uri(
-                "/v0/report/project/experiment/invalid-json", default={"data": "data"}
+                "/v0/report/project/experiment/invalid-json",
+                default={"data": "data"},
             )
 
 
@@ -573,3 +577,26 @@ def test_put_report_image(tmpdb):
 def test_serialize_set(tmpdb):
     with tmpdb as db:
         db.put_config({"set": {"a", "b", "c"}}, "test", "test")
+
+
+@TESTDB_PARAMETRIZATION
+def test_get_times(testdb):
+    with aerovaldb.open(testdb) as db:
+        for uri in db.list_all():
+            mtime = db.get_by_uri(uri, access_type="MTIME")
+            ctime = db.get_by_uri(uri, access_type="CTIME")
+
+            assert isinstance(mtime, datetime.datetime)
+            assert isinstance(ctime, datetime.datetime)
+            assert mtime.year >= 2024 and mtime < datetime.datetime.now()
+            assert ctime.year >= 2024 and ctime < datetime.datetime.now()
+
+
+@TESTDB_PARAMETRIZATION
+def test_get_experiment_mtime(testdb):
+    with aerovaldb.open(testdb) as db:
+        for exp in ["experiment", "experiment-old"]:
+            mtime = db.get_experiment_mtime("project", exp)
+
+            assert isinstance(mtime, datetime.datetime)
+            assert mtime.year >= 2024 and mtime < datetime.datetime.now()

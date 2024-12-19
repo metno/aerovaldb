@@ -1,7 +1,8 @@
-from .. import AerovalDB, open, AccessType
-from ..utils import async_and_sync
-import logging
 import argparse
+import logging
+
+from .. import AccessType, AerovalDB, open
+from ..utils import async_and_sync
 
 logger = logging.getLogger(__name__)
 
