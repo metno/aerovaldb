@@ -1,6 +1,3 @@
-import datetime
-import os
-
 import pytest
 
 import aerovaldb

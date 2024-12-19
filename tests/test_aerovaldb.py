@@ -6,7 +6,6 @@
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
 import datetime
-import os
 import random
 
 import pytest
