@@ -617,3 +617,56 @@ def test_get_experiment_mtime(testdb):
 
             assert isinstance(mtime, datetime.datetime)
             assert mtime.year >= 2024 and mtime < datetime.datetime.now()
+
+
+# http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
+PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+
+
+@TESTDB_PARAMETRIZATION
+def test_get_map_overlay(testdb):
+    with aerovaldb.open(testdb) as db:
+        path = db.get_map_overlay(
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+            access_type=aerovaldb.AccessType.BLOB,
+        )
+
+        assert path.startswith(PNG_FILE_SIGNATURE)
+
+
+@pytest.mark.parametrize(
+    "dbtype",
+    (
+        pytest.param(
+            "json_files",
+        ),
+        pytest.param(
+            "sqlitedb",
+        ),
+    ),
+)
+def test_put_map_overlay(tmpdb):
+    rand_bytes = random.randbytes(8)
+    with tmpdb as db:
+        db.put_map_overlay(
+            PNG_FILE_SIGNATURE + rand_bytes,
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+        )
+
+        data: bytes = db.get_map_overlay(
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+            access_type=aerovaldb.AccessType.BLOB,
+        )
+        assert data == PNG_FILE_SIGNATURE + rand_bytes
