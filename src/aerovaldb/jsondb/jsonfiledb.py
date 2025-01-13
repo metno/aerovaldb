@@ -30,7 +30,7 @@ from ..utils import (
     str_to_bool,
     validate_filename_component,
 )
-from ..utils.filter import filter_heatmap, filter_regional_stats, filter_contour
+from ..utils.filter import filter_heatmap, filter_regional_stats, filter_contour, filter_map
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
 
@@ -126,6 +126,7 @@ class AerovalJsonFileDB(AerovalDB):
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
             ROUTE_CONTOUR: filter_contour,
+            ROUTE_MAP: filter_map
         }
 
     async def _load_json(

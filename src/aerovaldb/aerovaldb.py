@@ -719,6 +719,8 @@ class AerovalDB(abc.ABC):
         time: str,
         /,
         *args,
+        frequency: str | None = None,
+        season: str | None = None,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,

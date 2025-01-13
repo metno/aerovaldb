@@ -51,3 +51,12 @@ def filter_contour(data, timestep: str | None = None, **kwargs):
         return data
 
     return data[timestep]
+
+def filter_map(data, frequency: str | None = None, season: str | None = None, **kwargs):
+    if all([x is None for x in [frequency, season]]):
+        return data
+    
+    if all([isinstance(x, str) for x in [frequency, season]]):
+        return[data][season]
+    
+    raise ValueError
