@@ -30,7 +30,7 @@ from ..utils import (
     str_to_bool,
     validate_filename_component,
 )
-from ..utils.filter import filter_heatmap, filter_regional_stats
+from ..utils.filter import filter_heatmap, filter_regional_stats, filter_contour
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
 
@@ -125,7 +125,33 @@ class AerovalJsonFileDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_CONTOUR: filter_contour,
         }
+
+    async def _load_json(
+        self,
+        file_path,
+        *,
+        access_type: AccessType = AccessType.OBJ,
+        cache: bool = False,
+    ):
+        if access_type in [
+            AccessType.BLOB,
+            AccessType.URI,
+            AccessType.FILE_PATH,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ]:
+            ValueError(f"Unable to load json with access_type={access_type}.")
+
+        json_str = await self._cache.get_json(file_path, no_cache=not cache)
+        if access_type == AccessType.JSON_STR:
+            return json_str
+
+        elif access_type == AccessType.OBJ:
+            return simplejson.loads(json_str, allow_nan=True)
+
+        raise UnsupportedOperation(f"{access_type}")
 
     @async_and_sync
     @alru_cache(maxsize=2048)
@@ -192,7 +218,11 @@ class AerovalJsonFileDB(AerovalDB):
 
         substitutions = route_args | kwargs
         if validate_args:
-            [validate_filename_component(x) for x in substitutions.values()]
+            [
+                validate_filename_component(x)
+                for x in substitutions.values()
+                if x is not None
+            ]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -201,7 +231,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         relative_path = path_template.format(**substitutions)
 
-        file_path = str(Path(os.path.join(self._basedir, relative_path)))
+        file_path = os.path.join(self._basedir, relative_path)
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
@@ -215,31 +245,32 @@ class AerovalJsonFileDB(AerovalDB):
                     return file_path
             return default
 
-        if access_type in [AccessType.URI]:
-            return build_uri(route, route_args, kwargs)
-
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
                 return file_path
-
-            if access_type == AccessType.JSON_STR:
-                raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-                return raw
+            if access_type == AccessType.URI:
+                return build_uri(route, route_args, kwargs)
 
             if access_type == AccessType.MTIME:
                 return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
             if access_type == AccessType.CTIME:
                 return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
-            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-
-            return simplejson.loads(raw, allow_nan=True)
+            return await self._load_json(
+                file_path, access_type=access_type, cache=use_caching
+            )
 
         if access_type == AccessType.FILE_PATH:
             raise UnsupportedOperation("Filtered endpoints can not return a filepath")
 
-        json = await self._cache.get_json(file_path, no_cache=not use_caching)
-        obj = simplejson.loads(json, allow_nan=True)
+        if access_type == AccessType.MTIME:
+            return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if access_type == AccessType.CTIME:
+            return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+
+        obj = await self._load_json(
+            file_path, access_type=AccessType.OBJ, cache=use_caching
+        )
 
         obj = filter_func(obj, **filter_vars)
 
@@ -808,3 +839,79 @@ class AerovalJsonFileDB(AerovalDB):
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
             f.write(obj)
+
+    @async_and_sync
+    async def get_contour(
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        timestep: str | None = None,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
+        access_type = self._normalize_access_type(access_type)
+        if timestep is None:
+            # The combined data is requested, so delegate to regular _get().
+            return await self._get(
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+                timestep=timestep,
+                access_type=access_type,
+                cache=cache,
+                default=default,
+            )
+
+        # We are looking for a timestep subset of the data file.
+        # There are two options. Either the data is in a dedicated file,
+        # or the correct subset from the combined file needs to be returned.
+        # We try the dedicated file first.
+        file_path = os.path.join(
+            self._basedir,
+            TIMESTEP_TEMPLATE.format(
+                project=project,
+                experiment=experiment,
+                obsvar=obsvar,
+                model=model,
+                timestep=timestep,
+            ),
+        )
+
+        if os.path.exists(file_path):
+            # TODO: mtime, ctime not yet implemented.
+            if access_type == AccessType.CTIME:
+                return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+            if access_type == AccessType.MTIME:
+                return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+
+            try:
+                data = await self._load_json(file_path, access_type=access_type)
+            except FileNotFoundError:
+                return default
+            else:
+                return data
+
+        return await self._get(
+            ROUTE_CONTOUR,
+            {
+                "project": project,
+                "experiment": experiment,
+                "obsvar": obsvar,
+                "model": model,
+            },
+            timestep=timestep,
+            access_type=access_type,
+            cache=cache,
+            default=default,
+        )

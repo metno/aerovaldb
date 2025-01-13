@@ -240,6 +240,7 @@ class AerovalDB(abc.ABC):
         model: str,
         /,
         *args,
+        timestep: str | None = None,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,

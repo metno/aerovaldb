@@ -13,11 +13,14 @@ def extract_substitutions(template: str):
     return re.findall(r"\{([a-zA-Z-]*?)\}", template)
 
 
-def parse_formatted_string(template: str, string: str):
+def parse_formatted_string(
+    template: str, string: str, *, force_split: list[str] | None = ["/", "_"]
+):
     """Parse formatted string. Meant to be the inverse of str.format()
 
     :param template: Template string.
     :param string: String to be matched.
+    :param force_split: Optional list of single character strings which will force a break between tokens.
     :raises Exception: If unable to match `s` against template.
     :return: Dict of extracted arguments.
 
@@ -31,6 +34,19 @@ def parse_formatted_string(template: str, string: str):
     >>> parse_formatted_string("{a}/{b}", "test1/test2")
     {'a': 'test1', 'b': 'test2'}
     """
+    if force_split is None:
+        force_split = []
+
+    if any([not isinstance(x, str) for x in force_split]):
+        raise TypeError(
+            f"force_split got elements that aren't string. Got {force_split}."
+        )
+
+    if any([len(x) != 1 for x in force_split]):
+        raise ValueError(
+            f"force_split must be a list of single character strings. Got {force_split}."
+        )
+
     original_string = string
     keywords = extract_substitutions(template)
 
@@ -61,7 +77,10 @@ def parse_formatted_string(template: str, string: str):
                     string[len(ls) :].startswith(next_token)
                 ):
                     char = string[len(ls)]
+                    if char in force_split:
+                        break
                     ls.append(char)
+
                 extr = "".join(ls)
             else:
                 extr = string

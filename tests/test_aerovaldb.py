@@ -70,6 +70,18 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             "./project/experiment/contour/",
         ),
         (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            {"timestep": "timestep"},
+            "748956457892",
+        ),
+        (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            {"timestep": "timestep2"},
+            "2758924570298570",
+        ),
+        (
             "get_timeseries",
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
