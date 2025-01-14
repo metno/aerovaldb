@@ -10,7 +10,12 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 import aerovaldb
-from aerovaldb.utils.filter import filter_heatmap, filter_regional_stats
+from aerovaldb.utils.filter import (
+    filter_heatmap,
+    filter_regional_stats,
+    filter_map,
+    filter_contour,
+)
 from aerovaldb.utils.string_mapper import (
     PriorityMapper,
     StringMapper,
@@ -42,6 +47,7 @@ class AerovalSqliteDB(AerovalDB):
     TABLE_COLUMN_NAMES = {
         "glob_stats": extract_substitutions(ROUTE_GLOB_STATS),
         "contour": extract_substitutions(ROUTE_CONTOUR),
+        "contour1": ["project", "experiment", "obsvar", "model", "timestep"],
         "timeseries": extract_substitutions(ROUTE_TIMESERIES),
         "timeseries_weekly": extract_substitutions(ROUTE_TIMESERIES_WEEKLY),
         "experiments": extract_substitutions(ROUTE_EXPERIMENTS),
@@ -114,6 +120,7 @@ class AerovalSqliteDB(AerovalDB):
     TABLE_NAME_TO_ROUTE = {
         "glob_stats": ROUTE_GLOB_STATS,
         "contour": ROUTE_CONTOUR,
+        "contour1": ROUTE_CONTOUR,
         "timeseries": ROUTE_TIMESERIES,
         "timeseries_weekly": ROUTE_TIMESERIES_WEEKLY,
         "experiments": ROUTE_EXPERIMENTS,
@@ -163,7 +170,12 @@ class AerovalSqliteDB(AerovalDB):
                 ROUTE_GLOB_STATS: "glob_stats",
                 ROUTE_REG_STATS: "glob_stats",
                 ROUTE_HEATMAP: "glob_stats",
-                ROUTE_CONTOUR: "contour",
+                ROUTE_CONTOUR: PriorityMapper(
+                    {
+                        "contour1": "{project}/{experiment}/{obsvar}/{model}/{timestamp}",
+                        "contour": "{project}/{experiment}/{obsvar}/{model}",
+                    }
+                ),
                 ROUTE_TIMESERIES: "timeseries",
                 ROUTE_TIMESERIES_WEEKLY: "timeseries_weekly",
                 ROUTE_EXPERIMENTS: "experiments",
@@ -226,6 +238,8 @@ class AerovalSqliteDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_CONTOUR: filter_contour,
+            ROUTE_MAP: filter_map,
         }
 
     @async_and_sync
@@ -382,7 +396,7 @@ class AerovalSqliteDB(AerovalDB):
             if k in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
         }
 
-        [validate_filename_component(x) for x in args.values()]
+        [validate_filename_component(x) for x in args.values() if x is not None]
 
         columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
         cur.execute(
@@ -443,6 +457,14 @@ class AerovalSqliteDB(AerovalDB):
 
         # Filtered.
         if filter_func is not None:
+            if access_type == AccessType.MTIME:
+                return datetime.datetime.strptime(
+                    fetched["mtime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
+            if access_type == AccessType.CTIME:
+                return datetime.datetime.strptime(
+                    fetched["ctime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
             obj = simplejson.loads(fetched["json"], allow_nan=True)
 
             obj = filter_func(obj, **route_args)
@@ -842,3 +864,77 @@ class AerovalSqliteDB(AerovalDB):
             (project, experiment, source, variable, date, obj),
         )
         self._con.commit()
+
+    @async_and_sync
+    async def get_contour(
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        timestep: str | None = None,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        access_type = self._normalize_access_type(access_type)
+        if timestep is None:
+            # The combined data is requested, so delegate to regular _get().
+            return await self._get(
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+                timestep=timestep,
+                access_type=access_type,
+                cache=cache,
+                default=default,
+            )
+
+        # We are looking for a timestep subset of the data file.
+        # There are two options. Either the data is in a dedicated file,
+        # or the correct subset from the combined file needs to be returned.
+        # We try the dedicated file first.
+        # file_path = os.path.join(
+        #    self._basedir,
+        #    TIMESTEP_TEMPLATE.format(
+        #        project=project,
+        #        experiment=experiment,
+        #        obsvar=obsvar,
+        #        model=model,
+        #        timestep=timestep,
+        #    ),
+        # )
+
+        if os.path.exists(file_path):
+            if access_type == AccessType.CTIME:
+                return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+            if access_type == AccessType.MTIME:
+                return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+
+            try:
+                data = await self._load_json(file_path, access_type=access_type)
+            except FileNotFoundError:
+                return default
+            else:
+                return data
+
+        return await self._get(
+            ROUTE_CONTOUR,
+            {
+                "project": project,
+                "experiment": experiment,
+                "obsvar": obsvar,
+                "model": model,
+            },
+            timestep=timestep,
+            access_type=access_type,
+            cache=cache,
+            default=default,
+        )

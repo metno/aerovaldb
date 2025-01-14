@@ -30,7 +30,12 @@ from ..utils import (
     str_to_bool,
     validate_filename_component,
 )
-from ..utils.filter import filter_heatmap, filter_regional_stats, filter_contour, filter_map
+from ..utils.filter import (
+    filter_heatmap,
+    filter_regional_stats,
+    filter_contour,
+    filter_map,
+)
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
 
@@ -38,6 +43,9 @@ logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
+    # Timestep template
+    TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
+
     def __init__(self, basedir: str | Path, /, use_async: bool = False):
         """
         :param basedir The root directory where aerovaldb will look for files.
@@ -126,7 +134,7 @@ class AerovalJsonFileDB(AerovalDB):
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
             ROUTE_CONTOUR: filter_contour,
-            ROUTE_MAP: filter_map
+            ROUTE_MAP: filter_map,
         }
 
     async def _load_json(
@@ -856,7 +864,6 @@ class AerovalJsonFileDB(AerovalDB):
         default=None,
         **kwargs,
     ):
-        TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
         access_type = self._normalize_access_type(access_type)
         if timestep is None:
             # The combined data is requested, so delegate to regular _get().
@@ -880,7 +887,7 @@ class AerovalJsonFileDB(AerovalDB):
         # We try the dedicated file first.
         file_path = os.path.join(
             self._basedir,
-            TIMESTEP_TEMPLATE.format(
+            AerovalJsonFileDB.TIMESTEP_TEMPLATE.format(
                 project=project,
                 experiment=experiment,
                 obsvar=obsvar,
@@ -890,7 +897,6 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
         if os.path.exists(file_path):
-            # TODO: mtime, ctime not yet implemented.
             if access_type == AccessType.CTIME:
                 return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
             if access_type == AccessType.MTIME:
