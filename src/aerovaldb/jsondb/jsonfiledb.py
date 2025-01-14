@@ -7,6 +7,7 @@ import shutil
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Awaitable, Callable
+from warnings import warn
 
 import filetype
 import simplejson  # type: ignore
@@ -299,7 +300,11 @@ class AerovalJsonFileDB(AerovalDB):
         Otherwise it is assumed to be a serializable python object.
         """
         substitutions = route_args | kwargs
-        [validate_filename_component(x) for x in substitutions.values()]
+        [
+            validate_filename_component(x)
+            for x in substitutions.values()
+            if x is not None
+        ]
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -905,3 +910,46 @@ class AerovalJsonFileDB(AerovalDB):
             return default
 
         raise FileNotFoundError
+
+    @async_and_sync
+    async def put_contour(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        timestep: str | None = None,
+        *args,
+        **kwargs,
+    ):
+        if timestep is None:
+            warn(
+                f"Writing contours without providing timestep is deprecated and will be removed in a future release.",
+                DeprecationWarning,
+            )
+
+            await self._put(
+                obj,
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+            )
+            return
+
+        await self._put(
+            obj,
+            ROUTE_CONTOUR2,
+            {
+                "project": project,
+                "experiment": experiment,
+                "obsvar": obsvar,
+                "model": model,
+                "timestep": timestep,
+            },
+        )

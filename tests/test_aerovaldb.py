@@ -217,6 +217,11 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
             None,
         ),
         (
+            "contour",
+            ["project", "experiment", "obsvar", "model"],
+            {"timestep": "timestep"},
+        ),
+        (
             "timeseries_weekly",
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,

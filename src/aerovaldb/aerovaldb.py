@@ -272,6 +272,7 @@ class AerovalDB(abc.ABC):
         obsvar: str,
         model: str,
         /,
+        timestep: str | None = None,
         *args,
         **kwargs,
     ):
