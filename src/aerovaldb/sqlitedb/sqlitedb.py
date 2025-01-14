@@ -5,7 +5,6 @@ import os
 import sqlite3
 from hashlib import md5
 from typing import Any, Awaitable, Callable
-from warnings import warn
 
 import simplejson  # type: ignore
 from async_lru import alru_cache

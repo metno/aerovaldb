@@ -7,7 +7,6 @@ import shutil
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Awaitable, Callable
-from warnings import warn
 
 import filetype
 import simplejson  # type: ignore
