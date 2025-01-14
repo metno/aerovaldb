@@ -925,9 +925,8 @@ class AerovalJsonFileDB(AerovalDB):
         **kwargs,
     ):
         if timestep is None:
-            warn(
-                f"Writing contours without providing timestep is deprecated and will be removed in a future release.",
-                DeprecationWarning,
+            logger.warning(
+                "Writing contours without providing timestep is deprecated and will be removed in a future release."
             )
 
             await self._put(

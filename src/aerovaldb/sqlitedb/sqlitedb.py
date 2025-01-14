@@ -1,5 +1,6 @@
 import datetime
 import importlib.metadata
+import logging
 import os
 import sqlite3
 from hashlib import md5
@@ -36,6 +37,8 @@ from ..utils import (
     parse_uri,
     validate_filename_component,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AerovalSqliteDB(AerovalDB):
@@ -934,9 +937,8 @@ class AerovalSqliteDB(AerovalDB):
         **kwargs,
     ):
         if timestep is None:
-            warn(
-                f"Writing contours without providing timestep is deprecated and will be removed in a future release.",
-                DeprecationWarning,
+            logger.warning(
+                "Writing contours without providing timestep is deprecated and will be removed in a future release."
             )
 
             await self._put(
