@@ -70,6 +70,18 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             "./project/experiment/contour/",
         ),
         (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            {"timestep": "timestep"},
+            "748956457892",
+        ),
+        (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            {"timestep": "timestep2"},
+            "2758924570298570",
+        ),
+        (
             "get_timeseries",
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
@@ -203,6 +215,11 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
             "timeseries",
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
+        ),
+        (
+            "contour",
+            ["project", "experiment", "obsvar", "model"],
+            {"timestep": "timestep"},
         ),
         (
             "timeseries_weekly",
@@ -491,7 +508,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 47
+        assert len(db.list_all()) == 48
 
 
 @TESTDB_PARAMETRIZATION

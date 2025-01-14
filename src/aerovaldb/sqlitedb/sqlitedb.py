@@ -1,5 +1,6 @@
 import datetime
 import importlib.metadata
+import logging
 import os
 import sqlite3
 from hashlib import md5
@@ -10,7 +11,12 @@ from async_lru import alru_cache
 from packaging.version import Version
 
 import aerovaldb
-from aerovaldb.utils.filter import filter_heatmap, filter_regional_stats
+from aerovaldb.utils.filter import (
+    filter_contour,
+    filter_heatmap,
+    filter_map,
+    filter_regional_stats,
+)
 from aerovaldb.utils.string_mapper import (
     PriorityMapper,
     StringMapper,
@@ -31,6 +37,8 @@ from ..utils import (
     validate_filename_component,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class AerovalSqliteDB(AerovalDB):
     """
@@ -42,6 +50,7 @@ class AerovalSqliteDB(AerovalDB):
     TABLE_COLUMN_NAMES = {
         "glob_stats": extract_substitutions(ROUTE_GLOB_STATS),
         "contour": extract_substitutions(ROUTE_CONTOUR),
+        "contour1": ["project", "experiment", "obsvar", "model", "timestep"],
         "timeseries": extract_substitutions(ROUTE_TIMESERIES),
         "timeseries_weekly": extract_substitutions(ROUTE_TIMESERIES_WEEKLY),
         "experiments": extract_substitutions(ROUTE_EXPERIMENTS),
@@ -114,6 +123,7 @@ class AerovalSqliteDB(AerovalDB):
     TABLE_NAME_TO_ROUTE = {
         "glob_stats": ROUTE_GLOB_STATS,
         "contour": ROUTE_CONTOUR,
+        "contour1": ROUTE_CONTOUR2,
         "timeseries": ROUTE_TIMESERIES,
         "timeseries_weekly": ROUTE_TIMESERIES_WEEKLY,
         "experiments": ROUTE_EXPERIMENTS,
@@ -164,6 +174,7 @@ class AerovalSqliteDB(AerovalDB):
                 ROUTE_REG_STATS: "glob_stats",
                 ROUTE_HEATMAP: "glob_stats",
                 ROUTE_CONTOUR: "contour",
+                ROUTE_CONTOUR2: "contour1",
                 ROUTE_TIMESERIES: "timeseries",
                 ROUTE_TIMESERIES_WEEKLY: "timeseries_weekly",
                 ROUTE_EXPERIMENTS: "experiments",
@@ -226,6 +237,8 @@ class AerovalSqliteDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_CONTOUR: filter_contour,
+            ROUTE_MAP: filter_map,
         }
 
     @async_and_sync
@@ -382,7 +395,7 @@ class AerovalSqliteDB(AerovalDB):
             if k in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
         }
 
-        [validate_filename_component(x) for x in args.values()]
+        [validate_filename_component(x) for x in args.values() if x is not None]
 
         columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
         cur.execute(
@@ -443,9 +456,17 @@ class AerovalSqliteDB(AerovalDB):
 
         # Filtered.
         if filter_func is not None:
+            if access_type == AccessType.MTIME:
+                return datetime.datetime.strptime(
+                    fetched["mtime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
+            if access_type == AccessType.CTIME:
+                return datetime.datetime.strptime(
+                    fetched["ctime"], AerovalSqliteDB.SQLITE_TIMESTAMP_FORMAT
+                )
             obj = simplejson.loads(fetched["json"], allow_nan=True)
 
-            obj = filter_func(obj, **route_args)
+            obj = filter_func(obj, **(route_args | kwargs))
             if access_type == AccessType.OBJ:
                 return obj
 
@@ -688,6 +709,7 @@ class AerovalSqliteDB(AerovalDB):
         for table in [
             "glob_stats",
             "contour",
+            "contour1",
             "timeseries",
             "timeseries_weekly",
             "config",
@@ -842,3 +864,102 @@ class AerovalSqliteDB(AerovalDB):
             (project, experiment, source, variable, date, obj),
         )
         self._con.commit()
+
+    @async_and_sync
+    async def get_contour(
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        timestep: str | None = None,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        access_type = self._normalize_access_type(access_type)
+        try:
+            result = await self._get(
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+                timestep=timestep,
+                access_type=access_type,
+                cache=cache,
+            )
+        except (FileNotFoundError, KeyError):
+            pass
+        else:
+            return result
+
+        try:
+            result = await self._get(
+                ROUTE_CONTOUR2,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                    "timestep": timestep,
+                },
+                access_type=access_type,
+                cache=cache,
+            )
+        except FileNotFoundError:
+            pass
+        else:
+            return result
+
+        if default is not None:
+            return default
+
+        raise FileNotFoundError
+
+    @async_and_sync
+    async def put_contour(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        timestep: str | None = None,
+        *args,
+        **kwargs,
+    ):
+        if timestep is None:
+            logger.warning(
+                "Writing contours without providing timestep is deprecated and will be removed in a future release."
+            )
+
+            await self._put(
+                obj,
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+            )
+            return
+
+        await self._put(
+            obj,
+            ROUTE_CONTOUR2,
+            {
+                "project": project,
+                "experiment": experiment,
+                "obsvar": obsvar,
+                "model": model,
+                "timestep": timestep,
+            },
+        )

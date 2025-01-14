@@ -30,7 +30,12 @@ from ..utils import (
     str_to_bool,
     validate_filename_component,
 )
-from ..utils.filter import filter_heatmap, filter_regional_stats
+from ..utils.filter import (
+    filter_contour,
+    filter_heatmap,
+    filter_map,
+    filter_regional_stats,
+)
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
 
@@ -38,6 +43,9 @@ logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
+    # Timestep template
+    TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
+
     def __init__(self, basedir: str | Path, /, use_async: bool = False):
         """
         :param basedir The root directory where aerovaldb will look for files.
@@ -64,8 +72,9 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{source}_{variable}/{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
@@ -125,7 +134,34 @@ class AerovalJsonFileDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_CONTOUR: filter_contour,
+            ROUTE_MAP: filter_map,
         }
+
+    async def _load_json(
+        self,
+        file_path,
+        *,
+        access_type: AccessType = AccessType.OBJ,
+        cache: bool = False,
+    ):
+        if access_type in [
+            AccessType.BLOB,
+            AccessType.URI,
+            AccessType.FILE_PATH,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ]:
+            ValueError(f"Unable to load json with access_type={access_type}.")
+
+        json_str = await self._cache.get_json(file_path, no_cache=not cache)
+        if access_type == AccessType.JSON_STR:
+            return json_str
+
+        elif access_type == AccessType.OBJ:
+            return simplejson.loads(json_str, allow_nan=True)
+
+        raise UnsupportedOperation(f"{access_type}")
 
     @async_and_sync
     @alru_cache(maxsize=2048)
@@ -192,7 +228,11 @@ class AerovalJsonFileDB(AerovalDB):
 
         substitutions = route_args | kwargs
         if validate_args:
-            [validate_filename_component(x) for x in substitutions.values()]
+            [
+                validate_filename_component(x)
+                for x in substitutions.values()
+                if x is not None
+            ]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -201,7 +241,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         relative_path = path_template.format(**substitutions)
 
-        file_path = str(Path(os.path.join(self._basedir, relative_path)))
+        file_path = os.path.join(self._basedir, relative_path)
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
@@ -215,31 +255,32 @@ class AerovalJsonFileDB(AerovalDB):
                     return file_path
             return default
 
-        if access_type in [AccessType.URI]:
-            return build_uri(route, route_args, kwargs)
-
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
                 return file_path
-
-            if access_type == AccessType.JSON_STR:
-                raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-                return raw
+            if access_type == AccessType.URI:
+                return build_uri(route, route_args, kwargs)
 
             if access_type == AccessType.MTIME:
                 return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
             if access_type == AccessType.CTIME:
                 return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
-            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-
-            return simplejson.loads(raw, allow_nan=True)
+            return await self._load_json(
+                file_path, access_type=access_type, cache=use_caching
+            )
 
         if access_type == AccessType.FILE_PATH:
             raise UnsupportedOperation("Filtered endpoints can not return a filepath")
 
-        json = await self._cache.get_json(file_path, no_cache=not use_caching)
-        obj = simplejson.loads(json, allow_nan=True)
+        if access_type == AccessType.MTIME:
+            return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if access_type == AccessType.CTIME:
+            return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
+
+        obj = await self._load_json(
+            file_path, access_type=AccessType.OBJ, cache=use_caching
+        )
 
         obj = filter_func(obj, **filter_vars)
 
@@ -258,7 +299,11 @@ class AerovalJsonFileDB(AerovalDB):
         Otherwise it is assumed to be a serializable python object.
         """
         substitutions = route_args | kwargs
-        [validate_filename_component(x) for x in substitutions.values()]
+        [
+            validate_filename_component(x)
+            for x in substitutions.values()
+            if x is not None
+        ]
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -363,7 +408,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
-        if "/contour/overlay/" in file_path:
+        if "/overlay/" in file_path:
             file_path = str(Path(file_path).parent / Path(file_path).stem)
 
         if file_path.startswith("reports/") and ext.lower() in IMG_FILE_EXTS:
@@ -738,21 +783,19 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         for ext in IMG_FILE_EXTS:
-            try:
-                file_path = await self._get(
-                    route=ROUTE_MAP_OVERLAY,
-                    route_args={
-                        "project": project,
-                        "experiment": experiment,
-                        "source": source,
-                        "variable": variable,
-                        "date": date,
-                    },
-                    _raise_file_not_found_error=False,
-                    access_type=AccessType.FILE_PATH,
-                )
-            except FileNotFoundError:
-                pass
+            file_path = await self._get(
+                route=ROUTE_MAP_OVERLAY,
+                route_args={
+                    "project": project,
+                    "experiment": experiment,
+                    "source": source,
+                    "variable": variable,
+                    "date": date,
+                },
+                _raise_file_not_found_error=False,
+                access_type=AccessType.FILE_PATH,
+            )
+
             file_path += ext
             if os.path.exists(file_path):
                 break
@@ -808,3 +851,103 @@ class AerovalJsonFileDB(AerovalDB):
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
             f.write(obj)
+
+    @async_and_sync
+    async def get_contour(
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        timestep: str | None = None,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        try:
+            result = await self._get(
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+                timestep=timestep,
+                access_type=access_type,
+                cache=cache,
+            )
+        except (FileNotFoundError, KeyError):
+            pass
+        else:
+            return result
+
+        try:
+            result = await self._get(
+                ROUTE_CONTOUR2,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                    "timestep": timestep,
+                },
+                access_type=access_type,
+                cache=cache,
+            )
+        except FileNotFoundError:
+            pass
+        else:
+            return result
+
+        if default is not None:
+            return default
+
+        raise FileNotFoundError
+
+    @async_and_sync
+    async def put_contour(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        timestep: str | None = None,
+        *args,
+        **kwargs,
+    ):
+        if timestep is None:
+            logger.warning(
+                "Writing contours without providing timestep is deprecated and will be removed in a future release."
+            )
+
+            await self._put(
+                obj,
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+            )
+            return
+
+        await self._put(
+            obj,
+            ROUTE_CONTOUR2,
+            {
+                "project": project,
+                "experiment": experiment,
+                "obsvar": obsvar,
+                "model": model,
+                "timestep": timestep,
+            },
+        )
