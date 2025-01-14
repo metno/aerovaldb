@@ -14,7 +14,7 @@ def extract_substitutions(template: str):
 
 
 def parse_formatted_string(
-    template: str, string: str, *, force_split: list[str] | None = ["/", "_"]
+    template: str, string: str, *, force_split: list[str] | None = ["/"]
 ):
     """Parse formatted string. Meant to be the inverse of str.format()
 

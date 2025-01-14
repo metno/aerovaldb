@@ -10,7 +10,7 @@ ROUTE_CONTOUR2 = "/v0/contour2/{project}/{experiment}/{obsvar}/{model}/{timestep
 ROUTE_TIMESERIES = "/v0/ts/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}"
 
 ROUTE_TIMESERIES_WEEKLY = (
-    "/v0/ts_weekly/{project}/{experiment}/{location}_{network}-{obsvar}_{layer}"
+    "/v0/ts_weekly/{project}/{experiment}/{location}/{network}/{obsvar}/{layer}"
 )
 
 ROUTE_EXPERIMENTS = "/v0/experiments/{project}"
