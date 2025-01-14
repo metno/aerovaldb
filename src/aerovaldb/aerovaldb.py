@@ -252,6 +252,7 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         :param obsvar: Observation variable.
         :param model: Model ID.
+        :param timestep: Optional timestep. Timestep will be required in the future.
 
         :param access_type: How the data is to be retrieved (See AccessType for details)
         :param cache: Whether to use cache for this read.
@@ -283,6 +284,7 @@ class AerovalDB(abc.ABC):
         :param experiment: Experiment ID.
         :param obsvar: Observation variable.
         :param model: Model ID.
+        :param timestep: Optional timestep. Will be required in the future.
         """
         raise NotImplementedError
 
@@ -737,6 +739,8 @@ class AerovalDB(abc.ABC):
         :param model: Model ID
         :param modvar: Model variable.
         :param time: Time parameter.
+        :param frequency: Optional frequency (eg. 'monthly')
+        :param season: Optional season.
 
         :param access_type: How the data is to be retrieved (See AccessType for details)
         :param cache: Whether to use cache for this read.
@@ -744,6 +748,10 @@ class AerovalDB(abc.ABC):
         if not data was found (Will be returned as is and not converted to match access_type).
 
         :returns The fetched data.
+
+        Note
+        ----
+        If either frequency or season are provided, they both must be provided.
         """
         raise NotImplementedError
 
