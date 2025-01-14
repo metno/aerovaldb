@@ -503,7 +503,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 47
+        assert len(db.list_all()) == 48
 
 
 @TESTDB_PARAMETRIZATION

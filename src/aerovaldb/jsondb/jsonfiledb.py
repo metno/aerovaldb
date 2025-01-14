@@ -31,10 +31,10 @@ from ..utils import (
     validate_filename_component,
 )
 from ..utils.filter import (
-    filter_heatmap,
-    filter_regional_stats,
     filter_contour,
+    filter_heatmap,
     filter_map,
+    filter_regional_stats,
 )
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import JSONLRUCache
@@ -74,6 +74,7 @@ class AerovalJsonFileDB(AerovalDB):
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
                 ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
@@ -865,9 +866,9 @@ class AerovalJsonFileDB(AerovalDB):
         **kwargs,
     ):
         access_type = self._normalize_access_type(access_type)
-        if timestep is None:
-            # The combined data is requested, so delegate to regular _get().
-            return await self._get(
+
+        try:
+            result = await self._get(
                 ROUTE_CONTOUR,
                 {
                     "project": project,
@@ -878,47 +879,31 @@ class AerovalJsonFileDB(AerovalDB):
                 timestep=timestep,
                 access_type=access_type,
                 cache=cache,
-                default=default,
             )
+        except (FileNotFoundError, KeyError):
+            pass
+        else:
+            return result
 
-        # We are looking for a timestep subset of the data file.
-        # There are two options. Either the data is in a dedicated file,
-        # or the correct subset from the combined file needs to be returned.
-        # We try the dedicated file first.
-        file_path = os.path.join(
-            self._basedir,
-            AerovalJsonFileDB.TIMESTEP_TEMPLATE.format(
-                project=project,
-                experiment=experiment,
-                obsvar=obsvar,
-                model=model,
-                timestep=timestep,
-            ),
-        )
+        try:
+            result = await self._get(
+                ROUTE_CONTOUR2,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                    "timestep": timestep,
+                },
+                access_type=access_type,
+                cache=cache,
+            )
+        except FileNotFoundError:
+            pass
+        else:
+            return result
 
-        if os.path.exists(file_path):
-            if access_type == AccessType.CTIME:
-                return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
-            if access_type == AccessType.MTIME:
-                return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if default is not None:
+            return default
 
-            try:
-                data = await self._load_json(file_path, access_type=access_type)
-            except FileNotFoundError:
-                return default
-            else:
-                return data
-
-        return await self._get(
-            ROUTE_CONTOUR,
-            {
-                "project": project,
-                "experiment": experiment,
-                "obsvar": obsvar,
-                "model": model,
-            },
-            timestep=timestep,
-            access_type=access_type,
-            cache=cache,
-            default=default,
-        )
+        raise FileNotFoundError
