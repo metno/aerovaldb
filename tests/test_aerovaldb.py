@@ -137,6 +137,21 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             "./project/experiment/map/with_time",
         ),
         (
+            "get_map",
+            [
+                "project",
+                "experiment",
+                "network",
+                "obsvar",
+                "layer",
+                "model",
+                "modvar",
+                "time",
+            ],
+            {"season": "season", "frequency": "frequency"},
+            "345967945795",
+        ),
+        (
             "get_scatter",
             [
                 "project",
