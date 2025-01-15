@@ -28,7 +28,6 @@ from ..utils import (
     parse_formatted_string,
     parse_uri,
     str_to_bool,
-    validate_filename_component,
 )
 from ..utils.filter import (
     filter_contour,
@@ -220,19 +219,12 @@ class AerovalJsonFileDB(AerovalDB):
         route_args,
         **kwargs,
     ):
-        validate_args = kwargs.pop("validate_args", True)
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         substitutions = route_args | kwargs
-        if validate_args:
-            [
-                validate_filename_component(x)
-                for x in substitutions.values()
-                if x is not None
-            ]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -299,11 +291,6 @@ class AerovalJsonFileDB(AerovalDB):
         Otherwise it is assumed to be a serializable python object.
         """
         substitutions = route_args | kwargs
-        [
-            validate_filename_component(x)
-            for x in substitutions.values()
-            if x is not None
-        ]
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -728,7 +715,6 @@ class AerovalJsonFileDB(AerovalDB):
                     "path": path,
                 },
                 access_type=access_type,
-                validate_args=False,
             )
         file_path = await self._get(
             route=ROUTE_REPORT_IMAGE,
@@ -738,7 +724,6 @@ class AerovalJsonFileDB(AerovalDB):
                 "path": path,
             },
             access_type=AccessType.FILE_PATH,
-            validate_args=False,
         )
         logger.debug(f"Fetching image with path '{file_path}'")
 

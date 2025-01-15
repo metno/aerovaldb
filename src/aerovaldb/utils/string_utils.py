@@ -41,31 +41,3 @@ def str_to_bool(value: str, /, default: bool | None = None) -> bool:
         return default
 
     raise ValueError("Could not convert string to bool: '{value}'")
-
-
-def validate_filename_component(value: str) -> None:
-    """
-    Checks if a file name component contains characters which should
-    not be included in the file path.
-
-    :param value : The component to be validated.
-
-    :raises ValueError :
-        if value is not string or not a valid filename component
-
-    >>> from aerovaldb.utils.string_utils import validate_filename_component
-    >>> validate_filename_component("Hello world")
-    >>> validate_filename_component(5)
-    Traceback (most recent call last):
-    ...
-    ValueError: Expected str, got <class 'int'>
-    >>> validate_filename_component("/")
-    Traceback (most recent call last):
-    ...
-    ValueError: '/' is not a valid file name component.
-    """
-    if not isinstance(value, str):
-        raise ValueError(f"Expected str, got {type(value)}")
-
-    if not PATH_COMPONENT_PATTERN.match(value):
-        raise ValueError(f"'{value}' is not a valid file name component.")

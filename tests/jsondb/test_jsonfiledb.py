@@ -13,14 +13,6 @@ def test_jsonfiledb__get_uri_for_file(tmp_path):
         )
 
 
-def test_jsonfiledb_invalid_parameter_values():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        with pytest.raises(ValueError) as e:
-            db.get_config("/%&/())()", "test")
-
-        assert "is not a valid file name component" in str(e.value)
-
-
 def test_with_symlink():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         data = db.get_config("linked-json-project", "experiment")
