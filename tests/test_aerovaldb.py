@@ -137,21 +137,6 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             "./project/experiment/map/with_time",
         ),
         (
-            "get_map",
-            [
-                "project",
-                "experiment",
-                "network",
-                "obsvar",
-                "layer",
-                "model",
-                "modvar",
-                "time",
-            ],
-            {"season": "season", "frequency": "frequency"},
-            "345967945795",
-        ),
-        (
             "get_scatter",
             [
                 "project",
@@ -523,7 +508,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 48
+        assert len(db.list_all()) == 49
 
 
 @TESTDB_PARAMETRIZATION
@@ -685,3 +670,25 @@ def test_put_map_overlay(tmpdb):
             access_type=aerovaldb.AccessType.BLOB,
         )
         assert data == PNG_FILE_SIGNATURE + rand_bytes
+
+
+@TESTDB_PARAMETRIZATION
+def test_get_map_filtering(testdb):
+    with aerovaldb.open(testdb) as db:
+        data = db.get_map(
+            "project",
+            "experiment",
+            "network",
+            "obsvar",
+            "layer",
+            "model",
+            "modvar",
+            "time",
+            frequency="frequency",
+            season="season",
+        )
+
+    assert "frequency" in data[0]
+    assert not "excluded_frequency" in data[0]
+    assert "season" in data[0]["frequency"]
+    assert not "excluded_season" in data[0]["frequency"]

@@ -67,16 +67,16 @@ def filter_map(data, frequency: str | None = None, season: str | None = None, **
             frequency,
         }
         for item in data:
-            for k1 in item:
+            for k1 in list(item.keys()):
                 if k1 not in keys_to_keep:
                     del item[k1]
                     continue
 
-                for k2 in item[frequency]:
+                for k2 in list(item[frequency].keys()):
                     if k2 != season:
                         del item[frequency][k2]
 
-        return data[frequency][season]
+        return data
 
     raise ValueError(
         f"frequency and season must either both be None, or both be provided. Got {[frequency, season]}"

@@ -72,7 +72,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{source}_{variable}/{date}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
