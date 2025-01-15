@@ -58,6 +58,26 @@ def filter_map(data, frequency: str | None = None, season: str | None = None, **
         return data
 
     if all([isinstance(x, str) for x in [frequency, season]]):
+        keys_to_keep = {
+            "station_name",
+            "latitude",
+            "longitude",
+            "altitude",
+            "region",
+            frequency,
+        }
+        for item in data:
+            for k1 in item:
+                if k1 not in keys_to_keep:
+                    del item[k1]
+                    continue
+
+                for k2 in item[frequency]:
+                    if k2 != season:
+                        del item[frequency][k2]
+
         return data[frequency][season]
 
-    raise ValueError
+    raise ValueError(
+        f"frequency and season must either both be None, or both be provided. Got {[frequency, season]}"
+    )
