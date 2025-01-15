@@ -683,7 +683,7 @@ def test_get_map_filtering(testdb):
             "layer",
             "model",
             "modvar",
-            "time",
+            "time2",
             frequency="frequency",
             season="season",
         )

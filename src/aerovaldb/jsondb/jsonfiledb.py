@@ -470,7 +470,7 @@ class AerovalJsonFileDB(AerovalDB):
             except Exception:
                 continue
             else:
-                uri = build_uri(route, route_args, kwargs | {"version": version})
+                uri = build_uri(route, route_args, kwargs | {"version": str(version)})
                 return uri
 
         raise ValueError(f"Unable to build URI for file path {file_path}")

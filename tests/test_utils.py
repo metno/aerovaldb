@@ -1,7 +1,13 @@
 import pytest
 
 from aerovaldb.routes import *
-from aerovaldb.utils import extract_substitutions, parse_formatted_string, parse_uri
+from aerovaldb.utils import (
+    decode_arg,
+    encode_arg,
+    extract_substitutions,
+    parse_formatted_string,
+    parse_uri,
+)
 
 
 @pytest.mark.parametrize(
@@ -87,3 +93,23 @@ def test_parse_uri(uri: str, expected: tuple[str, dict, dict]):
 def test_parse_uri_error():
     with pytest.raises(ValueError):
         parse_uri("??")
+
+
+@pytest.mark.parametrize(
+    "input,expected",
+    (
+        ("", ""),
+        ("%", "%0"),
+        ("/", "%1"),
+        ("hello-world/hello%1234", "hello-world%1hello%01234"),
+        ("%/" * 5, "%0%1" * 5),
+    ),
+)
+def test_encode_decode_arg(input: str, expected: str):
+    encoded = encode_arg(input)
+
+    assert encoded == expected
+
+    decoded = decode_arg(encoded)
+
+    assert decoded == input
