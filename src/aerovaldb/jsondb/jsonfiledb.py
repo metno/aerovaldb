@@ -28,7 +28,6 @@ from ..utils import (
     parse_formatted_string,
     parse_uri,
     str_to_bool,
-    validate_filename_component,
 )
 from ..utils.filter import (
     filter_contour,
@@ -72,7 +71,7 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{source}_{variable}/{date}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
@@ -220,19 +219,12 @@ class AerovalJsonFileDB(AerovalDB):
         route_args,
         **kwargs,
     ):
-        validate_args = kwargs.pop("validate_args", True)
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         substitutions = route_args | kwargs
-        if validate_args:
-            [
-                validate_filename_component(x)
-                for x in substitutions.values()
-                if x is not None
-            ]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -299,11 +291,6 @@ class AerovalJsonFileDB(AerovalDB):
         Otherwise it is assumed to be a serializable python object.
         """
         substitutions = route_args | kwargs
-        [
-            validate_filename_component(x)
-            for x in substitutions.values()
-            if x is not None
-        ]
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -470,7 +457,7 @@ class AerovalJsonFileDB(AerovalDB):
             except Exception:
                 continue
             else:
-                uri = build_uri(route, route_args, kwargs | {"version": version})
+                uri = build_uri(route, route_args, kwargs | {"version": str(version)})
                 return uri
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
@@ -728,7 +715,6 @@ class AerovalJsonFileDB(AerovalDB):
                     "path": path,
                 },
                 access_type=access_type,
-                validate_args=False,
             )
         file_path = await self._get(
             route=ROUTE_REPORT_IMAGE,
@@ -738,7 +724,6 @@ class AerovalJsonFileDB(AerovalDB):
                 "path": path,
             },
             access_type=AccessType.FILE_PATH,
-            validate_args=False,
         )
         logger.debug(f"Fetching image with path '{file_path}'")
 

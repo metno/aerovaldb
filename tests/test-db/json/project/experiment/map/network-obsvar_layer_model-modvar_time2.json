@@ -1,0 +1,12 @@
+[
+    {
+        "path": "./project/experiment/map/with_time",
+        "frequency": {
+            "season": {
+                "path": "345967945795"
+            },
+            "excluded_season": {}
+        },
+        "excluded_frequency": {}
+    }
+]

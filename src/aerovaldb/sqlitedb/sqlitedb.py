@@ -34,7 +34,6 @@ from ..utils import (
     extract_substitutions,
     json_dumps_wrapper,
     parse_uri,
-    validate_filename_component,
 )
 
 logger = logging.getLogger(__name__)
@@ -394,8 +393,6 @@ class AerovalSqliteDB(AerovalDB):
             for k, v in args.items()
             if k in AerovalSqliteDB.TABLE_COLUMN_NAMES[table_name]
         }
-
-        [validate_filename_component(x) for x in args.values() if x is not None]
 
         columnlist, substitutionlist = self._get_column_list_and_substitution_list(args)
         cur.execute(
