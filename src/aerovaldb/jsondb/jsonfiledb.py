@@ -831,6 +831,10 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
         ext = filetype.guess_extension(obj)
+        if ext is None:
+            raise ValueError(
+                f"Could not guess image file extension of provided image data starting with '0x{obj[:20].hex()}'."
+            )
         file_path += f".{ext}"
 
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)

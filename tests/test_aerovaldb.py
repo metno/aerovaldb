@@ -6,12 +6,15 @@
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
 import datetime
+import pathlib
 import random
 
+import filetype
 import pytest
 import simplejson  # type: ignore
 
 import aerovaldb
+import aerovaldb.jsondb
 from aerovaldb.utils.copy import copy_db_contents
 
 
@@ -619,14 +622,16 @@ def test_get_experiment_mtime(testdb):
             assert mtime.year >= 2024 and mtime < datetime.datetime.now()
 
 
-# http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
-PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+TEST_IMAGES = {
+    ".webp": pathlib.Path("tests/test_img/test.webp"),
+    ".png": pathlib.Path("tests/test_img/test.png"),
+}
 
 
 @TESTDB_PARAMETRIZATION
 def test_get_map_overlay(testdb):
     with aerovaldb.open(testdb) as db:
-        path = db.get_map_overlay(
+        data: bytes = db.get_map_overlay(
             "project",
             "experiment",
             "source",
@@ -635,7 +640,7 @@ def test_get_map_overlay(testdb):
             access_type=aerovaldb.AccessType.BLOB,
         )
 
-        assert path.startswith(PNG_FILE_SIGNATURE)
+        assert filetype.guess_extension(data) == "png"
 
 
 @pytest.mark.parametrize(
@@ -649,11 +654,20 @@ def test_get_map_overlay(testdb):
         ),
     ),
 )
-def test_put_map_overlay(tmpdb):
-    rand_bytes = random.randbytes(8)
+@pytest.mark.parametrize(
+    "expected_extension",
+    (
+        pytest.param(".png", id="png"),
+        pytest.param(".webp", id="webp"),
+    ),
+)
+def test_put_map_overlay(tmpdb, expected_extension: str):
+    with open(TEST_IMAGES[expected_extension], "rb") as f:
+        input_data = f.read()
+
     with tmpdb as db:
         db.put_map_overlay(
-            PNG_FILE_SIGNATURE + rand_bytes,
+            input_data,
             "project",
             "experiment",
             "source",
@@ -669,7 +683,18 @@ def test_put_map_overlay(tmpdb):
             "date",
             access_type=aerovaldb.AccessType.BLOB,
         )
-        assert data == PNG_FILE_SIGNATURE + rand_bytes
+        assert data == input_data
+
+        if isinstance(tmpdb, aerovaldb.jsondb.AerovalJsonFileDB):
+            file_path: str = db.get_map_overlay(
+                "project",
+                "experiment",
+                "source",
+                "variable",
+                "date",
+                access_type=aerovaldb.AccessType.FILE_PATH,
+            )
+            assert file_path.endswith(expected_extension)
 
 
 @TESTDB_PARAMETRIZATION
