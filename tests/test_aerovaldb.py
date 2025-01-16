@@ -12,6 +12,7 @@ import pytest
 import simplejson  # type: ignore
 
 import aerovaldb
+import aerovaldb.jsondb
 from aerovaldb.utils.copy import copy_db_contents
 
 
@@ -621,6 +622,12 @@ def test_get_experiment_mtime(testdb):
 
 # http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
 PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+# https://developers.google.com/speed/webp/docs/riff_container#webp_file_header
+# Note: Bytes 5-7 are the file size excluding the 12bit header, here set to match the
+# 8 random bytes that will be used in the below test.
+# Note: filetype library (which is used to guess extension includes two extra bytes beyond the actual header):
+# https://github.com/h2non/filetype.py/blob/0c7f219ea20a50b636c4a279af8694b0edf8419c/filetype/types/image.py#L186
+WEBP_FILE_SIGNATURE = bytes.fromhex("5249464600000008574542505650")
 
 
 @TESTDB_PARAMETRIZATION
@@ -649,11 +656,17 @@ def test_get_map_overlay(testdb):
         ),
     ),
 )
-def test_put_map_overlay(tmpdb):
-    rand_bytes = random.randbytes(8)
+@pytest.mark.parametrize(
+    "input_data,expected_extension",
+    (
+        pytest.param(PNG_FILE_SIGNATURE + random.randbytes(8), ".png", id="png"),
+        pytest.param(WEBP_FILE_SIGNATURE + random.randbytes(8), ".webp", id="webp"),
+    ),
+)
+def test_put_map_overlay(tmpdb, input_data: bytes, expected_extension: str):
     with tmpdb as db:
         db.put_map_overlay(
-            PNG_FILE_SIGNATURE + rand_bytes,
+            input_data,
             "project",
             "experiment",
             "source",
@@ -669,7 +682,18 @@ def test_put_map_overlay(tmpdb):
             "date",
             access_type=aerovaldb.AccessType.BLOB,
         )
-        assert data == PNG_FILE_SIGNATURE + rand_bytes
+        assert data == input_data
+
+        if isinstance(tmpdb, aerovaldb.jsondb.AerovalJsonFileDB):
+            file_path: str = db.get_map_overlay(
+                "project",
+                "experiment",
+                "source",
+                "variable",
+                "date",
+                access_type=aerovaldb.AccessType.FILE_PATH,
+            )
+            assert file_path.endswith(expected_extension)
 
 
 @TESTDB_PARAMETRIZATION
