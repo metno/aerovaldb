@@ -9,6 +9,7 @@ import datetime
 import pathlib
 import random
 
+import filetype
 import pytest
 import simplejson  # type: ignore
 
@@ -621,10 +622,6 @@ def test_get_experiment_mtime(testdb):
             assert mtime.year >= 2024 and mtime < datetime.datetime.now()
 
 
-# http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
-PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
-
-
 TEST_IMAGES = {
     ".webp": pathlib.Path("tests/test_img/test.webp"),
     ".png": pathlib.Path("tests/test_img/test.png"),
@@ -634,7 +631,7 @@ TEST_IMAGES = {
 @TESTDB_PARAMETRIZATION
 def test_get_map_overlay(testdb):
     with aerovaldb.open(testdb) as db:
-        path: bytes = db.get_map_overlay(
+        data: bytes = db.get_map_overlay(
             "project",
             "experiment",
             "source",
@@ -643,7 +640,7 @@ def test_get_map_overlay(testdb):
             access_type=aerovaldb.AccessType.BLOB,
         )
 
-        assert path.startswith(PNG_FILE_SIGNATURE)
+        assert filetype.guess_extension(data) == "png"
 
 
 @pytest.mark.parametrize(
