@@ -26,6 +26,8 @@ def test_put_map_overlay_extension_guess_error(tmp_path):
 
         with pytest.raises(ValueError) as e:
             db.put_map_overlay(
+                # Just a random hex sequence that doesn't match any known file headers
+                # of filetype library.
                 bytes.fromhex("6192d0f95dcbe642"),
                 "project",
                 "experiment",
