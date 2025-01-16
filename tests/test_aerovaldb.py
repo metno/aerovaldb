@@ -623,7 +623,7 @@ def test_get_experiment_mtime(testdb):
 # http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
 PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
 # https://developers.google.com/speed/webp/docs/riff_container#webp_file_header
-# Note: Bytes 5-7 are the file size excluding the 12bit header, here set to match the
+# Note: Bytes 5-7 are the file size excluding the 12byte header, here set to match the
 # 8 random bytes that will be used in the below test.
 # Note: filetype library (which is used to guess extension includes two extra bytes beyond the actual header):
 # https://github.com/h2non/filetype.py/blob/0c7f219ea20a50b636c4a279af8694b0edf8419c/filetype/types/image.py#L186
