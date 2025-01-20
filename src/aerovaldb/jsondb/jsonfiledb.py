@@ -36,7 +36,7 @@ from ..utils.filter import (
     filter_regional_stats,
 )
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
-from .cache import JSONLRUCache
+from .cache import JSONLRUCache, KeyCacheDecorator, CacheMissError
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class AerovalJsonFileDB(AerovalDB):
     # Timestep template
     TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
 
-    def __init__(self, basedir: str | Path, /, use_async: bool = False):
+    def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
@@ -57,8 +57,7 @@ class AerovalJsonFileDB(AerovalDB):
             f"Initializing aerovaldb for '{basedir}' with locking {self._use_real_lock}"
         )
 
-        self._asyncio = use_async
-        self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
+        self._cache = KeyCacheDecorator(JSONLRUCache(max_size=64), max_size=128)
 
         self._basedir = os.path.abspath(basedir)
 
@@ -133,7 +132,7 @@ class AerovalJsonFileDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
-            ROUTE_CONTOUR: filter_contour,
+            # ROUTE_CONTOUR: filter_contour,
             ROUTE_MAP: filter_map,
         }
 
@@ -153,7 +152,8 @@ class AerovalJsonFileDB(AerovalDB):
         ]:
             ValueError(f"Unable to load json with access_type={access_type}.")
 
-        json_str = await self._cache.get_json(file_path, no_cache=not cache)
+        json_str = self._cache.get(file_path, bypass_cache=not cache)
+        # json_str = self._cache.get_json(file_path, no_cache=not cache)
         if access_type == AccessType.JSON_STR:
             return json_str
 
@@ -859,7 +859,7 @@ class AerovalJsonFileDB(AerovalDB):
         access_type = self._normalize_access_type(access_type)
 
         try:
-            result = await self._get(
+            file_path = await self._get(
                 ROUTE_CONTOUR,
                 {
                     "project": project,
@@ -867,14 +867,43 @@ class AerovalJsonFileDB(AerovalDB):
                     "obsvar": obsvar,
                     "model": model,
                 },
-                timestep=timestep,
-                access_type=access_type,
+                # timestep=timestep,
+                access_type=AccessType.FILE_PATH,
                 cache=True,
             )
-        except (FileNotFoundError, KeyError):
+            try:
+                if timestep is None:
+                    key = file_path
+                else:
+                    key = f"{file_path}::{timestep}"
+
+                result = simplejson.loads(self._cache.get(key))
+            except CacheMissError:
+                result = await self._get(
+                    ROUTE_CONTOUR,
+                    {
+                        "project": project,
+                        "experiment": experiment,
+                        "obsvar": obsvar,
+                        "model": model,
+                    },
+                    # timestep=timestep,
+                    access_type=AccessType.OBJ,
+                    cache=True,
+                )
+                if timestep is not None:
+                    for t, value in result.items():
+                        self._cache.put(
+                            json_dumps_wrapper(value), key=f"{file_path}::{t}"
+                        )
+                    result = result[timestep]
+        except (FileNotFoundError, KeyError) as e:
             pass
         else:
-            return result
+            if access_type == AccessType.OBJ:
+                return result
+            if access_type == AccessType.JSON_STR:
+                return json_dumps_wrapper(result)
 
         try:
             result = await self._get(

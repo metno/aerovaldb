@@ -37,12 +37,12 @@ async def test_cache(cache: JSONLRUCache, test_files: list[str]):
     """
     Tests basic cache behaviour (ie. is the second call cached)
     """
-    assert await cache.get_json(test_files[0]) == "test0.json"
+    assert cache.get_json(test_files[0]) == "test0.json"
     assert len(cache._cache) == 1
     assert cache.hit_count == 0
     assert cache.miss_count == 1
 
-    assert await cache.get_json(test_files[0]) == "test0.json"
+    assert cache.get_json(test_files[0]) == "test0.json"
     assert len(cache._cache) == 1
     assert cache.hit_count == 1
     assert cache.miss_count == 1
@@ -55,12 +55,12 @@ async def test_change_mtime(cache: JSONLRUCache, test_files: list[str]):
     Test that cache is correctly invalidated when mtime of files
     is changed.
     """
-    await cache.get_json(test_files[0])
+    cache.get_json(test_files[0])
 
     time.sleep(0.005)
     Path(test_files[0]).touch()
 
-    assert await cache.get_json(test_files[0]) == "test0.json"
+    assert cache.get_json(test_files[0]) == "test0.json"
     assert cache.hit_count == 0
     assert cache.miss_count == 2
 
@@ -71,12 +71,12 @@ async def test_change_mtime(cache: JSONLRUCache, test_files: list[str]):
 async def test_manual_invalidation(cache: JSONLRUCache, test_files: list[str]):
     """Tests that cache is correctly considered invalidated when
     `invalidate_cache()` is called on an entry."""
-    await cache.get_json(test_files[0])
+    cache.get_json(test_files[0])
 
     cache.invalidate_entry(test_files[0])
     assert cache.size == 0
 
-    assert await cache.get_json(test_files[0]) == "test0.json"
+    assert cache.get_json(test_files[0]) == "test0.json"
     assert cache.hit_count == 0
     assert cache.miss_count == 2
 
@@ -143,7 +143,7 @@ async def test_lru_cache(
     for file, js, sz, m, h in zip(file_order, json, size, miss, hit):
         path = test_files[file]
 
-        assert await cache.get_json(path) == js
+        assert cache.get_json(path) == js
         assert cache.size == sz
         assert cache.miss_count == m
         assert cache.hit_count == h
