@@ -869,7 +869,7 @@ class AerovalJsonFileDB(AerovalDB):
                 },
                 timestep=timestep,
                 access_type=access_type,
-                cache=cache,
+                cache=True,
             )
         except (FileNotFoundError, KeyError):
             pass
