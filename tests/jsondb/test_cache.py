@@ -73,7 +73,7 @@ async def test_manual_invalidation(cache: LRUFileCache, test_files: list[str]):
     `invalidate_cache()` is called on an entry."""
     cache.get_json(test_files[0])
 
-    cache.invalidate_entry(test_files[0])
+    cache.evict(test_files[0])
     assert cache.size == 0
 
     assert cache.get_json(test_files[0]) == "test0.json"

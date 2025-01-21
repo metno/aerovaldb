@@ -85,11 +85,11 @@ class BaseCache(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def invalidate_all(self) -> None:
+    def clear(self) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def invalidate_entry(self, file_path: str) -> None:
+    def evict(self, file_path: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -116,8 +116,13 @@ class LRUFileCache(BaseCache):
         """
         self._hit_count: int = 0
         self._miss_count: int = 0
-        self._max_size = max_size
-        self.invalidate_all()
+        self._max_size: int = max_size
+
+        # Stores the actual cached content, indexed by canonical file path.
+        self._entries: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
+
+        # Stores queue of cache accesses, used for implementing LRU logic.
+        self._queue = LRUQueue()
 
     def _get_entry(self, abspath: str):
         """Returns an element from the cache."""
@@ -127,13 +132,10 @@ class LRUFileCache(BaseCache):
         return self._entries[abspath]["json"]  # type: ignore
 
     # @override # Only supported with python >= 3.12 (https://peps.python.org/pep-0698/)
-    def invalidate_all(self) -> None:
+    def clear(self) -> None:
         logger.debug("JSON Cache invalidated.")
 
-        # Stores the actual cached content, indexed by canonical file path.
-        self._entries: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
-
-        # Stores queue of cache accesses, used for implementing LRU logic.
+        self._entries = defaultdict(lambda: None)
         self._queue = LRUQueue()
 
         # Tally of cache hits and misses.
@@ -176,7 +178,7 @@ class LRUFileCache(BaseCache):
         """
         return str(os.path.realpath(file_path))
 
-    def _read_json(self, file_path: str | Path) -> str:
+    def _read_file(self, file_path: str | Path) -> str:
         abspath = self._canonical_file_path(file_path)
         logger.debug(f"Reading file {abspath}")
 
@@ -190,20 +192,20 @@ class LRUFileCache(BaseCache):
         }
         while self.size > self._max_size:
             key = self._queue.pop()
-            self.invalidate_entry(str(key))
+            self.evict(str(key))
 
     # @override
     def get(self, key: str, *, bypass_cache: bool = False) -> str:
         abspath = self._canonical_file_path(key)
 
         if bypass_cache:
-            return self._read_json(abspath)
+            return self._read_file(abspath)
 
         if self.is_valid(abspath):
             return self._get_entry(abspath)
 
         self._miss_count += 1
-        json = self._read_json(abspath)
+        json = self._read_file(abspath)
         self._queue.add(abspath)
         self._put_entry(abspath, json=json)
         return json
@@ -224,20 +226,20 @@ class LRUFileCache(BaseCache):
         """
         abspath = self._canonical_file_path(file_path)
         if no_cache:
-            return self._read_json(abspath)
+            return self._read_file(abspath)
 
         if self.is_valid(abspath):
             return self._get_entry(abspath)
 
         self._miss_count = self._miss_count + 1
         logger.debug(f"Reading file {abspath} and adding to cache.")
-        json = self._read_json(abspath)
+        json = self._read_file(abspath)
         self._queue.add(abspath)
         self._put_entry(abspath, json=json)
         return json
 
     # @override
-    def invalidate_entry(self, file_path: str | Path) -> None:
+    def evict(self, file_path: str | Path) -> None:
         """
         Invalidates the cache for a file path, ensuring it will be re-read on the next read.
 
@@ -283,8 +285,12 @@ class KeyCacheDecorator(BaseCache):
             raise TypeError(f"Cache is of type {type(cache)}, expected BaseCache")
 
         self._cache = cache
-        self.invalidate_all()
 
+        self._entries: dict[str, CacheEntry | None] = defaultdict(lambda: None)
+        self._queue = LRUQueue()
+
+        self._miss_count = 0
+        self._hit_count = 0
         self._max_size = max_size
 
     def _split_key(self, key: str) -> tuple[str, str | None]:
@@ -338,17 +344,17 @@ class KeyCacheDecorator(BaseCache):
         self._queue.add(key)
         while self.size > self._max_size:
             key = self._queue.pop()  # type: ignore
-            self.invalidate_entry(str(key))
+            self.evict(str(key))
 
     # @override
-    def invalidate_all(self) -> None:
-        self._entries: dict[str, CacheEntry | None] = defaultdict(lambda: None)
+    def clear(self) -> None:
+        self._entries = defaultdict(lambda: None)
         self._miss_count = 0
         self._hit_count = 0
         self._queue = LRUQueue()
 
     # @override
-    def invalidate_entry(self, key: str) -> None:
+    def evict(self, key: str) -> None:
         logger.debug(f"Invalidating cache for key {key}.")
         if key in self._entries:
             del self._entries[key]
