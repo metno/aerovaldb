@@ -6,7 +6,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Hashable, TypedDict
 
-from ..utils import async_and_sync
+from ..utils.typing import override
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +131,7 @@ class LRUFileCache(BaseCache):
         logger.debug(f"Returning contents from file {abspath} from cache.")
         return self._entries[abspath]["file"]  # type: ignore
 
-    # @override # Only supported with python >= 3.12 (https://peps.python.org/pep-0698/)
+    @override
     def clear(self) -> None:
         logger.debug("Cache invalidated.")
 
@@ -194,7 +194,7 @@ class LRUFileCache(BaseCache):
             key = self._queue.pop()
             self.evict(str(key))
 
-    # @override
+    @override
     def get(self, key: str, *, bypass_cache: bool = False) -> str:
         abspath = self._canonical_file_path(key)
 
@@ -210,12 +210,12 @@ class LRUFileCache(BaseCache):
         self._put_entry(abspath, obj=obj)
         return obj
 
-    # @override
+    @override
     def put(self, obj, *, key: str):
         abspath = self._canonical_file_path(key)
         self._put_entry(abspath, obj=obj)
 
-    # @override
+    @override
     def evict(self, file_path: str | Path) -> None:
         """
         Invalidates the cache for a file path, ensuring it will be re-read on the next read.
@@ -228,7 +228,7 @@ class LRUFileCache(BaseCache):
             del self._entries[abspath]
             self._queue.remove(abspath)
 
-    # @override
+    @override
     def is_valid(self, file_path: str | Path) -> bool:
         """
         Checks whether a cache element is valid.
@@ -281,22 +281,22 @@ class KeyCacheDecorator(BaseCache):
             f"Unexpected number of elements in '{key}'. Expected 1 or 2, got {len(splt)}."
         )
 
-    # @override
     @property
+    @override
     def hit_count(self) -> int:
         return self._hit_count
 
-    # @override
     @property
+    @override
     def size(self) -> int:
         return self._queue.size
 
-    # @override
     @property
+    @override
     def miss_count(self) -> int:
         return self._miss_count
 
-    # @override
+    @override
     def get(self, key: str, *, bypass_cache: bool = False) -> str:
         fp, k = self._split_key(key)
 
@@ -311,7 +311,7 @@ class KeyCacheDecorator(BaseCache):
         self._miss_count += 1
         raise CacheMissError
 
-    # @override
+    @override
     def put(self, obj, *, key: str) -> None:
         fp, _ = self._split_key(key)
         self._entries[key] = {
@@ -323,21 +323,21 @@ class KeyCacheDecorator(BaseCache):
             key = self._queue.pop()  # type: ignore
             self.evict(str(key))
 
-    # @override
+    @override
     def clear(self) -> None:
         self._entries = defaultdict(lambda: None)
         self._miss_count = 0
         self._hit_count = 0
         self._queue = LRUQueue()
 
-    # @override
+    @override
     def evict(self, key: str) -> None:
         logger.debug(f"Invalidating cache for key {key}.")
         if key in self._entries:
             del self._entries[key]
             self._queue.remove(key)
 
-    # @override
+    @override
     def is_valid(self, key: str) -> bool:
         fp, k = self._split_key(key)
         if k is None:
