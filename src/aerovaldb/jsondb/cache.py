@@ -1,8 +1,7 @@
-from abc import ABC, abstractmethod
-
 # from typing import override # Supported with Python>= 3.12 only.
 import logging
 import os
+from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Hashable, TypedDict
@@ -115,6 +114,8 @@ class JSONLRUCache(BaseCache):
 
         Files will be ejected based on least recently used, when full.
         """
+        self._hit_count: int = 0
+        self._miss_count: int = 0
         self._max_size = max_size
         self.invalidate_all()
 
@@ -136,8 +137,8 @@ class JSONLRUCache(BaseCache):
         self._queue = LRUQueue()
 
         # Tally of cache hits and misses.
-        self._hit_count: int = 0
-        self._miss_count: int = 0
+        self._hit_count = 0
+        self._miss_count = 0
 
     @property
     def hit_count(self) -> int:
@@ -209,7 +210,7 @@ class JSONLRUCache(BaseCache):
     # @override
     def put(self, obj, *, key: str):
         abspath = self._canonical_file_path(key)
-        self._put(obj, key=abspath)
+        self._put(abspath, json=obj)
 
     @async_and_sync
     # @override
@@ -290,7 +291,7 @@ class KeyCacheDecorator(BaseCache):
         if len(splt) == 1:
             return (splt[0], None)
         elif len(splt) == 2:
-            return tuple(splt)
+            return tuple(splt)  # type: ignore
 
         raise ValueError
 
@@ -331,8 +332,9 @@ class KeyCacheDecorator(BaseCache):
             "json": obj,
             "last_modified": os.path.getmtime(fp),
         }
+        self._queue.add(key)
         while self.size > self._max_size:
-            key = self._queue.pop()
+            key = self._queue.pop()  # type: ignore
             self.invalidate_entry(str(key))
 
     # @override

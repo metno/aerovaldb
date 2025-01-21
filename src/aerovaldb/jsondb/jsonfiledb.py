@@ -36,7 +36,7 @@ from ..utils.filter import (
     filter_regional_stats,
 )
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
-from .cache import JSONLRUCache, KeyCacheDecorator, CacheMissError
+from .cache import CacheMissError, JSONLRUCache, KeyCacheDecorator
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class AerovalJsonFileDB(AerovalDB):
             f"Initializing aerovaldb for '{basedir}' with locking {self._use_real_lock}"
         )
 
-        self._cache = KeyCacheDecorator(JSONLRUCache(max_size=64), max_size=128)
+        self._cache = KeyCacheDecorator(JSONLRUCache(max_size=64), max_size=512)
 
         self._basedir = os.path.abspath(basedir)
 
