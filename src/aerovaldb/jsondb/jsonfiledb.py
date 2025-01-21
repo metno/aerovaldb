@@ -29,12 +29,7 @@ from ..utils import (
     parse_uri,
     str_to_bool,
 )
-from ..utils.filter import (
-    filter_contour,
-    filter_heatmap,
-    filter_map,
-    filter_regional_stats,
-)
+from ..utils.filter import filter_heatmap, filter_map, filter_regional_stats
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import CacheMissError, KeyCacheDecorator, LRUFileCache
 
@@ -132,7 +127,6 @@ class AerovalJsonFileDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
-            # ROUTE_CONTOUR: filter_contour,
             ROUTE_MAP: filter_map,
         }
 
@@ -153,7 +147,6 @@ class AerovalJsonFileDB(AerovalDB):
             ValueError(f"Unable to load json with access_type={access_type}.")
 
         json_str = self._cache.get(file_path, bypass_cache=not cache)
-        # json_str = self._cache.get_json(file_path, no_cache=not cache)
         if access_type == AccessType.JSON_STR:
             return json_str
 
