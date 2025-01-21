@@ -54,8 +54,7 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
         (eg. 'json_files:.')
         - 'path', with path containing either an aerovaldb.cfg (Not yet implemented) configuration
         or path being a json_files dabasase (for example, '.' is equivalent to 'json_files:.')
-    :param use_async : If true, aiofile will be used to read files, otherwise files will be read
-        synchronously.
+    :param use_async : Not used. Should be removed in v0.3.0
     :return: an implementation-object of AerovalDB openend to a location
 
     Examples
@@ -99,4 +98,4 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
 
     aerodb = list_engines()[name]
 
-    return aerodb(path, use_async=use_async)  # type: ignore
+    return aerodb(path)  # type: ignore
