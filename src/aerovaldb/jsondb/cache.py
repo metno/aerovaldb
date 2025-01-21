@@ -1,4 +1,3 @@
-# from typing import override # Supported with Python>= 3.12 only.
 import logging
 import os
 from abc import ABC, abstractmethod
