@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Hashable, TypedDict
 
-from ..utils.typing import override
+from ..utils.compat import override
 
 logger = logging.getLogger(__name__)
 
