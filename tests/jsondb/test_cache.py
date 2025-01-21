@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from aerovaldb.jsondb.cache import JSONLRUCache
+from aerovaldb.jsondb.cache import LRUFileCache
 
 pytest_plugins = ("pytest_asyncio",)
 
 
 @pytest.fixture
-def cache() -> JSONLRUCache:
-    return JSONLRUCache(max_size=2)
+def cache() -> LRUFileCache:
+    return LRUFileCache(max_size=2)
 
 
 @pytest.fixture
@@ -33,24 +33,24 @@ def test_files(tmpdir: Path) -> list[str]:
 
 
 @pytest.mark.asyncio
-async def test_cache(cache: JSONLRUCache, test_files: list[str]):
+async def test_cache(cache: LRUFileCache, test_files: list[str]):
     """
     Tests basic cache behaviour (ie. is the second call cached)
     """
     assert cache.get_json(test_files[0]) == "test0.json"
-    assert len(cache._cache) == 1
+    assert len(cache._entries) == 1
     assert cache.hit_count == 0
     assert cache.miss_count == 1
 
     assert cache.get_json(test_files[0]) == "test0.json"
-    assert len(cache._cache) == 1
+    assert len(cache._entries) == 1
     assert cache.hit_count == 1
     assert cache.miss_count == 1
     assert cache.size == 1
 
 
 @pytest.mark.asyncio
-async def test_change_mtime(cache: JSONLRUCache, test_files: list[str]):
+async def test_change_mtime(cache: LRUFileCache, test_files: list[str]):
     """
     Test that cache is correctly invalidated when mtime of files
     is changed.
@@ -68,7 +68,7 @@ async def test_change_mtime(cache: JSONLRUCache, test_files: list[str]):
 
 
 @pytest.mark.asyncio
-async def test_manual_invalidation(cache: JSONLRUCache, test_files: list[str]):
+async def test_manual_invalidation(cache: LRUFileCache, test_files: list[str]):
     """Tests that cache is correctly considered invalidated when
     `invalidate_cache()` is called on an entry."""
     cache.get_json(test_files[0])
@@ -138,7 +138,7 @@ async def test_lru_cache(
     hit: list[int],
 ):
     """Tests cache lru ejection logic."""
-    cache = JSONLRUCache(max_size=max_size)
+    cache = LRUFileCache(max_size=max_size)
 
     for file, js, sz, m, h in zip(file_order, json, size, miss, hit):
         path = test_files[file]

@@ -103,9 +103,9 @@ class CacheEntry(TypedDict):
     last_modified: float
 
 
-class JSONLRUCache(BaseCache):
+class LRUFileCache(BaseCache):
     """
-    Implements an in-memory LRU cache for file content in aerovaldb.
+    Implements an in-memory LRU cache for file content.
     """
 
     def __init__(self, *, max_size: int):
@@ -119,19 +119,19 @@ class JSONLRUCache(BaseCache):
         self._max_size = max_size
         self.invalidate_all()
 
-    def _get(self, abspath: str):
+    def _get_entry(self, abspath: str):
         """Returns an element from the cache."""
         self._queue.add(abspath)
         self._hit_count = self._hit_count + 1
         logger.debug(f"Returning contents from file {abspath} from cache.")
-        return self._cache[abspath]["json"]  # type: ignore
+        return self._entries[abspath]["json"]  # type: ignore
 
     # @override # Only supported with python >= 3.12 (https://peps.python.org/pep-0698/)
     def invalidate_all(self) -> None:
         logger.debug("JSON Cache invalidated.")
 
         # Stores the actual cached content, indexed by canonical file path.
-        self._cache: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
+        self._entries: defaultdict[str, CacheEntry | None] = defaultdict(lambda: None)
 
         # Stores queue of cache accesses, used for implementing LRU logic.
         self._queue = LRUQueue()
@@ -183,8 +183,8 @@ class JSONLRUCache(BaseCache):
         with open(abspath, "r") as f:
             return f.read()
 
-    def _put(self, abspath: str, *, json: str):
-        self._cache[abspath] = {
+    def _put_entry(self, abspath: str, *, json: str):
+        self._entries[abspath] = {
             "json": json,
             "last_modified": os.path.getmtime(abspath),
         }
@@ -192,6 +192,7 @@ class JSONLRUCache(BaseCache):
             key = self._queue.pop()
             self.invalidate_entry(str(key))
 
+    # @override
     def get(self, key: str, *, bypass_cache: bool = False) -> str:
         abspath = self._canonical_file_path(key)
 
@@ -199,18 +200,18 @@ class JSONLRUCache(BaseCache):
             return self._read_json(abspath)
 
         if self.is_valid(abspath):
-            return self._get(abspath)
+            return self._get_entry(abspath)
 
         self._miss_count += 1
         json = self._read_json(abspath)
         self._queue.add(abspath)
-        self._put(abspath, json=json)
+        self._put_entry(abspath, json=json)
         return json
 
     # @override
     def put(self, obj, *, key: str):
         abspath = self._canonical_file_path(key)
-        self._put(abspath, json=obj)
+        self._put_entry(abspath, json=obj)
 
     @async_and_sync
     # @override
@@ -226,13 +227,13 @@ class JSONLRUCache(BaseCache):
             return self._read_json(abspath)
 
         if self.is_valid(abspath):
-            return self._get(abspath)
+            return self._get_entry(abspath)
 
         self._miss_count = self._miss_count + 1
         logger.debug(f"Reading file {abspath} and adding to cache.")
         json = self._read_json(abspath)
         self._queue.add(abspath)
-        self._put(abspath, json=json)
+        self._put_entry(abspath, json=json)
         return json
 
     # @override
@@ -244,8 +245,8 @@ class JSONLRUCache(BaseCache):
         """
         abspath = self._canonical_file_path(file_path)
         logger.debug(f"Invalidating cache for file {abspath}.")
-        if abspath in self._cache:
-            del self._cache[abspath]
+        if abspath in self._entries:
+            del self._entries[abspath]
             self._queue.remove(abspath)
 
     # @override
@@ -259,7 +260,7 @@ class JSONLRUCache(BaseCache):
         """
         abspath = self._canonical_file_path(file_path)
 
-        cache = self._cache[abspath]
+        cache = self._entries[abspath]
         if cache is None:
             return False
 
@@ -279,7 +280,7 @@ class KeyCacheDecorator(BaseCache):
 
     def __init__(self, cache: BaseCache, *, max_size: int = 64):
         if not isinstance(cache, BaseCache):
-            raise TypeError(f"Cache is of type {type(cache)}, expected JSONLRUCache")
+            raise TypeError(f"Cache is of type {type(cache)}, expected BaseCache")
 
         self._cache = cache
         self.invalidate_all()
@@ -293,7 +294,9 @@ class KeyCacheDecorator(BaseCache):
         elif len(splt) == 2:
             return tuple(splt)  # type: ignore
 
-        raise ValueError
+        raise ValueError(
+            f"Unexpected number of elements in '{key}'. Expected 1 or 2, got {len(splt)}."
+        )
 
     # @override
     @property
@@ -355,6 +358,7 @@ class KeyCacheDecorator(BaseCache):
     def is_valid(self, key: str) -> bool:
         fp, k = self._split_key(key)
         if k is None:
+            # File access is delegated to sub-cache.
             return self._cache.is_valid(fp)
 
         cache = self._entries[key]

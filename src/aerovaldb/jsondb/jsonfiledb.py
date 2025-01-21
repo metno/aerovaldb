@@ -36,7 +36,7 @@ from ..utils.filter import (
     filter_regional_stats,
 )
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
-from .cache import CacheMissError, JSONLRUCache, KeyCacheDecorator
+from .cache import CacheMissError, KeyCacheDecorator, LRUFileCache
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class AerovalJsonFileDB(AerovalDB):
             f"Initializing aerovaldb for '{basedir}' with locking {self._use_real_lock}"
         )
 
-        self._cache = KeyCacheDecorator(JSONLRUCache(max_size=64), max_size=512)
+        self._cache = KeyCacheDecorator(LRUFileCache(max_size=64), max_size=512)
 
         self._basedir = os.path.abspath(basedir)
 
@@ -887,7 +887,6 @@ class AerovalJsonFileDB(AerovalDB):
                         "obsvar": obsvar,
                         "model": model,
                     },
-                    # timestep=timestep,
                     access_type=AccessType.OBJ,
                     cache=True,
                 )
@@ -897,7 +896,7 @@ class AerovalJsonFileDB(AerovalDB):
                             json_dumps_wrapper(value), key=f"{file_path}::{t}"
                         )
                     result = result[timestep]
-        except (FileNotFoundError, KeyError) as e:
+        except (FileNotFoundError, KeyError):
             pass
         else:
             if access_type == AccessType.OBJ:
