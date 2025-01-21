@@ -98,7 +98,7 @@ class BaseCache(ABC):
 
 
 class CacheEntry(TypedDict):
-    json: str
+    file: str
 
     last_modified: float
 
@@ -129,11 +129,11 @@ class LRUFileCache(BaseCache):
         self._queue.add(abspath)
         self._hit_count = self._hit_count + 1
         logger.debug(f"Returning contents from file {abspath} from cache.")
-        return self._entries[abspath]["json"]  # type: ignore
+        return self._entries[abspath]["file"]  # type: ignore
 
     # @override # Only supported with python >= 3.12 (https://peps.python.org/pep-0698/)
     def clear(self) -> None:
-        logger.debug("JSON Cache invalidated.")
+        logger.debug("Cache invalidated.")
 
         self._entries = defaultdict(lambda: None)
         self._queue = LRUQueue()
@@ -185,9 +185,9 @@ class LRUFileCache(BaseCache):
         with open(abspath, "r") as f:
             return f.read()
 
-    def _put_entry(self, abspath: str, *, json: str):
+    def _put_entry(self, abspath: str, *, obj: str):
         self._entries[abspath] = {
-            "json": json,
+            "file": obj,
             "last_modified": os.path.getmtime(abspath),
         }
         while self.size > self._max_size:
@@ -205,38 +205,15 @@ class LRUFileCache(BaseCache):
             return self._get_entry(abspath)
 
         self._miss_count += 1
-        json = self._read_file(abspath)
+        obj = self._read_file(abspath)
         self._queue.add(abspath)
-        self._put_entry(abspath, json=json)
-        return json
+        self._put_entry(abspath, obj=obj)
+        return obj
 
     # @override
     def put(self, obj, *, key: str):
         abspath = self._canonical_file_path(key)
-        self._put_entry(abspath, json=obj)
-
-    @async_and_sync
-    # @override
-    def get_json(self, file_path: str | Path, *, no_cache: bool = False) -> str:
-        """
-        Fetches json a str from a file, using the cached version if it is still valid.
-
-        :param file_path : The file path to be fetched.
-        :no_cache : If true, file will always be read from the file.
-        """
-        abspath = self._canonical_file_path(file_path)
-        if no_cache:
-            return self._read_file(abspath)
-
-        if self.is_valid(abspath):
-            return self._get_entry(abspath)
-
-        self._miss_count = self._miss_count + 1
-        logger.debug(f"Reading file {abspath} and adding to cache.")
-        json = self._read_file(abspath)
-        self._queue.add(abspath)
-        self._put_entry(abspath, json=json)
-        return json
+        self._put_entry(abspath, obj=obj)
 
     # @override
     def evict(self, file_path: str | Path) -> None:
@@ -329,7 +306,7 @@ class KeyCacheDecorator(BaseCache):
         if self.is_valid(key):
             if (entry := self._entries[key]) is not None:
                 self._hit_count += 1
-                return entry["json"]
+                return entry["file"]
 
         self._miss_count += 1
         raise CacheMissError
@@ -338,7 +315,7 @@ class KeyCacheDecorator(BaseCache):
     def put(self, obj, *, key: str) -> None:
         fp, _ = self._split_key(key)
         self._entries[key] = {
-            "json": obj,
+            "file": obj,
             "last_modified": os.path.getmtime(fp),
         }
         self._queue.add(key)
