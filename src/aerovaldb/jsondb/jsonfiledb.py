@@ -777,6 +777,10 @@ class AerovalJsonFileDB(AerovalDB):
             file_path += ext
             if os.path.exists(file_path):
                 break
+        else:
+            raise FileNotFoundError(
+                f"Overlay for {project}/{experiment}/{source}/{variable}/{date} does not exist."
+            )
 
         logger.debug(f"Fetching image with path '{file_path}'")
 
