@@ -35,7 +35,7 @@ def get_method(route):
                         )
             if len(args) > 0:
                 raise IndexError(f"{len(args)} superfluous positional args provided.")
-            return await self._get(route, route_args, *args, cache=False, **kwargs)
+            return await self._get(route, route_args, *args, **kwargs)
 
         return wrapper
 

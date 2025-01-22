@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class CacheMissError(FileNotFoundError):
+    """
+    Raised by cache implementations when a cache miss occurs
+    that the implementation is unable to handle (by eg.
+    delegating it).
+    """
+
     pass
 
 
@@ -132,7 +138,7 @@ class LRUFileCache(BaseCache):
 
     @override
     def clear(self) -> None:
-        logger.debug("Cache invalidated.")
+        logger.debug("Cache cleared.")
 
         self._entries = defaultdict(lambda: None)
         self._queue = LRUQueue()
@@ -213,6 +219,7 @@ class LRUFileCache(BaseCache):
     def put(self, obj, *, key: str):
         abspath = self._canonical_file_path(key)
         self._put_entry(abspath, obj=obj)
+        logger.debug("%s of %s entries in cache", self.size, self._max_size)
 
     @override
     def evict(self, file_path: str | Path) -> None:
@@ -222,7 +229,7 @@ class LRUFileCache(BaseCache):
         :param file_path : The file path to invalidate cache for.
         """
         abspath = self._canonical_file_path(file_path)
-        logger.debug(f"Invalidating cache for file {abspath}.")
+        logger.debug(f"Clearing cache for file {abspath}.")
         if abspath in self._entries:
             del self._entries[abspath]
             self._queue.remove(abspath)
@@ -321,6 +328,8 @@ class KeyCacheDecorator(BaseCache):
         while self.size > self._max_size:
             key = self._queue.pop()  # type: ignore
             self.evict(str(key))
+
+        logger.debug("%s of %s entries in cache", self.size, self._max_size)
 
     @override
     def clear(self) -> None:
