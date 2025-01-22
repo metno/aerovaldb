@@ -870,7 +870,7 @@ class AerovalJsonFileDB(AerovalDB):
                 else:
                     key = f"{file_path}::{timestep}"
 
-                result = simplejson.loads(self._cache.get(key))
+                result = simplejson.loads(self._cache.get(key), allow_nan=True)
             except CacheMissError:
                 result = await self._get(
                     ROUTE_CONTOUR,
