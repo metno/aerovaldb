@@ -130,7 +130,7 @@ class AerovalJsonFileDB(AerovalDB):
             ROUTE_MAP: filter_map,
         }
 
-    async def _load_json(
+    def _load_json(
         self,
         key,
         *,
@@ -251,7 +251,7 @@ class AerovalJsonFileDB(AerovalDB):
             if access_type == AccessType.CTIME:
                 return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
-            return await self._load_json(
+            return self._load_json(
                 file_path, access_type=access_type, cache=use_caching
             )
 
@@ -267,11 +267,9 @@ class AerovalJsonFileDB(AerovalDB):
         key = f"{file_path}::{'/'.join(filter_params)}"
 
         try:
-            obj = await self._load_json(
-                key, access_type=AccessType.OBJ, cache=use_caching
-            )
+            obj = self._load_json(key, access_type=AccessType.OBJ, cache=use_caching)
         except CacheMissError:
-            obj = await self._load_json(file_path)
+            obj = self._load_json(file_path)
             obj = filter_func(obj, **filter_vars)
             if use_caching:
                 self._cache.put(json_dumps_wrapper(obj), key=key)
