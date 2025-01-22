@@ -132,7 +132,7 @@ class AerovalJsonFileDB(AerovalDB):
 
     async def _load_json(
         self,
-        file_path,
+        key,
         *,
         access_type: AccessType = AccessType.OBJ,
         cache: bool = False,
@@ -146,7 +146,7 @@ class AerovalJsonFileDB(AerovalDB):
         ]:
             ValueError(f"Unable to load json with access_type={access_type}.")
 
-        json_str = self._cache.get(file_path, bypass_cache=not cache)
+        json_str = self._cache.get(key, bypass_cache=not cache)
         if access_type == AccessType.JSON_STR:
             return json_str
 
@@ -263,11 +263,18 @@ class AerovalJsonFileDB(AerovalDB):
         if access_type == AccessType.CTIME:
             return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
-        obj = await self._load_json(
-            file_path, access_type=AccessType.OBJ, cache=use_caching
-        )
+        filter_params = [kwargs[k] for k in sorted(kwargs.keys())]
+        key = f"{file_path}::{'/'.join(filter_params)}"
 
-        obj = filter_func(obj, **filter_vars)
+        try:
+            obj = await self._load_json(
+                key, access_type=AccessType.OBJ, cache=use_caching
+            )
+        except CacheMissError:
+            obj = await self._load_json(file_path)
+            obj = filter_func(obj, **filter_vars)
+            if use_caching:
+                self._cache.put(json_dumps_wrapper(obj), key=key)
 
         if access_type == AccessType.OBJ:
             return obj

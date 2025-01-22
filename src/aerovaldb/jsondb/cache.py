@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class CacheMissError(FileNotFoundError):
+    """
+    Raised by cache implementations when a cache miss occurs
+    that the implementation is unable to handle (by eg.
+    delegating it).
+    """
+
     pass
 
 
