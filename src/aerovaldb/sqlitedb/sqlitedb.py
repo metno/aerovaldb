@@ -3,6 +3,7 @@ import importlib.metadata
 import logging
 import os
 import sqlite3
+import sys
 from hashlib import md5
 from typing import Any, Awaitable, Callable
 
@@ -35,6 +36,11 @@ from ..utils import (
     json_dumps_wrapper,
     parse_uri,
 )
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
@@ -372,6 +378,7 @@ class AerovalSqliteDB(AerovalDB):
 
         return (columnlist, substitutionlist)
 
+    @override
     async def _get(self, route, route_args, **kwargs):
         cache = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
@@ -472,6 +479,7 @@ class AerovalSqliteDB(AerovalDB):
 
         raise UnsupportedOperation
 
+    @override
     async def _put(self, obj, route, route_args, **kwargs):
         cur = self._con.cursor()
 
@@ -505,6 +513,7 @@ class AerovalSqliteDB(AerovalDB):
         self._con.commit()
 
     @async_and_sync
+    @override
     async def get_by_uri(
         self,
         uri: str,
@@ -546,6 +555,7 @@ class AerovalSqliteDB(AerovalDB):
         )
 
     @async_and_sync
+    @override
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
         if route == ROUTE_REPORT_IMAGE:
@@ -568,6 +578,7 @@ class AerovalSqliteDB(AerovalDB):
         await self._put(obj, route, route_args, **kwargs)
 
     @async_and_sync
+    @override
     async def list_all(self):
         cur = self._con.cursor()
         result = []
@@ -617,6 +628,7 @@ class AerovalSqliteDB(AerovalDB):
 
         return FakeLock()
 
+    @override
     def list_glob_stats(
         self,
         project: str,
@@ -660,6 +672,7 @@ class AerovalSqliteDB(AerovalDB):
         return result
 
     @async_and_sync
+    @override
     async def list_timeseries(
         self,
         project: str,
@@ -701,6 +714,7 @@ class AerovalSqliteDB(AerovalDB):
             result.append(uri)
         return result
 
+    @override
     def rm_experiment_data(self, project: str, experiment: str) -> None:
         cur = self._con.cursor()
         for table in [
@@ -735,6 +749,7 @@ class AerovalSqliteDB(AerovalDB):
             )
 
     @async_and_sync
+    @override
     async def get_report_image(
         self,
         project: str,
@@ -777,6 +792,7 @@ class AerovalSqliteDB(AerovalDB):
             )
 
     @async_and_sync
+    @override
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
         cur = self._con.cursor()
 
@@ -793,6 +809,7 @@ class AerovalSqliteDB(AerovalDB):
         self._con.commit()
 
     @async_and_sync
+    @override
     async def get_map_overlay(
         self,
         project: str,
@@ -839,6 +856,7 @@ class AerovalSqliteDB(AerovalDB):
             )
 
     @async_and_sync
+    @override
     async def put_map_overlay(
         self,
         obj,
@@ -863,6 +881,7 @@ class AerovalSqliteDB(AerovalDB):
         self._con.commit()
 
     @async_and_sync
+    @override
     async def get_contour(
         self,
         project: str,
@@ -920,6 +939,7 @@ class AerovalSqliteDB(AerovalDB):
         raise FileNotFoundError
 
     @async_and_sync
+    @override
     async def put_contour(
         self,
         obj,

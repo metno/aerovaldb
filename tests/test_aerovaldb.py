@@ -44,6 +44,9 @@ TESTDB_PARAMETRIZATION = pytest.mark.parametrize(
     ),
 )
 
+IMPLEMENTATION_PARAMETRIZATION = pytest.mark.parametrize(
+    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
+)
 GET_PARAMETRIZATION = pytest.mark.parametrize(
     "fun,args,kwargs,expected",
     (
@@ -357,9 +360,7 @@ def test_getter_json_str(testdb: str, fun: str, args: list, kwargs: dict, expect
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
-)
+@IMPLEMENTATION_PARAMETRIZATION
 @PUT_PARAMETRIZATION
 async def test_setters(dbtype: str, fun: str, args: list, kwargs: dict, tmpdb):
     """
@@ -383,9 +384,7 @@ async def test_setters(dbtype: str, fun: str, args: list, kwargs: dict, tmpdb):
         assert data["data"] == expected
 
 
-@pytest.mark.parametrize(
-    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
-)
+@IMPLEMENTATION_PARAMETRIZATION
 @PUT_PARAMETRIZATION
 def test_setters_sync(fun: str, args: list, kwargs: dict, tmpdb):
     """
@@ -409,9 +408,7 @@ def test_setters_sync(fun: str, args: list, kwargs: dict, tmpdb):
         assert data["data"] == expected
 
 
-@pytest.mark.parametrize(
-    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
-)
+@IMPLEMENTATION_PARAMETRIZATION
 @PUT_PARAMETRIZATION
 def test_setters_json_str(fun: str, args: list, kwargs: dict, tmpdb):
     with tmpdb as db:
@@ -431,17 +428,7 @@ def test_setters_json_str(fun: str, args: list, kwargs: dict, tmpdb):
         assert data["data"] == expected
 
 
-@pytest.mark.parametrize(
-    "dbtype",
-    (
-        pytest.param(
-            "json_files",
-        ),
-        pytest.param(
-            "sqlitedb",
-        ),
-    ),
-)
+@IMPLEMENTATION_PARAMETRIZATION
 def test_write_and_read_of_nan(tmpdb):
     with tmpdb as db:
         data = dict(value=float("nan"))
@@ -522,9 +509,7 @@ def test_list_timeseries(testdb):
         assert len(list(timeseries)) == 1
 
 
-@pytest.mark.parametrize(
-    "dbtype", (pytest.param("json_files"), pytest.param("sqlitedb"))
-)
+@IMPLEMENTATION_PARAMETRIZATION
 def test_rm_experiment_data(tmpdb):
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         copy_db_contents(db, tmpdb)
@@ -559,17 +544,7 @@ def test_get_report_image(testdb, sub_path: str):
         assert len(blob) > 0
 
 
-@pytest.mark.parametrize(
-    "dbtype",
-    (
-        pytest.param(
-            "json_files",
-        ),
-        pytest.param(
-            "sqlitedb",
-        ),
-    ),
-)
+@IMPLEMENTATION_PARAMETRIZATION
 def test_put_report_image(tmpdb):
     with open("tests/test-db/json/reports/project/experiment/img/pixel.png", "rb") as f:
         data = f.read()
@@ -583,17 +558,7 @@ def test_put_report_image(tmpdb):
     assert len(blob) > 0
 
 
-@pytest.mark.parametrize(
-    "dbtype",
-    (
-        pytest.param(
-            "json_files",
-        ),
-        pytest.param(
-            "sqlitedb",
-        ),
-    ),
-)
+@IMPLEMENTATION_PARAMETRIZATION
 def test_serialize_set(tmpdb):
     with tmpdb as db:
         db.put_config({"set": {"a", "b", "c"}}, "test", "test")
@@ -643,17 +608,7 @@ def test_get_map_overlay(testdb):
         assert filetype.guess_extension(data) == "png"
 
 
-@pytest.mark.parametrize(
-    "dbtype",
-    (
-        pytest.param(
-            "json_files",
-        ),
-        pytest.param(
-            "sqlitedb",
-        ),
-    ),
-)
+@IMPLEMENTATION_PARAMETRIZATION
 @pytest.mark.parametrize(
     "expected_extension",
     (

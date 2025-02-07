@@ -1,12 +1,15 @@
 import logging
 import os
+import sys
 from abc import ABC, abstractmethod
 from collections import defaultdict, deque
 from pathlib import Path
 from typing import Hashable, TypedDict
 
-from ..utils.compat import override
-
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 logger = logging.getLogger(__name__)
 
 
