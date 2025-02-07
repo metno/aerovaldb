@@ -44,3 +44,40 @@ def filter_heatmap(data, region: str, time: str, **kwargs):
                                 ][region] = {time: region_data[time]}
 
     return filtered_data
+
+
+def filter_contour(data, timestep: str | None = None, **kwargs):
+    if timestep == None:
+        return data
+
+    return data[timestep]
+
+
+def filter_map(data, frequency: str | None = None, season: str | None = None, **kwargs):
+    if all([x is None for x in [frequency, season]]):
+        return data
+
+    if all([isinstance(x, str) for x in [frequency, season]]):
+        keys_to_keep = {
+            "station_name",
+            "latitude",
+            "longitude",
+            "altitude",
+            "region",
+            frequency,
+        }
+        for item in data:
+            for k1 in list(item.keys()):
+                if k1 not in keys_to_keep:
+                    del item[k1]
+                    continue
+
+                for k2 in list(item[frequency].keys()):
+                    if k2 != season:
+                        del item[frequency][k2]
+
+        return data
+
+    raise ValueError(
+        f"frequency and season must either both be None, or both be provided. Got {[frequency, season]}"
+    )

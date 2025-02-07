@@ -1,6 +1,3 @@
-import datetime
-import os
-
 import pytest
 
 import aerovaldb
@@ -16,14 +13,6 @@ def test_jsonfiledb__get_uri_for_file(tmp_path):
         )
 
 
-def test_jsonfiledb_invalid_parameter_values():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        with pytest.raises(ValueError) as e:
-            db.get_config("/%&/())()", "test")
-
-        assert "is not a valid file name component" in str(e.value)
-
-
 def test_with_symlink():
     with aerovaldb.open("json_files:./tests/test-db/json") as db:
         data = db.get_config("linked-json-project", "experiment")
@@ -31,46 +20,20 @@ def test_with_symlink():
         assert data["path"] == "link"
 
 
-def test_get_map_overlay():
-    with aerovaldb.open("json_files:./tests/test-db/json") as db:
-        path = db.get_map_overlay(
-            "project",
-            "experiment",
-            "source",
-            "variable",
-            "date",
-            access_type=aerovaldb.AccessType.FILE_PATH,
-        )
-
-        assert os.path.exists(path)
-
-
-def test_put_map_overlay(tmp_path):
-    # http://www.libpng.org/pub/png/spec/1.2/PNG-Structure.html#PNG-file-signature
-    PNG_FILE_SIGNATURE = bytes([137, 80, 78, 71, 13, 10, 26, 10])
+def test_put_map_overlay_extension_guess_error(tmp_path):
     with aerovaldb.open(f"json_files:{str(tmp_path)}") as db:
-        db.put_map_overlay(
-            PNG_FILE_SIGNATURE, "project", "experiment", "source", "variable", "date"
-        )
+        db: AerovalJsonFileDB
 
-        path: str = db.get_map_overlay(
-            "project",
-            "experiment",
-            "source",
-            "variable",
-            "date",
-            access_type=aerovaldb.AccessType.FILE_PATH,
-        )
-        assert os.path.exists(path)
-        assert path.endswith(".png")
+        with pytest.raises(ValueError) as e:
+            db.put_map_overlay(
+                # Just a random hex sequence that doesn't match any known file headers
+                # of filetype library.
+                bytes.fromhex("6192d0f95dcbe642"),
+                "project",
+                "experiment",
+                "source",
+                "variable",
+                "date",
+            )
 
-        read_bytes = db.get_map_overlay(
-            "project",
-            "experiment",
-            "source",
-            "variable",
-            "date",
-            access_type=aerovaldb.AccessType.BLOB,
-        )
-
-        assert read_bytes == PNG_FILE_SIGNATURE
+        assert "Could not guess image file extension" in str(e.value)

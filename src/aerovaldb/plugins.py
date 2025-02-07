@@ -49,15 +49,14 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
     """Open an AerovalDB instance, sending args and kwargs
     directly to the `AervoalDB()` function
 
-    :param resource: the resource-identifier for the database. The resource can be
-        - 'entrypoint:path', with entrypoint being the type of database connection
-        (eg. 'json_files' or 'sqlitedb') being the location where the database is
-        located (eg. 'json_files:.')
-
-        - 'path', a path to a json_files folder or sqlite file.
-
+    :param resource: the resource-name for the database. The resource can be
+        - 'entrypoint:path', with path being the location where the database should be generated
+        (eg. 'json_files:.')
+        - 'path', being a json_files dabasase (for example, '.' is equivalent to 'json_files:.')
         - ':memory:' an sqlite in-memory database. Contents are not persistently
         stored!
+    :param use_async : Not used. Should be removed in v0.3.0
+    :return: an implementation-object of AerovalDB openend to a location
 
     Examples
 
@@ -100,4 +99,4 @@ def open(resource, /, use_async: bool = False) -> AerovalDB:
 
     aerodb = list_engines()[name]
 
-    return aerodb(path, use_async=use_async)  # type: ignore
+    return aerodb(path)  # type: ignore

@@ -6,12 +6,15 @@
 # - sqlitedb:   tests/sqlitedb/test_sqlitedb.py
 
 import datetime
+import pathlib
 import random
 
+import filetype
 import pytest
 import simplejson  # type: ignore
 
 import aerovaldb
+import aerovaldb.jsondb
 from aerovaldb.utils.copy import copy_db_contents
 
 
@@ -68,6 +71,18 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             ["project", "experiment", "modvar", "model"],
             None,
             "./project/experiment/contour/",
+        ),
+        (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            {"timestep": "timestep"},
+            "748956457892",
+        ),
+        (
+            "get_contour",
+            ["project", "experiment", "modvar", "model"],
+            {"timestep": "timestep2"},
+            "2758924570298570",
         ),
         (
             "get_timeseries",
@@ -203,6 +218,11 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
             "timeseries",
             ["project", "experiment", "location", "network", "obsvar", "layer"],
             None,
+        ),
+        (
+            "contour",
+            ["project", "experiment", "obsvar", "model"],
+            {"timestep": "timestep"},
         ),
         (
             "timeseries_weekly",
@@ -491,7 +511,7 @@ def test_list_glob_stats(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 47
+        assert len(db.list_all()) == 49
 
 
 @TESTDB_PARAMETRIZATION
@@ -600,3 +620,100 @@ def test_get_experiment_mtime(testdb):
 
             assert isinstance(mtime, datetime.datetime)
             assert mtime.year >= 2024 and mtime < datetime.datetime.now()
+
+
+TEST_IMAGES = {
+    ".webp": pathlib.Path("tests/test_img/test.webp"),
+    ".png": pathlib.Path("tests/test_img/test.png"),
+}
+
+
+@TESTDB_PARAMETRIZATION
+def test_get_map_overlay(testdb):
+    with aerovaldb.open(testdb) as db:
+        data: bytes = db.get_map_overlay(
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+            access_type=aerovaldb.AccessType.BLOB,
+        )
+
+        assert filetype.guess_extension(data) == "png"
+
+
+@pytest.mark.parametrize(
+    "dbtype",
+    (
+        pytest.param(
+            "json_files",
+        ),
+        pytest.param(
+            "sqlitedb",
+        ),
+    ),
+)
+@pytest.mark.parametrize(
+    "expected_extension",
+    (
+        pytest.param(".png", id="png"),
+        pytest.param(".webp", id="webp"),
+    ),
+)
+def test_put_map_overlay(tmpdb, expected_extension: str):
+    with open(TEST_IMAGES[expected_extension], "rb") as f:
+        input_data = f.read()
+
+    with tmpdb as db:
+        db.put_map_overlay(
+            input_data,
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+        )
+
+        data: bytes = db.get_map_overlay(
+            "project",
+            "experiment",
+            "source",
+            "variable",
+            "date",
+            access_type=aerovaldb.AccessType.BLOB,
+        )
+        assert data == input_data
+
+        if isinstance(tmpdb, aerovaldb.jsondb.AerovalJsonFileDB):
+            file_path: str = db.get_map_overlay(
+                "project",
+                "experiment",
+                "source",
+                "variable",
+                "date",
+                access_type=aerovaldb.AccessType.FILE_PATH,
+            )
+            assert file_path.endswith(expected_extension)
+
+
+@TESTDB_PARAMETRIZATION
+def test_get_map_filtering(testdb):
+    with aerovaldb.open(testdb) as db:
+        data = db.get_map(
+            "project",
+            "experiment",
+            "network",
+            "obsvar",
+            "layer",
+            "model",
+            "modvar",
+            "time2",
+            frequency="frequency",
+            season="season",
+        )
+
+    assert "frequency" in data[0]
+    assert not "excluded_frequency" in data[0]
+    assert "season" in data[0]["frequency"]
+    assert not "excluded_season" in data[0]["frequency"]

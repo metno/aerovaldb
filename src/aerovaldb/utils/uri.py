@@ -3,6 +3,43 @@ import urllib
 
 from ..routes import ALL_ROUTES
 
+encode_chars = {"%": "%0", "/": "%1"}
+
+
+def encode_arg(string: str):
+    ls: list[str] = []
+    prev = 0
+    i = 0
+    while i < len(string):
+        if string[i] in encode_chars:
+            ls.append(string[prev:i] + encode_chars.get(string[i]))  # type: ignore
+            prev = i + 1
+        i += 1
+
+    ls.append(string[prev:])
+
+    return "".join(ls)
+
+
+def decode_arg(string: str):
+    ls: list[str] = []
+    prev = 0
+    i = 0
+    while i < len(string):
+        if string[i] != "%":
+            i += 1
+            continue
+
+        for k, v in encode_chars.items():
+            if string[i : (i + 2)] == v:
+                ls.append(string[prev:i] + k)
+                i += 2
+                prev = i
+                break
+    ls.append(string[prev:])
+
+    return "".join(ls)
+
 
 def extract_substitutions(template: str):
     """
@@ -13,11 +50,14 @@ def extract_substitutions(template: str):
     return re.findall(r"\{([a-zA-Z-]*?)\}", template)
 
 
-def parse_formatted_string(template: str, string: str):
+def parse_formatted_string(
+    template: str, string: str, *, force_split: list[str] | None = ["/"]
+):
     """Parse formatted string. Meant to be the inverse of str.format()
 
     :param template: Template string.
     :param string: String to be matched.
+    :param force_split: Optional list of single character strings which will force a break between tokens.
     :raises Exception: If unable to match `s` against template.
     :return: Dict of extracted arguments.
 
@@ -31,6 +71,19 @@ def parse_formatted_string(template: str, string: str):
     >>> parse_formatted_string("{a}/{b}", "test1/test2")
     {'a': 'test1', 'b': 'test2'}
     """
+    if force_split is None:
+        force_split = []
+
+    if any([not isinstance(x, str) for x in force_split]):
+        raise TypeError(
+            f"force_split got elements that aren't string. Got {force_split}."
+        )
+
+    if any([len(x) != 1 for x in force_split]):
+        raise ValueError(
+            f"force_split must be a list of single character strings. Got {force_split}."
+        )
+
     original_string = string
     keywords = extract_substitutions(template)
 
@@ -61,7 +114,10 @@ def parse_formatted_string(template: str, string: str):
                     string[len(ls) :].startswith(next_token)
                 ):
                     char = string[len(ls)]
+                    if char in force_split:
+                        break
                     ls.append(char)
+
                 extr = "".join(ls)
             else:
                 extr = string
@@ -123,15 +179,19 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
             kwargs = {k: v[0] for k, v in kwargs.items()}
 
             for k, v in route_args.items():
-                route_args[k] = v.replace(":", "/")
+                route_args[k] = decode_arg(v)
             for k, v in kwargs.items():
-                kwargs[k] = v.replace(":", "/")
+                kwargs[k] = decode_arg(v)
             return (template, route_args, kwargs)
 
     raise ValueError(f"URI {uri} is not a valid URI.")
 
 
 def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
+    for k, v in route_args.items():
+        route_args[k] = encode_arg(v)
+    for k, v in kwargs.items():
+        kwargs[k] = encode_arg(v)
     uri = route.format(**route_args)
     if kwargs:
         queries = "&".join([f"{k}={v}" for k, v in kwargs.items()])

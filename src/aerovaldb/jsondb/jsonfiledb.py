@@ -28,17 +28,19 @@ from ..utils import (
     parse_formatted_string,
     parse_uri,
     str_to_bool,
-    validate_filename_component,
 )
-from ..utils.filter import filter_heatmap, filter_regional_stats
+from ..utils.filter import filter_heatmap, filter_map, filter_regional_stats
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
-from .cache import JSONLRUCache
+from .cache import CacheMissError, KeyCacheDecorator, LRUFileCache
 
 logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
-    def __init__(self, basedir: str | Path, /, use_async: bool = False):
+    # Timestep template
+    TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
+
+    def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
         :param asyncio Whether to use asynchronous io to read and store files.
@@ -50,8 +52,7 @@ class AerovalJsonFileDB(AerovalDB):
             f"Initializing aerovaldb for '{basedir}' with locking {self._use_real_lock}"
         )
 
-        self._asyncio = use_async
-        self._cache = JSONLRUCache(max_size=64, asyncio=self._asyncio)
+        self._cache = KeyCacheDecorator(LRUFileCache(max_size=64), max_size=512)
 
         self._basedir = os.path.abspath(basedir)
 
@@ -64,8 +65,9 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/contour/overlay/{source}_{variable}_{date}",
+                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
                 ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
@@ -125,7 +127,33 @@ class AerovalJsonFileDB(AerovalDB):
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
             ROUTE_REG_STATS: filter_regional_stats,
             ROUTE_HEATMAP: filter_heatmap,
+            ROUTE_MAP: filter_map,
         }
+
+    def _load_json(
+        self,
+        key,
+        *,
+        access_type: AccessType = AccessType.OBJ,
+        cache: bool = False,
+    ):
+        if access_type in [
+            AccessType.BLOB,
+            AccessType.URI,
+            AccessType.FILE_PATH,
+            AccessType.MTIME,
+            AccessType.CTIME,
+        ]:
+            ValueError(f"Unable to load json with access_type={access_type}.")
+
+        json_str = self._cache.get(key, bypass_cache=not cache)
+        if access_type == AccessType.JSON_STR:
+            return json_str
+
+        elif access_type == AccessType.OBJ:
+            return simplejson.loads(json_str, allow_nan=True)
+
+        raise UnsupportedOperation(f"{access_type}")
 
     @async_and_sync
     @alru_cache(maxsize=2048)
@@ -184,15 +212,12 @@ class AerovalJsonFileDB(AerovalDB):
         route_args,
         **kwargs,
     ):
-        validate_args = kwargs.pop("validate_args", True)
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
         substitutions = route_args | kwargs
-        if validate_args:
-            [validate_filename_component(x) for x in substitutions.values()]
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -201,7 +226,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         relative_path = path_template.format(**substitutions)
 
-        file_path = str(Path(os.path.join(self._basedir, relative_path)))
+        file_path = os.path.join(self._basedir, relative_path)
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
@@ -215,33 +240,39 @@ class AerovalJsonFileDB(AerovalDB):
                     return file_path
             return default
 
-        if access_type in [AccessType.URI]:
-            return build_uri(route, route_args, kwargs)
-
         if filter_func is None:
             if access_type == AccessType.FILE_PATH:
                 return file_path
-
-            if access_type == AccessType.JSON_STR:
-                raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-                return raw
+            if access_type == AccessType.URI:
+                return build_uri(route, route_args, kwargs)
 
             if access_type == AccessType.MTIME:
                 return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
             if access_type == AccessType.CTIME:
                 return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
-            raw = await self._cache.get_json(file_path, no_cache=not use_caching)
-
-            return simplejson.loads(raw, allow_nan=True)
+            return self._load_json(
+                file_path, access_type=access_type, cache=use_caching
+            )
 
         if access_type == AccessType.FILE_PATH:
             raise UnsupportedOperation("Filtered endpoints can not return a filepath")
 
-        json = await self._cache.get_json(file_path, no_cache=not use_caching)
-        obj = simplejson.loads(json, allow_nan=True)
+        if access_type == AccessType.MTIME:
+            return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if access_type == AccessType.CTIME:
+            return datetime.datetime.fromtimestamp(os.path.getctime(file_path))
 
-        obj = filter_func(obj, **filter_vars)
+        filter_params = [kwargs[k] for k in sorted(kwargs.keys())]
+        key = f"{file_path}::{'/'.join(filter_params)}"
+
+        try:
+            obj = self._load_json(key, access_type=AccessType.OBJ, cache=use_caching)
+        except CacheMissError:
+            obj = self._load_json(file_path)
+            obj = filter_func(obj, **filter_vars)
+            if use_caching:
+                self._cache.put(json_dumps_wrapper(obj), key=key)
 
         if access_type == AccessType.OBJ:
             return obj
@@ -258,7 +289,6 @@ class AerovalJsonFileDB(AerovalDB):
         Otherwise it is assumed to be a serializable python object.
         """
         substitutions = route_args | kwargs
-        [validate_filename_component(x) for x in substitutions.values()]
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -363,7 +393,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         _, ext = os.path.splitext(file_path)
 
-        if "/contour/overlay/" in file_path:
+        if "/overlay/" in file_path:
             file_path = str(Path(file_path).parent / Path(file_path).stem)
 
         if file_path.startswith("reports/") and ext.lower() in IMG_FILE_EXTS:
@@ -425,7 +455,7 @@ class AerovalJsonFileDB(AerovalDB):
             except Exception:
                 continue
             else:
-                uri = build_uri(route, route_args, kwargs | {"version": version})
+                uri = build_uri(route, route_args, kwargs | {"version": str(version)})
                 return uri
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
@@ -683,7 +713,6 @@ class AerovalJsonFileDB(AerovalDB):
                     "path": path,
                 },
                 access_type=access_type,
-                validate_args=False,
             )
         file_path = await self._get(
             route=ROUTE_REPORT_IMAGE,
@@ -693,7 +722,6 @@ class AerovalJsonFileDB(AerovalDB):
                 "path": path,
             },
             access_type=AccessType.FILE_PATH,
-            validate_args=False,
         )
         logger.debug(f"Fetching image with path '{file_path}'")
 
@@ -738,24 +766,26 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         for ext in IMG_FILE_EXTS:
-            try:
-                file_path = await self._get(
-                    route=ROUTE_MAP_OVERLAY,
-                    route_args={
-                        "project": project,
-                        "experiment": experiment,
-                        "source": source,
-                        "variable": variable,
-                        "date": date,
-                    },
-                    _raise_file_not_found_error=False,
-                    access_type=AccessType.FILE_PATH,
-                )
-            except FileNotFoundError:
-                pass
+            file_path = await self._get(
+                route=ROUTE_MAP_OVERLAY,
+                route_args={
+                    "project": project,
+                    "experiment": experiment,
+                    "source": source,
+                    "variable": variable,
+                    "date": date,
+                },
+                _raise_file_not_found_error=False,
+                access_type=AccessType.FILE_PATH,
+            )
+
             file_path += ext
             if os.path.exists(file_path):
                 break
+        else:
+            raise FileNotFoundError(
+                f"Overlay for {project}/{experiment}/{source}/{variable}/{date} does not exist."
+            )
 
         logger.debug(f"Fetching image with path '{file_path}'")
 
@@ -803,8 +833,140 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
         ext = filetype.guess_extension(obj)
+        if ext is None:
+            raise ValueError(
+                f"Could not guess image file extension of provided image data starting with '0x{obj[:20].hex()}'."
+            )
         file_path += f".{ext}"
 
         Path(file_path).parent.mkdir(exist_ok=True, parents=True)
         with open(file_path, "wb") as f:
             f.write(obj)
+
+    @async_and_sync
+    async def get_contour(
+        self,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        *args,
+        timestep: str | None = None,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        access_type = self._normalize_access_type(access_type)
+
+        try:
+            file_path = await self._get(
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+                # timestep=timestep,
+                access_type=AccessType.FILE_PATH,
+                cache=True,
+            )
+            try:
+                if timestep is None:
+                    key = file_path
+                else:
+                    key = f"{file_path}::{timestep}"
+
+                result = simplejson.loads(self._cache.get(key), allow_nan=True)
+            except CacheMissError:
+                result = await self._get(
+                    ROUTE_CONTOUR,
+                    {
+                        "project": project,
+                        "experiment": experiment,
+                        "obsvar": obsvar,
+                        "model": model,
+                    },
+                    access_type=AccessType.OBJ,
+                    cache=True,
+                )
+                if timestep is not None:
+                    for t, value in result.items():
+                        self._cache.put(
+                            json_dumps_wrapper(value), key=f"{file_path}::{t}"
+                        )
+                    result = result[timestep]
+        except (FileNotFoundError, KeyError):
+            pass
+        else:
+            if access_type == AccessType.OBJ:
+                return result
+            if access_type == AccessType.JSON_STR:
+                return json_dumps_wrapper(result)
+
+        try:
+            result = await self._get(
+                ROUTE_CONTOUR2,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                    "timestep": timestep,
+                },
+                access_type=access_type,
+                cache=cache,
+            )
+        except FileNotFoundError:
+            pass
+        else:
+            return result
+
+        if default is not None:
+            return default
+
+        raise FileNotFoundError
+
+    @async_and_sync
+    async def put_contour(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        obsvar: str,
+        model: str,
+        /,
+        timestep: str | None = None,
+        *args,
+        **kwargs,
+    ):
+        if timestep is None:
+            logger.warning(
+                "Writing contours without providing timestep is deprecated and will be removed in a future release."
+            )
+
+            await self._put(
+                obj,
+                ROUTE_CONTOUR,
+                {
+                    "project": project,
+                    "experiment": experiment,
+                    "obsvar": obsvar,
+                    "model": model,
+                },
+            )
+            return
+
+        await self._put(
+            obj,
+            ROUTE_CONTOUR2,
+            {
+                "project": project,
+                "experiment": experiment,
+                "obsvar": obsvar,
+                "model": model,
+                "timestep": timestep,
+            },
+        )
