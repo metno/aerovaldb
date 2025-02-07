@@ -56,7 +56,7 @@ Here is the recommended way of doing this:
   - The tmpdb fixture needs to be able to create a guaranteed empty, temporary db instance for your storage format.
   - The TESTDB_PARAMETRIZATION needs to be extended with the resource string matching the test-db created above.
   - The IMPLEMENTATION_PARAMETRIZATION needs to include the identifier for you implementation, so that it matches the tmpdb identifier.
-- `Tweak until all tests are green <https://img.ifunny.co/images/ada63efed0355a1c17aa761d6fdaa6d03ae7862ddccd0c75d1d0ff961c69deb0_1.jpg>``
+- Tweak until all tests are green.
 
 
 
