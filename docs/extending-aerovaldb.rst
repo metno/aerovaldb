@@ -53,11 +53,13 @@ These tests rely on a test database in the data storage format that is being tes
 
 Here is the recommended way of bootstrapping testing for a new implementation:
 
-- Implement :meth:`aerovaldb.AerovalDB.get_by_uri` and :meth:`aerovaldb.AerovalDB.put_by_uri` for your new implementation.
-- Add your implementation to the :code:`tests/utils/test_copy.py`` test and verify that it passes.
-- Use :meth:`aerovaldb.utils.copy.copy_db_contents` to make a version of the test database in your new storage format.
-- Add your implementation to the :code:`tests/test_aerovaldb.py` tests. To do this, the following changes need to be made:
-  - The :code:`tmpdb` fixture needs to be able to create a guaranteed empty, temporary db instance for your storage format.
-  - The :code:`TESTDB_PARAMETRIZATION` needs to be extended with the resource string matching the test-db created above.
-  - The :code:`IMPLEMENTATION_PARAMETRIZATION`` needs to include the identifier for you implementation, so that it matches the tmpdb identifier.
-- Tweak until all tests are green.
+* Implement :meth:`aerovaldb.AerovalDB.get_by_uri` and :meth:`aerovaldb.AerovalDB.put_by_uri` for your new implementation.
+* Add your implementation to the :code:`tests/utils/test_copy.py`` test and verify that it passes.
+* Use :meth:`aerovaldb.utils.copy.copy_db_contents` to make a version of the test database in your new storage format.
+* Add your implementation to the :code:`tests/test_aerovaldb.py` tests. To do this, the following changes need to be made:
+   
+   * The :code:`tmpdb` fixture needs to be able to create a guaranteed empty, temporary db instance for your storage format.
+   * The :code:`TESTDB_PARAMETRIZATION` needs to be extended with the resource string matching the test-db created above.
+   * The :code:`IMPLEMENTATION_PARAMETRIZATION`` needs to include the identifier for you implementation, so that it matches the tmpdb identifier.
+
+* Tweak until all tests are green.
