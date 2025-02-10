@@ -662,9 +662,9 @@ class AerovalJsonFileDB(AerovalDB):
         await self._put(obj, route, route_args, **kwargs)
 
     def _get_lock_file(self) -> str:
-        os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
+        os.makedirs(os.path.expanduser("~/.aerovaldb/lock/"), exist_ok=True)
         lock_file = os.path.join(
-            os.environ.get("AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/.lock/")),
+            os.environ.get("AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/lock/")),
             md5(self._basedir.encode()).hexdigest(),
         )
         return lock_file
