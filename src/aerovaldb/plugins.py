@@ -46,14 +46,15 @@ def list_engines() -> dict[str, AerovalDB]:
 
 
 def open(resource, /, use_async: bool = False) -> AerovalDB:
-    """open an AerovalDB directly, sending args and kwargs
+    """Open an AerovalDB instance, sending args and kwargs
     directly to the `AervoalDB()` function
 
     :param resource: the resource-name for the database. The resource can be
         - 'entrypoint:path', with path being the location where the database should be generated
         (eg. 'json_files:.')
-        - 'path', with path containing either an aerovaldb.cfg (Not yet implemented) configuration
-        or path being a json_files dabasase (for example, '.' is equivalent to 'json_files:.')
+        - 'path', being a json_files dabasase (for example, '.' is equivalent to 'json_files:.')
+        - ':memory:' an sqlite in-memory database. Contents are not persistently
+        stored!
     :param use_async : Not used. Should be removed in v0.3.0
     :return: an implementation-object of AerovalDB openend to a location
 

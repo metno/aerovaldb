@@ -163,3 +163,5 @@ cython_debug/
 tests/test-db/tmp
 .mutmut-cache
 XX~/
+
+playground/

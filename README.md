@@ -32,8 +32,12 @@ Our documentation can be found [here](https://aerovaldb.readthedocs.io/)
 9. To be discussed: do we want to allow the programmer to set open-modes, e.g. 'r', 'rw', 'w'?
 
 ## Installation
-`python -m pip install 'aerovaldb@git+https://github.com/metno/aerovaldb.git'`
 
+The most recent stable version of aerovaldb can be installed from pypi like this:
+- `pip install aerovaldb`
+
+Development versions can be installed directly from Github like this:
+`pip install 'aerovaldb@git+https://github.com/metno/aerovaldb.git'`
 
 ## Usage
 
@@ -97,7 +101,7 @@ with aerovaldb.open('json_files:path/to/data/') as db:
 
 ## COPYRIGHT
 
-Copyright (C) 2024  Augustin Mortier, Thorbjørn Lunding, Heiko Klein, Norwegian Meteorological Institute
+Copyright (C) 2024  Augustin Mortier, Thorbjørn Lundin, Heiko Klein, Norwegian Meteorological Institute
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public

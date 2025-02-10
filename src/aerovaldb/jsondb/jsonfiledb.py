@@ -4,6 +4,7 @@ import importlib.metadata
 import logging
 import os
 import shutil
+import sys
 from hashlib import md5
 from pathlib import Path
 from typing import Any, Awaitable, Callable
@@ -32,6 +33,11 @@ from ..utils import (
 from ..utils.filter import filter_heatmap, filter_map, filter_regional_stats
 from ..utils.string_mapper import StringMapper, VersionConstraintMapper
 from .cache import CacheMissError, KeyCacheDecorator, LRUFileCache
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
@@ -206,6 +212,7 @@ class AerovalJsonFileDB(AerovalDB):
         """
         return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
+    @override
     async def _get(
         self,
         route,
@@ -282,6 +289,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         raise UnsupportedOperation
 
+    @override
     async def _put(self, obj, route, route_args, **kwargs):
         """Jsondb implemention of database put operation.
 
@@ -306,6 +314,7 @@ class AerovalJsonFileDB(AerovalDB):
         with open(file_path, "w") as f:
             f.write(json)
 
+    @override
     def rm_experiment_data(self, project: str, experiment: str) -> None:
         """Deletes ALL data associated with an experiment.
 
@@ -321,6 +330,7 @@ class AerovalJsonFileDB(AerovalDB):
             shutil.rmtree(exp_dir)
 
     @async_and_sync
+    @override
     async def get_regional_stats(
         self,
         project: str,
@@ -352,6 +362,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
+    @override
     async def get_heatmap(
         self,
         project: str,
@@ -461,6 +472,7 @@ class AerovalJsonFileDB(AerovalDB):
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
     @async_and_sync
+    @override
     async def list_glob_stats(
         self,
         project: str,
@@ -497,6 +509,7 @@ class AerovalJsonFileDB(AerovalDB):
         return result
 
     @async_and_sync
+    @override
     async def list_timeseries(
         self,
         project: str,
@@ -538,6 +551,7 @@ class AerovalJsonFileDB(AerovalDB):
         return result
 
     @async_and_sync
+    @override
     async def list_map(
         self,
         project: str,
@@ -581,6 +595,7 @@ class AerovalJsonFileDB(AerovalDB):
         return result
 
     @async_and_sync
+    @override
     async def get_by_uri(
         self,
         uri: str,
@@ -623,6 +638,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
+    @override
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
 
@@ -646,9 +662,9 @@ class AerovalJsonFileDB(AerovalDB):
         await self._put(obj, route, route_args, **kwargs)
 
     def _get_lock_file(self) -> str:
-        os.makedirs(os.path.expanduser("~/.aerovaldb/.lock/"), exist_ok=True)
+        os.makedirs(os.path.expanduser("~/.aerovaldb/lock/"), exist_ok=True)
         lock_file = os.path.join(
-            os.environ.get("AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/.lock/")),
+            os.environ.get("AVDB_LOCK_DIR", os.path.expanduser("~/.aerovaldb/lock/")),
             md5(self._basedir.encode()).hexdigest(),
         )
         return lock_file
@@ -660,6 +676,7 @@ class AerovalJsonFileDB(AerovalDB):
         return FakeLock()
 
     @async_and_sync
+    @override
     async def list_all(self, access_type: str | AccessType = AccessType.URI):
         access_type = self._normalize_access_type(access_type)
 
@@ -685,6 +702,7 @@ class AerovalJsonFileDB(AerovalDB):
         return result
 
     @async_and_sync
+    @override
     async def get_report_image(
         self,
         project: str,
@@ -732,6 +750,7 @@ class AerovalJsonFileDB(AerovalDB):
             return f.read()
 
     @async_and_sync
+    @override
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
         template = await self._get_template(ROUTE_REPORT_IMAGE, {})
 
@@ -744,6 +763,7 @@ class AerovalJsonFileDB(AerovalDB):
             f.write(obj)
 
     @async_and_sync
+    @override
     async def get_map_overlay(
         self,
         project: str,
@@ -801,6 +821,7 @@ class AerovalJsonFileDB(AerovalDB):
             return f.read()
 
     @async_and_sync
+    @override
     async def put_map_overlay(
         self,
         obj,
@@ -844,6 +865,7 @@ class AerovalJsonFileDB(AerovalDB):
             f.write(obj)
 
     @async_and_sync
+    @override
     async def get_contour(
         self,
         project: str,
@@ -930,6 +952,7 @@ class AerovalJsonFileDB(AerovalDB):
         raise FileNotFoundError
 
     @async_and_sync
+    @override
     async def put_contour(
         self,
         obj,
