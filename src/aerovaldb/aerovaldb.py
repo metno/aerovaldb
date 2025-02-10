@@ -496,7 +496,7 @@ class AerovalDB(abc.ABC):
         :param access_type: How the data is to be retrieved (See AccessType for details)
         :param cache: Whether to use cache for this read.
         :param default: Default value that will be returned instead of raising FileNotFoundError
-            if not data was found (Will be returned as is and not converted to match access_type).
+            if no data was found (Will be returned as is and not converted to match access_type).
 
         :return: The fetched data.
         """
@@ -1163,10 +1163,10 @@ class AerovalDB(abc.ABC):
     ):
         """Gets a stored object by its URI.
 
-        :param uri : URI of the item to fetch.
-        :param access_type : See AccessType.
-        :param cache : Whether to use the cache.
-        :param default : If provided, this value will be returned instead of raising
+        :param uri: URI of the item to fetch.
+        :param access_type: See AccessType.
+        :param cache: Whether to use the cache.
+        :param default: If provided, this value will be returned instead of raising
             a FileNotFoundError if not file exists. The provided object will be returned
             as is, and will not be converted to match access_type.
 
