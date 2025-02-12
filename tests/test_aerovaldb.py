@@ -72,12 +72,6 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
         (
             "get_contour",
             ["project", "experiment", "modvar", "model"],
-            None,
-            "./project/experiment/contour/",
-        ),
-        (
-            "get_contour",
-            ["project", "experiment", "modvar", "model"],
             {"timestep": "timestep"},
             "748956457892",
         ),
@@ -216,7 +210,6 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
     "fun,args,kwargs",
     (
         ("glob_stats", ["project", "experiment", "frequency"], None),
-        ("contour", ["project", "experiment", "obsvar", "model"], None),
         (
             "timeseries",
             ["project", "experiment", "location", "network", "obsvar", "layer"],

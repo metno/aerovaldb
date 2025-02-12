@@ -874,7 +874,7 @@ class AerovalJsonFileDB(AerovalDB):
         model: str,
         /,
         *args,
-        timestep: str | None = None,
+        timestep: str,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,
