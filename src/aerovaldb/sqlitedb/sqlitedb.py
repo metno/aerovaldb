@@ -622,6 +622,7 @@ class AerovalSqliteDB(AerovalDB):
         )
         return lock_file
 
+    @override
     def lock(self):
         if self._use_real_lock:
             return FileLock(self._get_lock_file())

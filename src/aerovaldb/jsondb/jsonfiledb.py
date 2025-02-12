@@ -9,7 +9,7 @@ from hashlib import md5
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
-import filetype
+import filetype  # type: ignore
 import simplejson  # type: ignore
 from async_lru import alru_cache
 from packaging.version import Version
@@ -668,6 +668,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
         return lock_file
 
+    @override
     def lock(self):
         if self._use_real_lock:
             return FileLock(self._get_lock_file())

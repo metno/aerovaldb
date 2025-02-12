@@ -151,6 +151,7 @@ class LRUFileCache(BaseCache):
         self._miss_count = 0
 
     @property
+    @override
     def hit_count(self) -> int:
         """Returns the number of cache hits since the last `invalidate_all()` call.
 
@@ -161,11 +162,13 @@ class LRUFileCache(BaseCache):
         return self._hit_count
 
     @property
+    @override
     def size(self) -> int:
         """Returns the current size of the cache in terms of number of elements."""
         return self._queue.size
 
     @property
+    @override
     def miss_count(self) -> int:
         """Returns the number of cache misses since the last `invalidate_all()` call.
 

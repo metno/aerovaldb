@@ -1,8 +1,14 @@
 import logging
+import sys
 from abc import ABC
 from typing import Awaitable, Callable, Mapping
 
 from packaging.version import Version
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +149,7 @@ class VersionConstraintMapper(Mapper):
 
         self.template = template
 
+    @override
     async def __call__(self, *args, **kwargs) -> str:
         version_provider = kwargs.pop("version_provider")
         version = await version_provider(kwargs["project"], kwargs["experiment"])
@@ -192,6 +199,7 @@ class PriorityMapper(Mapper):
                 self.templates.append(k)
                 self.match.append(v)
 
+    @override
     async def __call__(self, *args, **kwargs) -> str:
         selected_template = None
         for t, m in zip(self.templates, self.match):
@@ -212,5 +220,6 @@ class ConstantMapper(Mapper):
     def __init__(self, template: str):
         self.template = template
 
+    @override
     async def __call__(self, *args, **kwargs) -> str:
         return self.template
