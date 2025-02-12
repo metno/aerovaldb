@@ -312,7 +312,7 @@ async def test_getter(testdb: str, fun: str, args: list, kwargs: dict, expected)
     """
     This test tests that data is read as expected from a static, fixed database.
     """
-    with aerovaldb.open(testdb, use_async=True) as db:
+    with aerovaldb.open(testdb) as db:
         f = getattr(db, fun)
 
         if kwargs is not None:
@@ -326,7 +326,7 @@ async def test_getter(testdb: str, fun: str, args: list, kwargs: dict, expected)
 @TESTDB_PARAMETRIZATION
 @GET_PARAMETRIZATION
 def test_getter_sync(testdb: str, fun: str, args: list, kwargs: dict, expected):
-    with aerovaldb.open(testdb, use_async=False) as db:
+    with aerovaldb.open(testdb) as db:
         f = getattr(db, fun)
 
         if kwargs is not None:
@@ -340,7 +340,7 @@ def test_getter_sync(testdb: str, fun: str, args: list, kwargs: dict, expected):
 @TESTDB_PARAMETRIZATION
 @GET_PARAMETRIZATION
 def test_getter_json_str(testdb: str, fun: str, args: list, kwargs: dict, expected):
-    with aerovaldb.open(testdb, use_async=False) as db:
+    with aerovaldb.open(testdb) as db:
         f = getattr(db, fun)
 
         if kwargs is not None:

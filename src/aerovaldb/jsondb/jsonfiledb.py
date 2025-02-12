@@ -49,7 +49,6 @@ class AerovalJsonFileDB(AerovalDB):
     def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
-        :param asyncio Whether to use asynchronous io to read and store files.
         """
         self._use_real_lock = str_to_bool(
             os.environ.get("AVDB_USE_LOCKING", ""), default=False
