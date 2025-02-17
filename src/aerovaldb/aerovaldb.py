@@ -6,7 +6,7 @@ import inspect
 from aerovaldb.utils.query import QueryResult
 
 from .routes import *
-from .types import AccessType
+from .types import AccessType, AssetType
 from .utils import async_and_sync
 
 
@@ -1330,3 +1330,15 @@ class AerovalDB(abc.ABC):
         """
         uri = await self.get_config(project, experiment, access_type=AccessType.URI)
         return await self.get_by_uri(uri, access_type=AccessType.MTIME)
+
+    @async_and_sync
+    async def query(self, asset_type: AssetType | set[AssetType]) -> QueryResult:
+        """Query function for getting information about assets
+        stored in the db.
+
+        :param asset_type: Enum of the type of asset to query (Can be a set).
+
+        :return: A QueryResult object that contains URIs and information about
+        the queried files.
+        """
+        raise NotImplementedError

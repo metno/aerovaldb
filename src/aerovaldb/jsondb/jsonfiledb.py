@@ -605,6 +605,7 @@ class AerovalJsonFileDB(AerovalDB):
         return FakeLock()
 
     @async_and_sync
+    @override
     async def query(self, asset_type: AssetType | set[AssetType]) -> QueryResult:
         if isinstance(asset_type, AssetType):
             asset_type = set([asset_type])
