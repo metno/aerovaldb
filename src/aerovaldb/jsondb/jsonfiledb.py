@@ -21,6 +21,7 @@ from aerovaldb.types import AccessType
 from ..exceptions import UnsupportedOperation
 from ..lock import FakeLock, FileLock
 from ..routes import *
+from ..types import AssetType
 from ..utils import (
     async_and_sync,
     build_uri,
@@ -38,6 +39,8 @@ if sys.version_info >= (3, 12):
     from typing import override
 else:
     from typing_extensions import override
+
+from ..utils.query import QueryEntry, QueryResult
 
 logger = logging.getLogger(__name__)
 
@@ -391,7 +394,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
-    async def _get_uri_for_file(self, file_path: str) -> str:
+    async def _get_query_entry_for_file(self, file_path: str) -> QueryEntry:
         """
         For the provided data file path, returns the corresponding
         URI.
@@ -419,7 +422,11 @@ class AerovalJsonFileDB(AerovalDB):
                 {"project": project, "experiment": experiment, "path": path},
                 {},
             )
-            return uri
+            return QueryEntry(
+                uri,
+                AssetType(ROUTE_REPORT_IMAGE),
+                {"project": project, "experiment": experiment, "path": path},
+            )
 
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
@@ -462,11 +469,11 @@ class AerovalJsonFileDB(AerovalDB):
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
                 }
-            except Exception:
+            except Exception as e:
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return uri
+                return QueryEntry(uri, AssetType(route), route_args)
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
@@ -476,36 +483,14 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    await self._get_template(
-                        ROUTE_GLOB_STATS, {"project": project, "experiment": experiment}
-                    ),  # type: ignore
-                )
-            )
+        return QueryResult(
+            [
+                e
+                for e in (await self.query(AssetType.GLOB_STATS))._result
+                if e.args["project"] == project and e.args["experiment"] == experiment
+            ]
         )
-        glb = template.replace("{frequency}", "*")
-
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -513,41 +498,14 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    await self._get_template(
-                        ROUTE_TIMESERIES,
-                        {"project": project, "experiment": experiment},
-                    ),  # type: ignore
-                )
-            )
+        return QueryResult(
+            [
+                e
+                for e in (await self.query(AssetType.TIMESERIES))._result
+                if e.args["project"] == project and e.args["experiment"] == experiment
+            ]
         )
-        glb = (
-            template.replace("{location}", "*")
-            .replace("{network}", "*")
-            .replace("{obsvar}", "*")
-            .replace("{layer}", "*")
-        )
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -555,43 +513,14 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    self._get_template(
-                        ROUTE_MAP,
-                        {"project": project, "experiment": experiment},
-                    ),  # type: ignore
-                )
-            )
+        return QueryResult(
+            [
+                e
+                for e in (await self.query(AssetType.MAP))._result
+                if e.args["project"] == project and e.args["experiment"] == experiment
+            ]
         )
-        glb = (
-            template.replace("{network}", "*")
-            .replace("{obsvar}", "*")
-            .replace("{layer}", "*")
-            .replace("{model}", "*")
-            .replace("{modvar}", "*")
-            .replace("{time}", "*")
-        )
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -676,30 +605,33 @@ class AerovalJsonFileDB(AerovalDB):
         return FakeLock()
 
     @async_and_sync
-    @override
-    async def list_all(self, access_type: str | AccessType = AccessType.URI):
-        access_type = self._normalize_access_type(access_type)
+    async def query(self, asset_type: AssetType | set[AssetType]) -> QueryResult:
+        if isinstance(asset_type, AssetType):
+            asset_type = set([asset_type])
 
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            UnsupportedOperation(f"Accesstype {access_type} not supported.")
-
-        glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
+        glb = glob.iglob(
+            os.path.join(glob.escape(self._basedir), "./**"), recursive=True
+        )
 
         result = []
         for f in glb:
             if os.path.isfile(f):
-                if access_type == AccessType.FILE_PATH:
-                    result.append(f)
-                    continue
-
                 try:
-                    uri = await self._get_uri_for_file(f)
+                    entry = await self._get_query_entry_for_file(f)
                 except (ValueError, KeyError):
                     continue
                 else:
-                    result.append(uri)
+                    if entry.type in asset_type:
+                        result.append(entry)
 
-        return result
+        return QueryResult(result)
+
+    @async_and_sync
+    @override
+    async def list_all(self):
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        all_asset_types = [AssetType(x) for x in ALL_ROUTES]
+        return await self.query(all_asset_types)
 
     @async_and_sync
     @override

@@ -3,6 +3,8 @@ import datetime
 import functools
 import inspect
 
+from aerovaldb.utils.query import QueryResult
+
 from .routes import *
 from .types import AccessType
 from .utils import async_and_sync
@@ -218,9 +220,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryResult]:
         """Lists the URI for each glob_stats object.
 
         :param project: str
@@ -355,9 +355,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryResult]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -791,8 +789,6 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ) -> list[str]:
         """Lists all map files for a given project / experiment combination.
 
