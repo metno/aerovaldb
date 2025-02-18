@@ -481,12 +481,9 @@ class AerovalJsonFileDB(AerovalDB):
         project: str,
         experiment: str,
     ):
-        return QueryResult(
-            [
-                e
-                for e in (await self.query(AssetType.GLOB_STATS))._result
-                if e.args["project"] == project and e.args["experiment"] == experiment
-            ]
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(
+            AssetType.GLOB_STATS, project=project, experiment=experiment
         )
 
     @async_and_sync
@@ -496,12 +493,9 @@ class AerovalJsonFileDB(AerovalDB):
         project: str,
         experiment: str,
     ):
-        return QueryResult(
-            [
-                e
-                for e in (await self.query(AssetType.TIMESERIES))._result
-                if e.args["project"] == project and e.args["experiment"] == experiment
-            ]
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(
+            AssetType.TIMESERIES, project=project, experiment=experiment
         )
 
     @async_and_sync
@@ -511,13 +505,8 @@ class AerovalJsonFileDB(AerovalDB):
         project: str,
         experiment: str,
     ):
-        return QueryResult(
-            [
-                e
-                for e in (await self.query(AssetType.MAP))._result
-                if e.args["project"] == project and e.args["experiment"] == experiment
-            ]
-        )
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(AssetType.MAP, project=project, experiment=experiment)
 
     @async_and_sync
     @override
@@ -603,7 +592,12 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @override
-    async def query(self, asset_type: AssetType | set[AssetType]) -> QueryResult:
+    async def query(
+        self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
+    ) -> QueryResult:
+        if asset_type is None:
+            asset_type = set([AssetType(x) for x in ALL_ROUTES])
+
         if isinstance(asset_type, AssetType):
             asset_type = set([asset_type])
 
@@ -620,7 +614,8 @@ class AerovalJsonFileDB(AerovalDB):
                     continue
                 else:
                     if entry.type in asset_type:
-                        result.append(entry)
+                        if all(entry.args[k] == v for k, v in kwargs.items()):
+                            result.append(entry)
 
         return QueryResult(result)
 
@@ -628,8 +623,7 @@ class AerovalJsonFileDB(AerovalDB):
     @override
     async def list_all(self):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
-        all_asset_types = [AssetType(x) for x in ALL_ROUTES]
-        return await self.query(all_asset_types)
+        return await self.query()
 
     @async_and_sync
     @override
