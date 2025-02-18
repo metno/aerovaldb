@@ -46,9 +46,6 @@ logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
-    # Timestep template
-    TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
-
     def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
@@ -416,7 +413,7 @@ class AerovalJsonFileDB(AerovalDB):
             split = file_path.split("/")
             project = split[1]
             experiment = split[2]
-            path = ":".join(split[3:])
+            path = "/".join(split[3:])
             uri = build_uri(
                 ROUTE_REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},

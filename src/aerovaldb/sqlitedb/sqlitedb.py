@@ -604,13 +604,7 @@ class AerovalSqliteDB(AerovalDB):
                     else:
                         kwargs[k] = r[k]
 
-                if route == ROUTE_REPORT_IMAGE:
-                    for k, v in route_args.items():
-                        route_args[k] = v.replace("/", ":")
-
-                    uri = build_uri(route, route_args, kwargs)
-                else:
-                    uri = build_uri(route, route_args, kwargs)
+                uri = build_uri(route, route_args, kwargs)
                 result.append(uri)
         return result
 
