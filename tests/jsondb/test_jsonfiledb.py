@@ -37,3 +37,23 @@ def test_put_map_overlay_extension_guess_error(tmp_path):
             )
 
         assert "Could not guess image file extension" in str(e.value)
+
+
+def test_get_uri_with_dashes(tmp_path):
+    with aerovaldb.open(f"json_files:{tmp_path}") as db:
+        db.put_map(
+            {},
+            "project",
+            "experiment",
+            "AERONET-Sun",
+            "od550aer",
+            "Column",
+            "TM5-AP3-CTRL",
+            "od550aer",
+            "2010",
+        )
+
+        assert (
+            db.list_all()[0]
+            == "/v0/map/project/experiment/AERONET-Sun/od550aer/Column/TM5-AP3-CTRL/od550aer?version=0.0.1"
+        )

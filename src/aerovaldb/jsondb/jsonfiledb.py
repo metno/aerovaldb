@@ -39,6 +39,8 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
+from .backwards_compatibility import *
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,8 +75,26 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
-                ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_TIMESERIES_WEEKLY: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.26.0",
+                    ),
+                ],
+                ROUTE_TIMESERIES: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.26.0",
+                    ),
+                ],
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
                 ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
                 ROUTE_MENU: "./{project}/{experiment}/menu.json",
@@ -486,6 +506,22 @@ class AerovalJsonFileDB(AerovalDB):
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
                 }
+                if route == ROUTE_MAP:
+                    route_args, kwargs = post_process_maps_args_kwargs(
+                        route_args, kwargs
+                    )
+                elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
+                    route_args, kwargs = post_process_timeseries_args_kwargs(
+                        route_args, kwargs
+                    )
+                elif route == ROUTE_HEATMAP_TIMESERIES:
+                    route_args, kwargs = post_process_heatmap_ts_args_kwargs(
+                        route_args, kwargs, version=version
+                    )
+                elif route == ROUTE_FORECAST:
+                    route_args, kwargs = post_process_forecast_args_kwargs(
+                        route_args, kwargs
+                    )
             except Exception:
                 continue
             else:
