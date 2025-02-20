@@ -3,8 +3,10 @@ import datetime
 import functools
 import inspect
 
+from aerovaldb.utils.query import QueryResult
+
 from .routes import *
-from .types import AccessType
+from .types import AccessType, AssetType
 from .utils import async_and_sync
 
 
@@ -218,9 +220,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryResult]:
         """Lists the URI for each glob_stats object.
 
         :param project: str
@@ -355,9 +355,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryResult]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -791,8 +789,6 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ) -> list[str]:
         """Lists all map files for a given project / experiment combination.
 
@@ -1334,3 +1330,21 @@ class AerovalDB(abc.ABC):
         """
         uri = await self.get_config(project, experiment, access_type=AccessType.URI)
         return await self.get_by_uri(uri, access_type=AccessType.MTIME)
+
+    @async_and_sync
+    async def query(
+        self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
+    ) -> QueryResult:
+        """Query function for getting information about assets
+        stored in the db.
+
+        :param asset_type: Enum of the type of asset to query (Can be a set). By default, all asset types
+        will be included.
+        :param kwargs: Optional additional filter arguments. Will be matched against QueryEntry.args.
+        All provided keys must match. For possible keys see function signature of the getter for which
+        you want to match.
+
+        :return: A QueryResult object that contains URIs and information about
+        the queried files.
+        """
+        raise NotImplementedError

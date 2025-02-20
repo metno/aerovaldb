@@ -21,6 +21,7 @@ from aerovaldb.types import AccessType
 from ..exceptions import UnsupportedOperation
 from ..lock import FakeLock, FileLock
 from ..routes import *
+from ..types import AssetType
 from ..utils import (
     async_and_sync,
     build_uri,
@@ -39,15 +40,13 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
+from ..utils.query import QueryEntry, QueryResult
 from .backwards_compatibility import *
 
 logger = logging.getLogger(__name__)
 
 
 class AerovalJsonFileDB(AerovalDB):
-    # Timestep template
-    TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
-
     def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
@@ -435,7 +434,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
-    async def _get_uri_for_file(self, file_path: str) -> str:
+    async def _get_query_entry_for_file(self, file_path: str) -> QueryEntry:
         """
         For the provided data file path, returns the corresponding
         URI.
@@ -457,13 +456,17 @@ class AerovalJsonFileDB(AerovalDB):
             split = file_path.split("/")
             project = split[1]
             experiment = split[2]
-            path = ":".join(split[3:])
+            path = "/".join(split[3:])
             uri = build_uri(
                 ROUTE_REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
                 {},
             )
-            return uri
+            return QueryEntry(
+                uri,
+                AssetType(ROUTE_REPORT_IMAGE),
+                {"project": project, "experiment": experiment, "path": path},
+            )
 
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
@@ -526,7 +529,7 @@ class AerovalJsonFileDB(AerovalDB):
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return uri
+                return QueryEntry(uri, AssetType(route), route_args)
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
@@ -536,36 +539,11 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    await self._get_template(
-                        ROUTE_GLOB_STATS, {"project": project, "experiment": experiment}
-                    ),  # type: ignore
-                )
-            )
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(
+            AssetType.GLOB_STATS, project=project, experiment=experiment
         )
-        glb = template.replace("{frequency}", "*")
-
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -573,41 +551,11 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    await self._get_template(
-                        ROUTE_TIMESERIES,
-                        {"project": project, "experiment": experiment},
-                    ),  # type: ignore
-                )
-            )
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(
+            AssetType.TIMESERIES, project=project, experiment=experiment
         )
-        glb = (
-            template.replace("{location}", "*")
-            .replace("{network}", "*")
-            .replace("{obsvar}", "*")
-            .replace("{layer}", "*")
-        )
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -615,43 +563,9 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    self._get_template(
-                        ROUTE_MAP,
-                        {"project": project, "experiment": experiment},
-                    ),  # type: ignore
-                )
-            )
-        )
-        glb = (
-            template.replace("{network}", "*")
-            .replace("{obsvar}", "*")
-            .replace("{layer}", "*")
-            .replace("{model}", "*")
-            .replace("{modvar}", "*")
-            .replace("{time}", "*")
-        )
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(AssetType.MAP, project=project, experiment=experiment)
 
     @async_and_sync
     @override
@@ -737,29 +651,38 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @override
-    async def list_all(self, access_type: str | AccessType = AccessType.URI):
-        access_type = self._normalize_access_type(access_type)
+    async def query(
+        self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
+    ) -> QueryResult:
+        if asset_type is None:
+            asset_type = set([AssetType(x) for x in ALL_ROUTES])
 
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            UnsupportedOperation(f"Accesstype {access_type} not supported.")
+        if isinstance(asset_type, AssetType):
+            asset_type = set([asset_type])
 
-        glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
+        glb = glob.iglob(
+            os.path.join(glob.escape(self._basedir), "./**"), recursive=True
+        )
 
         result = []
         for f in glb:
             if os.path.isfile(f):
-                if access_type == AccessType.FILE_PATH:
-                    result.append(f)
-                    continue
-
                 try:
-                    uri = await self._get_uri_for_file(f)
+                    entry = await self._get_query_entry_for_file(f)
                 except (ValueError, KeyError):
                     continue
                 else:
-                    result.append(uri)
+                    if entry.type in asset_type:
+                        if all(entry.args[k] == v for k, v in kwargs.items()):
+                            result.append(entry)
 
-        return result
+        return QueryResult(result)
+
+    @async_and_sync
+    @override
+    async def list_all(self):
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query()
 
     @async_and_sync
     @override

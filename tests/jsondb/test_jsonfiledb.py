@@ -9,7 +9,7 @@ def test_jsonfiledb__get_uri_for_file(tmp_path):
     with aerovaldb.open(f"json_files:{str(tmp_path)}") as db:
         db: AerovalJsonFileDB
         assert (
-            db._get_uri_for_file(str(tmp_path / "project/experiments.json"))
+            db._get_query_entry_for_file(str(tmp_path / "project/experiments.json")).uri
             == "/v0/experiments/project?version=0.0.1"
         )
 

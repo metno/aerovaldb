@@ -3,7 +3,7 @@ import urllib
 
 from ..routes import ALL_ROUTES
 
-encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
+encode_chars = {"%": "%0", "/": "%1", "_": "%2", "&": "%3"}
 
 
 def encode_arg(string: str):
@@ -166,7 +166,7 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
                 continue
             else:
                 for k, v in route_args.items():
-                    route_args[k] = v.replace(":", "/")
+                    route_args[k] = decode_arg(v)
                 return (template, route_args, dict())
 
         elif len(split) == 2:
