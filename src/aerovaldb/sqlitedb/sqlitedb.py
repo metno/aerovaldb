@@ -622,6 +622,7 @@ class AerovalSqliteDB(AerovalDB):
         )
         return lock_file
 
+    @override
     def lock(self):
         if self._use_real_lock:
             return FileLock(self._get_lock_file())
@@ -890,7 +891,7 @@ class AerovalSqliteDB(AerovalDB):
         model: str,
         /,
         *args,
-        timestep: str | None = None,
+        timestep: str,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,
@@ -948,7 +949,7 @@ class AerovalSqliteDB(AerovalDB):
         obsvar: str,
         model: str,
         /,
-        timestep: str | None = None,
+        timestep: str,
         *args,
         **kwargs,
     ):

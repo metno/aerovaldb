@@ -2,9 +2,15 @@ import asyncio
 import fcntl
 import logging
 import pathlib
+import sys
 from abc import ABC, abstractmethod
 
 from ..utils import has_async_loop, run_until_finished
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +63,15 @@ class FakeLock(AerovaldbLock):
         logger.debug("Initializing FAKE lock")
         self.acquire()
 
+    @override
     def acquire(self):
         self._acquired = True
 
+    @override
     def release(self):
         self._acquired = False
 
+    @override
     def is_locked(self) -> bool:
         return self._acquired
 
@@ -75,6 +84,7 @@ class FileLock(AerovaldbLock):
         self._aiolock = asyncio.Lock()
         self.acquire()
 
+    @override
     def acquire(self):
         logger.debug("Acquiring lock with lockfile %s", self._lock_file)
 
@@ -84,6 +94,7 @@ class FileLock(AerovaldbLock):
         fcntl.lockf(self._lock_handle, fcntl.LOCK_EX)
         self._acquired = True
 
+    @override
     def release(self):
         logger.debug("Releasing lock with lockfile %s", self._lock_file)
 
@@ -92,5 +103,6 @@ class FileLock(AerovaldbLock):
         if self._aiolock.locked():
             self._aiolock.release()
 
+    @override
     def is_locked(self) -> bool:
         return self._acquired

@@ -9,7 +9,7 @@ from hashlib import md5
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
-import filetype
+import filetype  # type: ignore
 import simplejson  # type: ignore
 from async_lru import alru_cache
 from packaging.version import Version
@@ -49,7 +49,6 @@ class AerovalJsonFileDB(AerovalDB):
     def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
-        :param asyncio Whether to use asynchronous io to read and store files.
         """
         self._use_real_lock = str_to_bool(
             os.environ.get("AVDB_USE_LOCKING", ""), default=False
@@ -669,6 +668,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
         return lock_file
 
+    @override
     def lock(self):
         if self._use_real_lock:
             return FileLock(self._get_lock_file())
@@ -874,7 +874,7 @@ class AerovalJsonFileDB(AerovalDB):
         model: str,
         /,
         *args,
-        timestep: str | None = None,
+        timestep: str,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
         default=None,
