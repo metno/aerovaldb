@@ -81,5 +81,5 @@ def test_get_uri_with_underscore_region(tmp_path, mocker):
 
         assert (
             db.list_all()[0]
-            == "/v0/hm_ts/project/experiment?region=some_region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0"
+            == "/v0/hm_ts/project/experiment?region=some%2region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0"
         )
