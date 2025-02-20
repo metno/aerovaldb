@@ -3,7 +3,7 @@ import urllib
 
 from ..routes import ALL_ROUTES
 
-encode_chars = {"%": "%0", "/": "%1"}
+encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
 
 
 def encode_arg(string: str):
