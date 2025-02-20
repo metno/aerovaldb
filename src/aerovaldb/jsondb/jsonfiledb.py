@@ -512,7 +512,7 @@ class AerovalJsonFileDB(AerovalDB):
                     )
                 elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
                     route_args, kwargs = post_process_timeseries_args_kwargs(
-                        route_args, kwargs
+                        route_args, kwargs, version=version
                     )
                 elif route == ROUTE_HEATMAP_TIMESERIES:
                     route_args, kwargs = post_process_heatmap_ts_args_kwargs(
