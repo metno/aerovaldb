@@ -66,7 +66,26 @@ def test_get_uri_with_dashes(tmp_path, mocker):
         )
 
 
-def test_get_uri_with_underscore_region(tmp_path, mocker):
+def test_get_uri_with_underscore_region1(tmp_path, mocker):
+    mocker.patch.object(AerovalJsonFileDB, "_get_version", mock_version_provider)
+    with aerovaldb.open(f"json_files:{tmp_path}") as db:
+        db.put_timeseries(
+            {},
+            "project",
+            "experiment",
+            "Amsterdam_Island",
+            "AERONET-Sun",
+            "od550aer",
+            "Column",
+        )
+
+        assert (
+            db.list_all()[0]
+            == "/v0/ts/project/experiment/Amsterdam%2Island/AERONET-Sun/od550aer/Column?version=0.25.0"
+        )
+
+
+def test_get_uri_with_underscore_region2(tmp_path, mocker):
     mocker.patch.object(AerovalJsonFileDB, "_get_version", mock_version_provider)
     with aerovaldb.open(f"json_files:{tmp_path}") as db:
         db.put_heatmap_timeseries(

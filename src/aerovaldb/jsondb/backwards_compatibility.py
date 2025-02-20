@@ -26,13 +26,22 @@ def post_process_maps_args_kwargs(
 
 
 def post_process_timeseries_args_kwargs(
-    args: dict[str, str], kwargs: dict[str, str]
+    args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
+    if version >= Version("0.26.0"):
+        return args, kwargs
+
     if "-" in args["obsvar"]:
         splt = args["obsvar"].split("-")
         args["obsvar"] = splt[-1]
 
         args["network"] = args["network"] + f"-{'-'.join(splt[:-1])}"
+
+    if "_" in args["network"]:
+        splt = args["network"].split("_")
+        args["network"] = splt[-1]
+
+        args["location"] = args["location"] + f"_{'_'.join(splt[:-1])}"
 
     return args, kwargs
 
