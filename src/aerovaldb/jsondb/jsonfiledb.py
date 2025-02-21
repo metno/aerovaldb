@@ -77,21 +77,21 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_TIMESERIES_WEEKLY: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.26.0",
+                        min_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.26.0",
+                        max_version="0.28.0.dev0",
                     ),
                 ],
                 ROUTE_TIMESERIES: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.26.0",
+                        min_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.26.0",
+                        max_version="0.28.0.dev0",
                     ),
                 ],
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
@@ -107,12 +107,12 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_MAP: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
-                        min_version="0.26.0",
+                        min_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
-                        max_version="0.26.0",
+                        max_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -122,12 +122,12 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_SCATTER: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
-                        min_version="0.26.0",
+                        min_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
-                        max_version="0.26.0",
+                        max_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -138,12 +138,12 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_HEATMAP_TIMESERIES: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.26.0",
+                        min_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                         min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
-                        max_version="0.26.0",
+                        max_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
@@ -158,11 +158,11 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_FORECAST: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.26.0",
+                        min_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.26.0",
+                        max_version="0.28.0.dev0",
                     ),
                 ],
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
@@ -304,8 +304,10 @@ class AerovalJsonFileDB(AerovalDB):
                 file_path, access_type=access_type, cache=use_caching
             )
 
+        # TODO: Changed for testing purposes.
         if access_type == AccessType.FILE_PATH:
-            raise UnsupportedOperation("Filtered endpoints can not return a filepath")
+            return file_path
+        #    raise UnsupportedOperation("Filtered endpoints can not return a filepath")
 
         if access_type == AccessType.MTIME:
             return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
@@ -978,3 +980,12 @@ class AerovalJsonFileDB(AerovalDB):
                 "timestep": timestep,
             },
         )
+
+    @async_and_sync
+    @override
+    async def rm_by_uri(self, uri: str):
+        file_path = await self.get_by_uri(str(uri), access_type=AccessType.FILE_PATH)
+        logger.debug("Removing file '%s'.", file_path)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)

@@ -28,7 +28,10 @@ def post_process_maps_args_kwargs(
 def post_process_timeseries_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if version >= Version("0.26.0"):
+    if version >= Version("0.28.0.dev0"):
+        splt = "_".join([args["location"], args["network"]]).split("_")
+        args["location"] = "_".join(splt[:-1])
+        args["network"] = splt[-1]
         return args, kwargs
 
     if "-" in args["obsvar"]:
@@ -61,7 +64,7 @@ def post_process_scatter_args_kwargs(
 def post_process_heatmap_ts_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if version >= Version("0.26.0"):
+    if version >= Version("0.28.0.dev0"):
         return args, kwargs
     if version <= Version("0.12.2"):
         return args, kwargs
