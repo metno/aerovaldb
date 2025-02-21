@@ -40,7 +40,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
-from ..utils.query import QueryEntry, QueryResult
+from ..utils.query import QueryEntry
 from .backwards_compatibility import *
 
 logger = logging.getLogger(__name__)
@@ -653,7 +653,7 @@ class AerovalJsonFileDB(AerovalDB):
     @override
     async def query(
         self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
-    ) -> QueryResult:
+    ) -> list[QueryEntry]:
         if asset_type is None:
             asset_type = set([AssetType(x) for x in ALL_ROUTES])
 
@@ -673,10 +673,10 @@ class AerovalJsonFileDB(AerovalDB):
                     continue
                 else:
                     if entry.type in asset_type:
-                        if all(entry.args[k] == v for k, v in kwargs.items()):
+                        if all(entry.meta[k] == v for k, v in kwargs.items()):
                             result.append(entry)
 
-        return QueryResult(result)
+        return result
 
     @async_and_sync
     @override

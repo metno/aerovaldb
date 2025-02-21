@@ -3,7 +3,7 @@ import datetime
 import functools
 import inspect
 
-from aerovaldb.utils.query import QueryResult
+from aerovaldb.utils.query import QueryEntry
 
 from .routes import *
 from .types import AccessType, AssetType
@@ -220,7 +220,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-    ) -> list[QueryResult]:
+    ) -> list[QueryEntry]:
         """Lists the URI for each glob_stats object.
 
         :param project: str
@@ -355,7 +355,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-    ) -> list[QueryResult]:
+    ) -> list[QueryEntry]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -1334,7 +1334,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     async def query(
         self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
-    ) -> QueryResult:
+    ) -> list[QueryEntry]:
         """Query function for getting information about assets
         stored in the db.
 
@@ -1344,7 +1344,7 @@ class AerovalDB(abc.ABC):
         All provided keys must match. For possible keys see function signature of the getter for which
         you want to match.
 
-        :return: A QueryResult object that contains URIs and information about
+        :return: A list of QueryEntry objects that contains URIs and information about
         the queried files.
         """
         raise NotImplementedError
