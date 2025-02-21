@@ -502,9 +502,6 @@ class AerovalJsonFileDB(AerovalDB):
 
             try:
                 all_args = parse_formatted_string(template, f"./{file_path}")  # type: ignore
-                for k, v in all_args.items():
-                    all_args[k] = v.replace("/", ":")
-
                 route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
@@ -529,7 +526,7 @@ class AerovalJsonFileDB(AerovalDB):
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return QueryEntry(uri, AssetType(route), route_args)
+                return QueryEntry(uri, AssetType(route), route_args | kwargs)
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
