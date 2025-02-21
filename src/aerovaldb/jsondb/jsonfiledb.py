@@ -7,7 +7,7 @@ import shutil
 import sys
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Iterable
 
 import filetype  # type: ignore
 import simplejson  # type: ignore
@@ -652,13 +652,18 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     @override
     async def query(
-        self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
+        self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
     ) -> list[QueryEntry]:
         if asset_type is None:
             asset_type = set([AssetType(x) for x in ALL_ROUTES])
-
-        if isinstance(asset_type, AssetType):
+        elif isinstance(asset_type, AssetType):
             asset_type = set([asset_type])
+        elif isinstance(asset_type, Iterable):
+            asset_type = set(asset_type)
+        else:
+            raise TypeError(
+                f"Expected AssetType | Iterable[AssetType]. Got {type(asset_type)}"
+            )
 
         glb = glob.iglob(
             os.path.join(glob.escape(self._basedir), "./**"), recursive=True

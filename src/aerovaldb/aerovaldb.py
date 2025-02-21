@@ -2,6 +2,7 @@ import abc
 import datetime
 import functools
 import inspect
+from typing import Iterable
 
 from aerovaldb.utils.query import QueryEntry
 
@@ -1333,18 +1334,31 @@ class AerovalDB(abc.ABC):
 
     @async_and_sync
     async def query(
-        self, asset_type: AssetType | set[AssetType] | None = None, **kwargs
+        self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
     ) -> list[QueryEntry]:
         """Query function for getting information about assets
         stored in the db.
 
-        :param asset_type: Enum of the type of asset to query (Can be a set). By default, all asset types
-        will be included.
-        :param kwargs: Optional additional filter arguments. Will be matched against QueryEntry.args.
+        :param asset_type: Enum of the type of asset to query (Can be an iterable of multiple types). By default,
+        all asset types will be included.
+        :param kwargs: Optional additional filter arguments. Will be matched against QueryEntry.meta.
         All provided keys must match. For possible keys see function signature of the getter for which
         you want to match.
 
-        :return: A list of QueryEntry objects that contains URIs and information about
+        :return: A list of QueryEntry objects that contains the URI and information about
         the queried files.
+
+        Example:
+        >>> import tempfile
+        >>> import aerovaldb
+        >>>
+        >>> with tempfile.TemporaryDirectory() as dir:
+        ...     with aerovaldb.open(f"json_files:{dir}") as db:
+        ...         db.put_experiments({}, "project1")
+        ...         db.put_experiments({}, "project2")
+        ...         db.query(aerovaldb.AssetType.EXPERIMENTS, project="project1")
+        ...         db.query(aerovaldb.AssetType.EXPERIMENTS, project="project1")[0].meta
+        ['/v0/experiments/project1?version=0.0.1']
+        {'project': 'project1'}
         """
         raise NotImplementedError
