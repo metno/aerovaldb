@@ -23,6 +23,8 @@ def post_process_args(
         )
     elif route == ROUTE_FORECAST:
         args, kwargs = _post_process_forecast_args_kwargs(args, kwargs)
+    elif route == ROUTE_SCATTER:
+        args, kwargs = _post_process_scatter_args_kwargs(args, kwargs)
     return args, kwargs
 
 
