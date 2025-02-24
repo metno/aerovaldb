@@ -39,7 +39,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
-from .backwards_compatibility import *
+from .backwards_compatibility import post_process_args
 
 logger = logging.getLogger(__name__)
 
@@ -506,22 +506,25 @@ class AerovalJsonFileDB(AerovalDB):
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
                 }
-                if route == ROUTE_MAP:
-                    route_args, kwargs = post_process_maps_args_kwargs(
-                        route_args, kwargs
-                    )
-                elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
-                    route_args, kwargs = post_process_timeseries_args_kwargs(
-                        route_args, kwargs, version=version
-                    )
-                elif route == ROUTE_HEATMAP_TIMESERIES:
-                    route_args, kwargs = post_process_heatmap_ts_args_kwargs(
-                        route_args, kwargs, version=version
-                    )
-                elif route == ROUTE_FORECAST:
-                    route_args, kwargs = post_process_forecast_args_kwargs(
-                        route_args, kwargs
-                    )
+                route_args, kwargs = post_process_args(
+                    route, route_args, kwargs, version=version
+                )
+                # if route == ROUTE_MAP:
+                #     route_args, kwargs = post_process_maps_args_kwargs(
+                #         route_args, kwargs
+                #     )
+                # elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
+                #     route_args, kwargs = post_process_timeseries_args_kwargs(
+                #         route_args, kwargs, version=version
+                #     )
+                # elif route == ROUTE_HEATMAP_TIMESERIES:
+                #     route_args, kwargs = post_process_heatmap_ts_args_kwargs(
+                #         route_args, kwargs, version=version
+                #     )
+                # elif route == ROUTE_FORECAST:
+                #     route_args, kwargs = post_process_forecast_args_kwargs(
+                #         route_args, kwargs
+                #     )
             except Exception:
                 continue
             else:
