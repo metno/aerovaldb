@@ -2,43 +2,17 @@ import re
 import urllib
 
 from ..routes import ALL_ROUTES
+from .encode import decode_str, encode_str
 
 encode_chars = {"%": "%0", "/": "%1", "&": "%3"}
 
 
 def encode_arg(string: str):
-    ls: list[str] = []
-    prev = 0
-    i = 0
-    while i < len(string):
-        if string[i] in encode_chars:
-            ls.append(string[prev:i] + encode_chars.get(string[i]))  # type: ignore
-            prev = i + 1
-        i += 1
-
-    ls.append(string[prev:])
-
-    return "".join(ls)
+    return encode_str(string, encode_chars=encode_chars)
 
 
 def decode_arg(string: str):
-    ls: list[str] = []
-    prev = 0
-    i = 0
-    while i < len(string):
-        if string[i] != "%":
-            i += 1
-            continue
-
-        for k, v in encode_chars.items():
-            if string[i : (i + 2)] == v:
-                ls.append(string[prev:i] + k)
-                i += 2
-                prev = i
-                break
-    ls.append(string[prev:])
-
-    return "".join(ls)
+    return decode_str(string, encode_chars=encode_chars)
 
 
 def extract_substitutions(template: str):

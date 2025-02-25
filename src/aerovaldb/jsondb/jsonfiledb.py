@@ -40,10 +40,22 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
+from ..utils.encode import decode_str, encode_str
 from ..utils.query import QueryEntry
 from .backwards_compatibility import *
 
 logger = logging.getLogger(__name__)
+
+
+class _LiteralArg(str):
+    """Custom string instance that behaves identical to a regular string.
+    It is only used in internal isinstance checks to decide whether to
+    apply character encoding to a provided arg when constructing a file
+    name. This is in order to allow for args which represent a path to
+    contain a '/' character which is normally encoded.
+    """
+
+    pass
 
 
 class AerovalJsonFileDB(AerovalDB):
@@ -266,7 +278,12 @@ class AerovalJsonFileDB(AerovalDB):
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
-        substitutions = route_args | kwargs
+        substitutions = {
+            k: v
+            if isinstance(v, _LiteralArg)
+            else encode_str(v, encode_chars={"%": "%0", "/": "%1", "_": "%2"})
+            for k, v in (route_args | kwargs).items()
+        }
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -340,7 +357,12 @@ class AerovalJsonFileDB(AerovalDB):
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        substitutions = route_args | kwargs
+        substitutions = {
+            k: v
+            if isinstance(v, _LiteralArg)
+            else encode_str(v, encode_chars={"%": "%0", "/": "%1", "_": "%2"})
+            for k, v in (route_args | kwargs).items()
+        }
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -443,6 +465,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         :param file_path : The file_path.
         """
+        encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
@@ -461,7 +484,11 @@ class AerovalJsonFileDB(AerovalDB):
             path = "/".join(split[3:])
             uri = build_uri(
                 ROUTE_REPORT_IMAGE,
-                {"project": project, "experiment": experiment, "path": path},
+                {
+                    "project": decode_str(project, encode_chars=encode_chars),
+                    "experiment": decode_str(experiment, encode_chars=encode_chars),
+                    "path": path,
+                },
                 {},
             )
             return QueryEntry(
@@ -524,6 +551,14 @@ class AerovalJsonFileDB(AerovalDB):
                     route_args, kwargs = post_process_forecast_args_kwargs(
                         route_args, kwargs
                     )
+                route_args = {
+                    k: decode_str(v, encode_chars=encode_chars)
+                    for k, v in route_args.items()
+                }
+                kwargs = {
+                    k: decode_str(v, encode_chars=encode_chars)
+                    for k, v in kwargs.items()
+                }
             except Exception:
                 continue
             else:
@@ -586,7 +621,7 @@ class AerovalJsonFileDB(AerovalDB):
             return await self.get_report_image(
                 route_args["project"],
                 route_args["experiment"],
-                route_args["path"],
+                route_args["path"].replace("%1", "/"),
                 access_type=access_type,
             )
 
@@ -715,7 +750,7 @@ class AerovalJsonFileDB(AerovalDB):
                 route_args={
                     "project": project,
                     "experiment": experiment,
-                    "path": path,
+                    "path": _LiteralArg(path),
                 },
                 access_type=access_type,
             )
@@ -724,7 +759,7 @@ class AerovalJsonFileDB(AerovalDB):
             route_args={
                 "project": project,
                 "experiment": experiment,
-                "path": path,
+                "path": _LiteralArg(path),
             },
             access_type=AccessType.FILE_PATH,
         )
