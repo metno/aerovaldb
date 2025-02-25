@@ -7,7 +7,7 @@ import shutil
 import sys
 from hashlib import md5
 from pathlib import Path
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Iterable
 
 import filetype  # type: ignore
 import simplejson  # type: ignore
@@ -21,6 +21,7 @@ from aerovaldb.types import AccessType
 from ..exceptions import UnsupportedOperation
 from ..lock import FakeLock, FileLock
 from ..routes import *
+from ..types import AssetType
 from ..utils import (
     async_and_sync,
     build_uri,
@@ -39,13 +40,25 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
+from ..utils.encode import decode_str, encode_str
+from ..utils.query import QueryEntry
+from .backwards_compatibility import *
+
 logger = logging.getLogger(__name__)
 
 
-class AerovalJsonFileDB(AerovalDB):
-    # Timestep template
-    TIMESTEP_TEMPLATE = "{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson"
+class _LiteralArg(str):
+    """Custom string instance that behaves identical to a regular string.
+    It is only used in internal isinstance checks to decide whether to
+    apply character encoding to a provided arg when constructing a file
+    name. This is in order to allow for args which represent a path to
+    contain a '/' character which is normally encoded.
+    """
 
+    pass
+
+
+class AerovalJsonFileDB(AerovalDB):
     def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
@@ -73,8 +86,26 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
-                ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_TIMESERIES_WEEKLY: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.28.0.dev0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.28.0.dev0",
+                    ),
+                ],
+                ROUTE_TIMESERIES: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.28.0.dev0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.28.0.dev0",
+                    ),
+                ],
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
                 ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
                 ROUTE_MENU: "./{project}/{experiment}/menu.json",
@@ -87,8 +118,13 @@ class AerovalJsonFileDB(AerovalDB):
                 ],
                 ROUTE_MAP: [
                     VersionConstraintMapper(
+                        "./{project}/{experiment}/map/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
+                        min_version="0.28.0.dev0",
+                    ),
+                    VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
+                        max_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -97,8 +133,13 @@ class AerovalJsonFileDB(AerovalDB):
                 ],
                 ROUTE_SCATTER: [
                     VersionConstraintMapper(
+                        "./{project}/{experiment}/scat/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
+                        min_version="0.28.0.dev0",
+                    ),
+                    VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
+                        max_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -108,8 +149,13 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_PROFILES: "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
                 ROUTE_HEATMAP_TIMESERIES: [
                     VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/{region}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.28.0.dev0",
+                    ),
+                    VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                         min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                        max_version="0.28.0.dev0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
@@ -121,7 +167,16 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.12.2",
                     ),
                 ],
-                ROUTE_FORECAST: "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                ROUTE_FORECAST: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/forecast/{region}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.28.0.dev0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.28.0.dev0",
+                    ),
+                ],
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
                 ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
@@ -223,7 +278,12 @@ class AerovalJsonFileDB(AerovalDB):
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
-        substitutions = route_args | kwargs
+        substitutions = {
+            k: v
+            if isinstance(v, _LiteralArg)
+            else encode_str(v, encode_chars={"%": "%0", "/": "%1", "_": "%2"})
+            for k, v in (route_args | kwargs).items()
+        }
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -261,8 +321,10 @@ class AerovalJsonFileDB(AerovalDB):
                 file_path, access_type=access_type, cache=use_caching
             )
 
+        # TODO: Changed for testing purposes.
         if access_type == AccessType.FILE_PATH:
-            raise UnsupportedOperation("Filtered endpoints can not return a filepath")
+            return file_path
+        #    raise UnsupportedOperation("Filtered endpoints can not return a filepath")
 
         if access_type == AccessType.MTIME:
             return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
@@ -295,7 +357,12 @@ class AerovalJsonFileDB(AerovalDB):
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        substitutions = route_args | kwargs
+        substitutions = {
+            k: v
+            if isinstance(v, _LiteralArg)
+            else encode_str(v, encode_chars={"%": "%0", "/": "%1", "_": "%2"})
+            for k, v in (route_args | kwargs).items()
+        }
 
         path_template = await self._get_template(route, substitutions)
         relative_path = path_template.format(**substitutions)
@@ -391,13 +458,14 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
-    async def _get_uri_for_file(self, file_path: str) -> str:
+    async def _get_query_entry_for_file(self, file_path: str) -> QueryEntry:
         """
         For the provided data file path, returns the corresponding
         URI.
 
         :param file_path : The file_path.
         """
+        encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
@@ -413,13 +481,21 @@ class AerovalJsonFileDB(AerovalDB):
             split = file_path.split("/")
             project = split[1]
             experiment = split[2]
-            path = ":".join(split[3:])
+            path = "/".join(split[3:])
             uri = build_uri(
                 ROUTE_REPORT_IMAGE,
-                {"project": project, "experiment": experiment, "path": path},
+                {
+                    "project": decode_str(project, encode_chars=encode_chars),
+                    "experiment": decode_str(experiment, encode_chars=encode_chars),
+                    "path": path,
+                },
                 {},
             )
-            return uri
+            return QueryEntry(
+                uri,
+                AssetType(ROUTE_REPORT_IMAGE),
+                {"project": project, "experiment": experiment, "path": path},
+            )
 
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == ROUTE_MODELS_STYLE):
@@ -455,18 +531,39 @@ class AerovalJsonFileDB(AerovalDB):
 
             try:
                 all_args = parse_formatted_string(template, f"./{file_path}")  # type: ignore
-                for k, v in all_args.items():
-                    all_args[k] = v.replace("/", ":")
-
                 route_args = {k: v for k, v in all_args.items() if k in route_arg_names}
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
+                }
+                if route == ROUTE_MAP:
+                    route_args, kwargs = post_process_maps_args_kwargs(
+                        route_args, kwargs
+                    )
+                elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
+                    route_args, kwargs = post_process_timeseries_args_kwargs(
+                        route_args, kwargs, version=version
+                    )
+                elif route == ROUTE_HEATMAP_TIMESERIES:
+                    route_args, kwargs = post_process_heatmap_ts_args_kwargs(
+                        route_args, kwargs, version=version
+                    )
+                elif route == ROUTE_FORECAST:
+                    route_args, kwargs = post_process_forecast_args_kwargs(
+                        route_args, kwargs
+                    )
+                route_args = {
+                    k: decode_str(v, encode_chars=encode_chars)
+                    for k, v in route_args.items()
+                }
+                kwargs = {
+                    k: decode_str(v, encode_chars=encode_chars)
+                    for k, v in kwargs.items()
                 }
             except Exception:
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return uri
+                return QueryEntry(uri, AssetType(route), route_args | kwargs)
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
@@ -476,36 +573,11 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    await self._get_template(
-                        ROUTE_GLOB_STATS, {"project": project, "experiment": experiment}
-                    ),  # type: ignore
-                )
-            )
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(
+            AssetType.GLOB_STATS, project=project, experiment=experiment
         )
-        glb = template.replace("{frequency}", "*")
-
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -513,41 +585,11 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    await self._get_template(
-                        ROUTE_TIMESERIES,
-                        {"project": project, "experiment": experiment},
-                    ),  # type: ignore
-                )
-            )
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(
+            AssetType.TIMESERIES, project=project, experiment=experiment
         )
-        glb = (
-            template.replace("{location}", "*")
-            .replace("{network}", "*")
-            .replace("{obsvar}", "*")
-            .replace("{layer}", "*")
-        )
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
 
     @async_and_sync
     @override
@@ -555,43 +597,9 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ):
-        access_type = self._normalize_access_type(access_type)
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            raise UnsupportedOperation(f"Unsupported accesstype, {access_type}")
-
-        template = str(
-            os.path.abspath(
-                os.path.join(
-                    self._basedir,
-                    self._get_template(
-                        ROUTE_MAP,
-                        {"project": project, "experiment": experiment},
-                    ),  # type: ignore
-                )
-            )
-        )
-        glb = (
-            template.replace("{network}", "*")
-            .replace("{obsvar}", "*")
-            .replace("{layer}", "*")
-            .replace("{model}", "*")
-            .replace("{modvar}", "*")
-            .replace("{time}", "*")
-        )
-        glb = glb.format(project=project, experiment=experiment)
-
-        result = []
-        for f in glob.glob(glb):
-            if access_type == AccessType.FILE_PATH:
-                result.append(f)
-                continue
-
-            result.append(await self._get_uri_for_file(f))
-
-        return result
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query(AssetType.MAP, project=project, experiment=experiment)
 
     @async_and_sync
     @override
@@ -613,7 +621,7 @@ class AerovalJsonFileDB(AerovalDB):
             return await self.get_report_image(
                 route_args["project"],
                 route_args["experiment"],
-                route_args["path"],
+                route_args["path"].replace("%1", "/"),
                 access_type=access_type,
             )
 
@@ -677,29 +685,43 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @override
-    async def list_all(self, access_type: str | AccessType = AccessType.URI):
-        access_type = self._normalize_access_type(access_type)
+    async def query(
+        self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
+    ) -> list[QueryEntry]:
+        if asset_type is None:
+            asset_type = set([AssetType(x) for x in ALL_ROUTES])
+        elif isinstance(asset_type, AssetType):
+            asset_type = set([asset_type])
+        elif isinstance(asset_type, Iterable):
+            asset_type = set(asset_type)
+        else:
+            raise TypeError(
+                f"Expected AssetType | Iterable[AssetType]. Got {type(asset_type)}"
+            )
 
-        if access_type in [AccessType.OBJ, AccessType.JSON_STR]:
-            UnsupportedOperation(f"Accesstype {access_type} not supported.")
-
-        glb = glob.iglob(os.path.join(self._basedir, "./**"), recursive=True)
+        glb = glob.iglob(
+            os.path.join(glob.escape(self._basedir), "./**"), recursive=True
+        )
 
         result = []
         for f in glb:
             if os.path.isfile(f):
-                if access_type == AccessType.FILE_PATH:
-                    result.append(f)
-                    continue
-
                 try:
-                    uri = await self._get_uri_for_file(f)
+                    entry = await self._get_query_entry_for_file(f)
                 except (ValueError, KeyError):
                     continue
                 else:
-                    result.append(uri)
+                    if entry.type in asset_type:
+                        if all(entry.meta[k] == v for k, v in kwargs.items()):
+                            result.append(entry)
 
         return result
+
+    @async_and_sync
+    @override
+    async def list_all(self):
+        logger.warning("list_all is deprecated. Please consider using query() instead.")
+        return await self.query()
 
     @async_and_sync
     @override
@@ -728,7 +750,7 @@ class AerovalJsonFileDB(AerovalDB):
                 route_args={
                     "project": project,
                     "experiment": experiment,
-                    "path": path,
+                    "path": _LiteralArg(path),
                 },
                 access_type=access_type,
             )
@@ -737,7 +759,7 @@ class AerovalJsonFileDB(AerovalDB):
             route_args={
                 "project": project,
                 "experiment": experiment,
-                "path": path,
+                "path": _LiteralArg(path),
             },
             access_type=AccessType.FILE_PATH,
         )
@@ -993,3 +1015,12 @@ class AerovalJsonFileDB(AerovalDB):
                 "timestep": timestep,
             },
         )
+
+    @async_and_sync
+    @override
+    async def rm_by_uri(self, uri: str):
+        file_path = await self.get_by_uri(str(uri), access_type=AccessType.FILE_PATH)
+        logger.debug("Removing file '%s'.", file_path)
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
