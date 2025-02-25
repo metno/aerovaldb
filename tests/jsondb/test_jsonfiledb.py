@@ -81,7 +81,7 @@ def test_get_uri_with_underscore_region1(tmp_path, mocker):
 
         assert (
             db.list_all()[0]
-            == "/v0/ts/project/experiment/Amsterdam%2Island/AERONET-Sun/od550aer/Column?version=0.25.0"
+            == "/v0/ts/project/experiment/Amsterdam_Island/AERONET-Sun/od550aer/Column?version=0.25.0"
         )
 
 
@@ -100,5 +100,5 @@ def test_get_uri_with_underscore_region2(tmp_path, mocker):
 
         assert (
             db.list_all()[0]
-            == "/v0/hm_ts/project/experiment?region=some%2region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0"
+            == "/v0/hm_ts/project/experiment?region=some_region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0"
         )
