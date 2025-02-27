@@ -59,6 +59,9 @@ class _LiteralArg(str):
 
 
 class AerovalJsonFileDB(AerovalDB):
+    # Character mapping used for encoding and decoding string values in file names.
+    FNAME_ENCODE_CHARS = {"%": "%0", "/": "%1", "_": "%2"}
+
     def __init__(self, basedir: str | Path):
         """
         :param basedir The root directory where aerovaldb will look for files.
@@ -281,7 +284,7 @@ class AerovalJsonFileDB(AerovalDB):
         substitutions = {
             k: v
             if isinstance(v, _LiteralArg)
-            else encode_str(v, encode_chars={"%": "%0", "/": "%1", "_": "%2"})
+            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
             for k, v in (route_args | kwargs).items()
         }
 
@@ -360,7 +363,7 @@ class AerovalJsonFileDB(AerovalDB):
         substitutions = {
             k: v
             if isinstance(v, _LiteralArg)
-            else encode_str(v, encode_chars={"%": "%0", "/": "%1", "_": "%2"})
+            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
             for k, v in (route_args | kwargs).items()
         }
 
@@ -465,7 +468,6 @@ class AerovalJsonFileDB(AerovalDB):
 
         :param file_path : The file_path.
         """
-        encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
@@ -485,8 +487,12 @@ class AerovalJsonFileDB(AerovalDB):
             uri = build_uri(
                 ROUTE_REPORT_IMAGE,
                 {
-                    "project": decode_str(project, encode_chars=encode_chars),
-                    "experiment": decode_str(experiment, encode_chars=encode_chars),
+                    "project": decode_str(
+                        project, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
+                    ),
+                    "experiment": decode_str(
+                        experiment, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
+                    ),
                     "path": path,
                 },
                 {},
@@ -539,11 +545,11 @@ class AerovalJsonFileDB(AerovalDB):
                     route, route_args, kwargs, version=version
                 )
                 route_args = {
-                    k: decode_str(v, encode_chars=encode_chars)
+                    k: decode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
                     for k, v in route_args.items()
                 }
                 kwargs = {
-                    k: decode_str(v, encode_chars=encode_chars)
+                    k: decode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
                     for k, v in kwargs.items()
                 }
             except Exception:
