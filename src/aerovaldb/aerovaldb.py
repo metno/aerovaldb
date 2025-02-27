@@ -2,9 +2,12 @@ import abc
 import datetime
 import functools
 import inspect
+from typing import Iterable
+
+from aerovaldb.utils.query import QueryEntry
 
 from .routes import *
-from .types import AccessType
+from .types import AccessType, AssetType
 from .utils import async_and_sync
 
 
@@ -218,9 +221,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryEntry]:
         """Lists the URI for each glob_stats object.
 
         :param project: str
@@ -355,9 +356,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryEntry]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -791,8 +790,6 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ) -> list[str]:
         """Lists all map files for a given project / experiment combination.
 
@@ -1334,3 +1331,45 @@ class AerovalDB(abc.ABC):
         """
         uri = await self.get_config(project, experiment, access_type=AccessType.URI)
         return await self.get_by_uri(uri, access_type=AccessType.MTIME)
+
+    @async_and_sync
+    async def query(
+        self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
+    ) -> list[QueryEntry]:
+        """Query function for getting information about assets
+        stored in the db.
+
+        :param asset_type: Enum of the type of asset to query (Can be an iterable of multiple types). By default,
+        all asset types will be included.
+        :param kwargs: Optional additional filter arguments. Will be matched against QueryEntry.meta.
+        All provided keys must match. For possible keys see function signature of the getter for which
+        you want to match.
+
+        :return: A list of QueryEntry objects that contains the URI and information about
+        the queried files.
+
+        Example:
+        >>> import tempfile
+        >>> import aerovaldb
+        >>>
+        >>> with tempfile.TemporaryDirectory() as dir:
+        ...     with aerovaldb.open(f"json_files:{dir}") as db:
+        ...         db.put_experiments({}, "project1")
+        ...         db.put_experiments({}, "project2")
+        ...         db.query(aerovaldb.AssetType.EXPERIMENTS, project="project1")
+        ...         db.query(aerovaldb.AssetType.EXPERIMENTS, project="project1")[0].meta
+        ['/v0/experiments/project1?version=0.0.1']
+        {'project': 'project1'}
+        """
+        raise NotImplementedError
+
+    @async_and_sync
+    async def rm_by_uri(self, uri: str):
+        """Removes the asset associated with the provided uri. The provided
+        uri must match a whole file (ie. uris corresponding to filtered uris
+        will not work and will raise an UnsupporedOperationError).
+
+        :param uri: URI to remove.
+        :raises UnsupporedOperation: If URI corresponds to a filtered endpoint.
+        """
+        raise NotImplementedError

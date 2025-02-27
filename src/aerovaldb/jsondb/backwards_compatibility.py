@@ -1,5 +1,7 @@
 from packaging.version import Version
 
+# The motivation for doing this is explained here:
+# See this issue:
 from ..routes import *
 
 
