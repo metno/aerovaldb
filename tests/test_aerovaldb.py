@@ -488,6 +488,7 @@ def test_list_glob_stats(testdb):
         assert len(glob_stats) == 1
 
 
+@pytest.mark.dependency(scope="session", name="test_list_all")
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:

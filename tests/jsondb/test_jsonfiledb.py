@@ -1,4 +1,5 @@
 import pytest
+from packaging.version import Version
 
 import aerovaldb
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
@@ -37,3 +38,56 @@ def test_put_map_overlay_extension_guess_error(tmp_path):
             )
 
         assert "Could not guess image file extension" in str(e.value)
+
+
+async def mock_version_provider(self, project: str, experiment: str):
+    # Mocks version to a version where backwards compatibility is relevant for the below tests.
+    return Version("0.25.0")
+
+
+@pytest.mark.parametrize(
+    "uri,meta",
+    (
+        (
+            "/v0/hm_ts/project/experiment?region=some%2region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0",
+            {
+                "project": "project",
+                "experiment": "experiment",
+                "region": "some_region",
+                "network": "some-network",
+                "obsvar": "obsvar",
+                "layer": "layer",
+            },
+        ),
+        (
+            "/v0/ts/project/experiment/Amsterdam%2Island/AERONET-Sun/od550aer/Column?version=0.25.0",
+            {
+                "project": "project",
+                "experiment": "experiment",
+                "region": "Amsterdam_Island",
+                "network": "AERONET-Sun",
+                "obsvar": "od550aer",
+                "layer": "Column",
+            },
+        ),
+        (
+            "/v0/map/project/experiment/AERONET-Sun/od550aer/Column/TM5-AP3-CTRL/od550aer?time=2010&version=0.25.0",
+            {
+                "project",
+                "experiment",
+                "AERONET-Sun",
+                "od550aer",
+                "Column",
+                "TM5-AP3-CTRL",
+                "od550aer",
+                "2010",
+            },
+        ),
+    ),
+)
+def test_backwards_compatibility_uri(tmp_path, mocker, uri: str, meta: dict[str, str]):
+    mocker.patch.object(AerovalJsonFileDB, "_get_version", mock_version_provider)
+    with aerovaldb.open(f"json_files:{tmp_path}") as db:
+        db.put_by_uri({}, uri)
+
+        assert db.list_all()[0] == uri

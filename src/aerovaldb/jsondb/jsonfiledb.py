@@ -39,6 +39,8 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
+from .backwards_compatibility import post_process_args
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,8 +75,26 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
                 ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
-                ROUTE_TIMESERIES_WEEKLY: "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                ROUTE_TIMESERIES: "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                ROUTE_TIMESERIES_WEEKLY: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.26.0",
+                    ),
+                ],
+                ROUTE_TIMESERIES: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.26.0",
+                    ),
+                ],
                 ROUTE_EXPERIMENTS: "./{project}/experiments.json",
                 ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
                 ROUTE_MENU: "./{project}/{experiment}/menu.json",
@@ -87,8 +107,13 @@ class AerovalJsonFileDB(AerovalDB):
                 ],
                 ROUTE_MAP: [
                     VersionConstraintMapper(
+                        "./{project}/{experiment}/map/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
+                        max_version="0.26.0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -97,8 +122,13 @@ class AerovalJsonFileDB(AerovalDB):
                 ],
                 ROUTE_SCATTER: [
                     VersionConstraintMapper(
+                        "./{project}/{experiment}/scat/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
+                        max_version="0.26.0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -108,8 +138,13 @@ class AerovalJsonFileDB(AerovalDB):
                 ROUTE_PROFILES: "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
                 ROUTE_HEATMAP_TIMESERIES: [
                     VersionConstraintMapper(
+                        "./{project}/{experiment}/hm/ts/{region}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                         min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
+                        max_version="0.26.0",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
@@ -121,7 +156,16 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.12.2",
                     ),
                 ],
-                ROUTE_FORECAST: "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                ROUTE_FORECAST: [
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/forecast/{region}_{network}_{obsvar}_{layer}.json",
+                        min_version="0.26.0",
+                    ),
+                    VersionConstraintMapper(
+                        "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
+                        max_version="0.26.0",
+                    ),
+                ],
                 ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
                 ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
@@ -462,6 +506,9 @@ class AerovalJsonFileDB(AerovalDB):
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
                 }
+                route_args, kwargs = post_process_args(
+                    route, route_args, kwargs, version=version
+                )
             except Exception:
                 continue
             else:
