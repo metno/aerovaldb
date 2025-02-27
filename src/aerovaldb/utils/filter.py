@@ -3,7 +3,7 @@
 # subset of the globstats endpoint.
 
 
-def filter_regional_stats(data, variable: str, network: str, layer: str, **kwargs):
+def filter_regional_stats(data, variable: str, network: str, layer: str):
     """
     Filters regional stats out of a glob_stats data object.
 
@@ -15,7 +15,7 @@ def filter_regional_stats(data, variable: str, network: str, layer: str, **kwarg
     return data[variable][network][layer]
 
 
-def filter_heatmap(data, region: str, time: str, **kwargs):
+def filter_heatmap(data, region: str, time: str):
     """
     Filters heatmap data out of a glob stats data object.
 
@@ -46,14 +46,14 @@ def filter_heatmap(data, region: str, time: str, **kwargs):
     return filtered_data
 
 
-def filter_contour(data, timestep: str | None = None, **kwargs):
+def filter_contour(data, timestep: str | None = None):
     if timestep == None:
         return data
 
     return data[timestep]
 
 
-def filter_map(data, frequency: str | None = None, season: str | None = None, **kwargs):
+def filter_map(data, frequency: str | None = None, season: str | None = None):
     if all([x is None for x in [frequency, season]]):
         return data
 

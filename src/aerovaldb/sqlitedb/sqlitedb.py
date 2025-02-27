@@ -1,5 +1,6 @@
 import datetime
 import importlib.metadata
+import inspect
 import logging
 import os
 import sqlite3
@@ -411,6 +412,15 @@ class AerovalSqliteDB(AerovalDB):
             args,
         )
         filter_func = self.FILTERS.get(route, None)
+        if filter_func:
+            filter_vars = {
+                k: v
+                for k, v in (route_args | kwargs).items()
+                if k in inspect.signature(filter_func).parameters.keys()
+            }
+            if not filter_vars:
+                filter_func = None
+
         try:
             fetched = cur.fetchall()
             if not fetched:
@@ -470,7 +480,7 @@ class AerovalSqliteDB(AerovalDB):
                 )
             obj = simplejson.loads(fetched["json"], allow_nan=True)
 
-            obj = filter_func(obj, **(route_args | kwargs))
+            obj = filter_func(obj, **filter_vars)
             if access_type == AccessType.OBJ:
                 return obj
 
