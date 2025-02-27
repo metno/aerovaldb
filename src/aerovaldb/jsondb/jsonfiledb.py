@@ -324,10 +324,8 @@ class AerovalJsonFileDB(AerovalDB):
                 file_path, access_type=access_type, cache=use_caching
             )
 
-        # TODO: Changed for testing purposes.
         if access_type == AccessType.FILE_PATH:
-            return file_path
-        #    raise UnsupportedOperation("Filtered endpoints can not return a filepath")
+            raise UnsupportedOperation("Filtered endpoints can not return a filepath")
 
         if access_type == AccessType.MTIME:
             return datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
