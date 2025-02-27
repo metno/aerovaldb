@@ -1,6 +1,7 @@
 import datetime
 import glob
 import importlib.metadata
+import inspect
 import logging
 import os
 import shutil
@@ -299,7 +300,14 @@ class AerovalJsonFileDB(AerovalDB):
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
-        filter_vars = route_args | kwargs
+        if filter_func:
+            filter_vars = {
+                k: v
+                for k, v in (route_args | kwargs).items()
+                if k in inspect.signature(filter_func).parameters.keys()
+            }
+            if not filter_vars:
+                filter_func = None
 
         if not os.path.exists(file_path):
             if default is None or access_type == AccessType.FILE_PATH:
