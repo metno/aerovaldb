@@ -42,7 +42,7 @@ else:
 
 from ..utils.encode import decode_str, encode_str
 from ..utils.query import QueryEntry
-from .backwards_compatibility import *
+from .backwards_compatibility import post_process_args
 
 logger = logging.getLogger(__name__)
 
@@ -535,30 +535,9 @@ class AerovalJsonFileDB(AerovalDB):
                 kwargs = {
                     k: v for k, v in all_args.items() if not (k in route_arg_names)
                 }
-                if route == ROUTE_MAP:
-                    route_args, kwargs = post_process_maps_args_kwargs(
-                        route_args, kwargs
-                    )
-                elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
-                    route_args, kwargs = post_process_timeseries_args_kwargs(
-                        route_args, kwargs, version=version
-                    )
-                elif route == ROUTE_HEATMAP_TIMESERIES:
-                    route_args, kwargs = post_process_heatmap_ts_args_kwargs(
-                        route_args, kwargs, version=version
-                    )
-                elif route == ROUTE_FORECAST:
-                    route_args, kwargs = post_process_forecast_args_kwargs(
-                        route_args, kwargs
-                    )
-                route_args = {
-                    k: decode_str(v, encode_chars=encode_chars)
-                    for k, v in route_args.items()
-                }
-                kwargs = {
-                    k: decode_str(v, encode_chars=encode_chars)
-                    for k, v in kwargs.items()
-                }
+                route_args, kwargs = post_process_args(
+                    route, route_args, kwargs, version=version
+                )
             except Exception:
                 continue
             else:

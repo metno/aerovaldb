@@ -1,13 +1,36 @@
 from packaging.version import Version
 
-
 # The motivation for doing this is explained here:
 # See this issue:
+from ..routes import *
+
+
+# The motivation for doing this is explained here:
 # https://github.com/metno/aerovaldb/issues/119
 # tl;dr: it works around ambiguity in parsing of legacy
 # filenames, to be able to extract metadata from file
 # names reliably.
-def post_process_maps_args_kwargs(
+def post_process_args(
+    route: str, args: dict[str, str], kwargs: dict[str, str], *, version: Version
+) -> tuple[dict[str, str], dict[str, str]]:
+    if route == ROUTE_MAP:
+        args, kwargs = _post_process_maps_args_kwargs(args, kwargs)
+    elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
+        args, kwargs = _post_process_timeseries_args_kwargs(
+            args, kwargs, version=version
+        )
+    elif route == ROUTE_HEATMAP_TIMESERIES:
+        args, kwargs = _post_process_heatmap_ts_args_kwargs(
+            args, kwargs, version=version
+        )
+    elif route == ROUTE_FORECAST:
+        args, kwargs = _post_process_forecast_args_kwargs(args, kwargs)
+    elif route == ROUTE_SCATTER:
+        args, kwargs = _post_process_scatter_args_kwargs(args, kwargs)
+    return args, kwargs
+
+
+def _post_process_maps_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str]
 ) -> tuple[dict[str, str], dict[str, str]]:
     if "-" in args["obsvar"]:
@@ -25,13 +48,10 @@ def post_process_maps_args_kwargs(
     return args, kwargs
 
 
-def post_process_timeseries_args_kwargs(
+def _post_process_timeseries_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if version >= Version("0.28.0.dev0"):
-        splt = "_".join([args["location"], args["network"]]).split("_")
-        args["location"] = "_".join(splt[:-1])
-        args["network"] = splt[-1]
+    if version >= Version("0.26.0"):
         return args, kwargs
 
     if "-" in args["obsvar"]:
@@ -49,7 +69,7 @@ def post_process_timeseries_args_kwargs(
     return args, kwargs
 
 
-def post_process_scatter_args_kwargs(
+def _post_process_scatter_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str]
 ) -> tuple[dict[str, str], dict[str, str]]:
     if "-" in args["obsvar"]:
@@ -61,10 +81,10 @@ def post_process_scatter_args_kwargs(
     return args, kwargs
 
 
-def post_process_heatmap_ts_args_kwargs(
+def _post_process_heatmap_ts_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if version >= Version("0.28.0.dev0"):
+    if version >= Version("0.26.0"):
         return args, kwargs
     if version <= Version("0.12.2"):
         return args, kwargs
@@ -96,7 +116,7 @@ def post_process_heatmap_ts_args_kwargs(
     return args, kwargs
 
 
-def post_process_forecast_args_kwargs(
+def _post_process_forecast_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str]
 ) -> tuple[dict[str, str], dict[str, str]]:
     if "-" in args["obsvar"]:
