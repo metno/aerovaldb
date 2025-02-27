@@ -1366,7 +1366,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     async def rm_by_uri(self, uri: str):
         """Removes the asset associated with the provided uri. The provided
-        uri must match a while file (ie. uris corresponding to filtered uris
+        uri must match a whole file (ie. uris corresponding to filtered uris
         will not work and will raise an UnsupporedOperationError).
 
         :param uri: URI to remove.
