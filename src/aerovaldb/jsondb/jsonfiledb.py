@@ -538,6 +538,14 @@ class AerovalJsonFileDB(AerovalDB):
                 route_args, kwargs = post_process_args(
                     route, route_args, kwargs, version=version
                 )
+                route_args = {
+                    k: decode_str(v, encode_chars=encode_chars)
+                    for k, v in route_args.items()
+                }
+                kwargs = {
+                    k: decode_str(v, encode_chars=encode_chars)
+                    for k, v in kwargs.items()
+                }
             except Exception:
                 continue
             else:
