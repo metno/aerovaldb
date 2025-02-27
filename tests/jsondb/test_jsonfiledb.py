@@ -91,4 +91,3 @@ def test_backwards_compatibility_uri(tmp_path, mocker, uri: str, meta: dict[str,
         db.put_by_uri({}, uri)
 
         assert db.list_all()[0] == uri
-        # TODO: Query metadata
