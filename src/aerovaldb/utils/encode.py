@@ -1,19 +1,25 @@
-def encode_str(string: str, *, encode_chars: dict[str, str]):
-    ls: list[str] = []
-    prev = 0
-    i = 0
-    while i < len(string):
-        if string[i] in encode_chars:
-            ls.append(string[prev:i] + encode_chars.get(string[i]))  # type: ignore
-            prev = i + 1
-        i += 1
+def encode_str(string: str, *, encode_chars: dict[str, str]) -> str:
+    """Encodes a string by replacing characters by en encoded
+    character sequence.
 
-    ls.append(string[prev:])
+    :param string: String to be encoded.
+    :param encode_chars: Mapping from character to replacement string
+    sequence in encoded string.
 
-    return "".join(ls)
+    :return: Encoded string.
+    """
+    mapping = str.maketrans(encode_chars)
+    return string.translate(mapping)
 
 
-def decode_str(string: str, *, encode_chars: dict[str, str]):
+def decode_str(string: str, *, encode_chars: dict[str, str]) -> str:
+    """Decodes a string previously encoded using encode_str.
+
+    :param string: String to be decoded.
+    :param encode_chars: Mapping from character to replacement string
+    used during the original encode operation.
+    :return: Decoded string.
+    """
     ls: list[str] = []
     prev = 0
     i = 0

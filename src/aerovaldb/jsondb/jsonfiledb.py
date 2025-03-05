@@ -505,7 +505,7 @@ class AerovalJsonFileDB(AerovalDB):
             )
             return QueryEntry(
                 uri,
-                AssetType(ROUTE_REPORT_IMAGE),
+                AssetType.REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
             )
 
@@ -688,7 +688,7 @@ class AerovalJsonFileDB(AerovalDB):
         self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
     ) -> list[QueryEntry]:
         if asset_type is None:
-            asset_type = set([AssetType(x) for x in [x.value for x in AssetType]])
+            asset_type = set(AssetType)
         elif isinstance(asset_type, AssetType):
             asset_type = set([asset_type])
         elif isinstance(asset_type, Iterable):
