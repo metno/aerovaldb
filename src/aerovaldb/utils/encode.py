@@ -23,15 +23,16 @@ def decode_str(string: str, *, encode_chars: dict[str, str]) -> str:
     ls: list[str] = []
     prev = 0
     i = 0
+    first_char = [x[0] for x in encode_chars.values()]
     while i < len(string):
-        if string[i] != "%":
+        if string[i] not in first_char:
             i += 1
             continue
 
         for k, v in encode_chars.items():
-            if string[i : (i + 2)] == v:
+            if string[i : (i + len(v))] == v:
                 ls.append(string[prev:i] + k)
-                i += 2
+                i += len(v)
                 prev = i
                 break
     ls.append(string[prev:])
