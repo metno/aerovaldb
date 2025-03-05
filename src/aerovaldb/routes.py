@@ -48,29 +48,3 @@ ROUTE_REPORT = "/v0/report/{project}/{experiment}/{title}"
 ROUTE_REPORT_IMAGE = "/v0/report-image/{project}/{experiment}/{path}"
 
 ROUTE_MAP_OVERLAY = "/v0/map-overlay/{project}/{experiment}/{source}/{variable}/{date}"
-
-ALL_ROUTES = [
-    ROUTE_GLOB_STATS,
-    ROUTE_REG_STATS,
-    ROUTE_HEATMAP,
-    ROUTE_CONTOUR,
-    ROUTE_CONTOUR2,
-    ROUTE_TIMESERIES,
-    ROUTE_TIMESERIES_WEEKLY,
-    ROUTE_EXPERIMENTS,
-    ROUTE_CONFIG,
-    ROUTE_MENU,
-    ROUTE_STATISTICS,
-    ROUTE_RANGES,
-    ROUTE_REGIONS,
-    ROUTE_MODELS_STYLE,
-    ROUTE_MAP,
-    ROUTE_SCATTER,
-    ROUTE_PROFILES,
-    ROUTE_HEATMAP_TIMESERIES,
-    ROUTE_FORECAST,
-    ROUTE_GRIDDED_MAP,
-    ROUTE_REPORT,
-    ROUTE_REPORT_IMAGE,
-    ROUTE_MAP_OVERLAY,
-]

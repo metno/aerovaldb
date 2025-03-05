@@ -688,7 +688,7 @@ class AerovalJsonFileDB(AerovalDB):
         self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
     ) -> list[QueryEntry]:
         if asset_type is None:
-            asset_type = set([AssetType(x) for x in ALL_ROUTES])
+            asset_type = set([AssetType(x) for x in [x.value for x in AssetType]])
         elif isinstance(asset_type, AssetType):
             asset_type = set([asset_type])
         elif isinstance(asset_type, Iterable):
