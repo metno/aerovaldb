@@ -620,7 +620,7 @@ class AerovalJsonFileDB(AerovalDB):
             return await self.get_report_image(
                 route_args["project"],
                 route_args["experiment"],
-                route_args["path"].replace("%1", "/"),
+                route_args["path"],
                 access_type=access_type,
             )
 
