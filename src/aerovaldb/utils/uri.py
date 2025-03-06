@@ -8,10 +8,21 @@ encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
 
 
 def encode_arg(string: str):
+    """Encodes a string to work in an aerovaldb URI.
+
+    :param string: The string to be encoded.
+    :return: Encoded string.
+    """
     return encode_str(string, encode_chars=encode_chars)
 
 
 def decode_arg(string: str):
+    """Decodes an encoded string to work in an aerovaldb URI. Inverse of
+    encode_arg
+
+    :param string: The string to be decoded.
+    :return: Decoded string.
+    """
     return decode_str(string, encode_chars=encode_chars)
 
 
