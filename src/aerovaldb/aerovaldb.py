@@ -1343,7 +1343,8 @@ class AerovalDB(abc.ABC):
         all asset types will be included.
         :param kwargs: Optional additional filter arguments. Will be matched against QueryEntry.meta.
         All provided keys must match. For possible keys see function signature of the getter for which
-        you want to match.
+        you want to match. For instance :meth:`aerovaldb.AerovalDB.get_experiments()` can be filtered on
+        the project key.
 
         :return: A list of QueryEntry objects that contains the URI and information about
         the queried files.
