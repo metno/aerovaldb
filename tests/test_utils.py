@@ -64,12 +64,12 @@ def test_parse_fromatted_string_error(template: str, string: str, val: str, exce
     (
         (
             "/v0/experiments/project",
-            (Route.EXPERIMENTS.value, {"project": "project"}, {}),
+            (Route.EXPERIMENTS, {"project": "project"}, {}),
         ),
         (
             "/v0/map/project/experiment/network/obsvar/layer/model/modvar?time=time",
             (
-                Route.MAP.value,
+                Route.MAP,
                 {
                     "project": "project",
                     "experiment": "experiment",

@@ -11,21 +11,21 @@ from ..routes import Route
 # filenames, to be able to extract metadata from file
 # names reliably.
 def post_process_args(
-    route: str, args: dict[str, str], kwargs: dict[str, str], *, version: Version
+    route: Route, args: dict[str, str], kwargs: dict[str, str], *, version: Version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if route == Route.MAP.value:
+    if route == Route.MAP:
         args, kwargs = _post_process_maps_args_kwargs(args, kwargs)
-    elif route in [Route.TIMESERIES.value, Route.TIMESERIES_WEEKLY.value]:
+    elif route in [Route.TIMESERIES, Route.TIMESERIES_WEEKLY]:
         args, kwargs = _post_process_timeseries_args_kwargs(
             args, kwargs, version=version
         )
-    elif route == Route.HEATMAP_TIMESERIES.value:
+    elif route == Route.HEATMAP_TIMESERIES:
         args, kwargs = _post_process_heatmap_ts_args_kwargs(
             args, kwargs, version=version
         )
-    elif route == Route.FORECAST.value:
+    elif route == Route.FORECAST:
         args, kwargs = _post_process_forecast_args_kwargs(args, kwargs)
-    elif route == Route.SCATTER.value:
+    elif route == Route.SCATTER:
         args, kwargs = _post_process_scatter_args_kwargs(args, kwargs)
     return args, kwargs
 
