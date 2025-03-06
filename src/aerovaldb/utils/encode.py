@@ -23,23 +23,3 @@ def decode_str(string: str, *, encode_chars: dict[str, str]) -> str:
     for k, v in encode_chars.items():
         string = string.replace(v, k)
     return string
-    # ls: list[str] = []
-    # prev = 0
-    # i = 0
-    # first_char = [x[0] for x in encode_chars.values()]
-    # while i < len(string):
-    #    if string[i] not in first_char:
-    #        i += 1
-    #        continue
-
-
-#
-#    for k, v in encode_chars.items():
-#        if string[i : (i + len(v))] == v:
-#            ls.append(string[prev:i] + k)
-#            i += len(v)
-#            prev = i
-#            break
-# ls.append(string[prev:])
-#
-# return "".join(ls)
