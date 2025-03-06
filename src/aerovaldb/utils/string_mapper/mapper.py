@@ -1,7 +1,7 @@
 import logging
 import sys
 from abc import ABC
-from typing import Awaitable, Callable, Mapping
+from typing import Awaitable, Callable, Hashable, Mapping
 
 from packaging.version import Version
 
@@ -60,7 +60,7 @@ class StringMapper:
     def __iter__(self):
         return iter(self._lookuptable.keys())
 
-    async def lookup(self, key: str, **kwargs) -> str:
+    async def lookup(self, key: Hashable, **kwargs) -> str:
         """
         Performs a lookup of the value for the given key.
 

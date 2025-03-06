@@ -126,7 +126,7 @@ def parse_formatted_string(
     return result
 
 
-def parse_uri(uri: str | QueryEntry) -> tuple[str, dict[str, str], dict[str, str]]:
+def parse_uri(uri: str | QueryEntry) -> tuple[Route, dict[str, str], dict[str, str]]:
     """
     Parses an uri returning a tuple consisting of
     - The route against which it was matched.
@@ -157,7 +157,7 @@ def parse_uri(uri: str | QueryEntry) -> tuple[str, dict[str, str], dict[str, str
             else:
                 for k, v in route_args.items():
                     route_args[k] = decode_arg(v)
-                return (template, route_args, dict())
+                return (Route(template), route_args, dict())
 
         elif len(split) == 2:
             try:
@@ -172,17 +172,17 @@ def parse_uri(uri: str | QueryEntry) -> tuple[str, dict[str, str], dict[str, str
                 route_args[k] = decode_arg(v)
             for k, v in kwargs.items():
                 kwargs[k] = decode_arg(v)
-            return (template, route_args, kwargs)
+            return (Route(template), route_args, kwargs)
 
     raise ValueError(f"URI {uri} is not a valid URI.")
 
 
-def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
+def build_uri(route: Route, route_args: dict, kwargs: dict = {}) -> str:
     for k, v in route_args.items():
         route_args[k] = encode_arg(v)
     for k, v in kwargs.items():
         kwargs[k] = encode_arg(v)
-    uri = route.format(**route_args)
+    uri = route.value.format(**route_args)
     if kwargs:
         queries = "&".join([f"{k}={v}" for k, v in kwargs.items()])
         uri = f"{uri}?{queries}"
