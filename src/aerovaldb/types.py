@@ -1,5 +1,7 @@
 from enum import Enum, auto
 
+from .routes import *
+
 
 class AccessType(Enum):
     """Enumeration of access types. Specifies how data will be read

@@ -2,8 +2,11 @@ import abc
 import datetime
 import functools
 import inspect
+from typing import Iterable
 
-from .routes import *
+from aerovaldb.utils.query import QueryEntry
+
+from .routes import Route
 from .types import AccessType
 from .utils import async_and_sync
 
@@ -90,7 +93,7 @@ class AerovalDB(abc.ABC):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
-    async def _get(self, route: str, route_args: dict[str, str], **kwargs):
+    async def _get(self, route: Route, route_args: dict[str, str], **kwargs):
         """Abstract implementation of the main getter functions. All get and put
         functions map to this function, with a corresponding route as key
         to enable key/value pair put and get functionality.
@@ -100,7 +103,7 @@ class AerovalDB(abc.ABC):
         """
         raise NotImplementedError
 
-    async def _put(self, obj, route: str, route_args: dict[str, str], **kwargs):
+    async def _put(self, obj, route: Route, route_args: dict[str, str], **kwargs):
         """Abstract implementation of the main getter functions. All get and put
         functions map to this function, with a corresponding route as key
         to enable key/value pair put and get functionality.
@@ -112,7 +115,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_GLOB_STATS)
+    @get_method(Route.GLOB_STATS)
     async def get_glob_stats(
         self,
         project: str,
@@ -140,7 +143,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_REG_STATS)
+    @get_method(Route.REGIONAL_STATS)
     async def get_regional_stats(
         self,
         project: str,
@@ -167,7 +170,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_HEATMAP)
+    @get_method(Route.HEATMAP)
     async def get_heatmap(
         self,
         project: str,
@@ -200,7 +203,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_GLOB_STATS)
+    @put_method(Route.GLOB_STATS)
     async def put_glob_stats(
         self, obj, project: str, experiment: str, frequency: str, /, *args, **kwargs
     ):
@@ -218,9 +221,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryEntry]:
         """Lists the URI for each glob_stats object.
 
         :param project: str
@@ -231,7 +232,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_CONTOUR)
+    @get_method(Route.CONTOUR)
     async def get_contour(
         self,
         project: str,
@@ -264,7 +265,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_CONTOUR)
+    @put_method(Route.CONTOUR)
     async def put_contour(
         self,
         obj,
@@ -289,7 +290,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_TIMESERIES)
+    @get_method(Route.TIMESERIES)
     async def get_timeseries(
         self,
         project: str,
@@ -324,7 +325,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_TIMESERIES)
+    @put_method(Route.TIMESERIES)
     async def put_timeseries(
         self,
         obj,
@@ -355,9 +356,7 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ) -> list[str]:
+    ) -> list[QueryEntry]:
         """Returns a list of URIs of all timeseries files for
         a given project and experiment id.
 
@@ -367,7 +366,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_TIMESERIES_WEEKLY)
+    @get_method(Route.TIMESERIES_WEEKLY)
     async def get_timeseries_weekly(
         self,
         project: str,
@@ -402,7 +401,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_TIMESERIES_WEEKLY)
+    @put_method(Route.TIMESERIES_WEEKLY)
     async def put_timeseries_weekly(
         self,
         obj,
@@ -429,7 +428,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_EXPERIMENTS)
+    @get_method(Route.EXPERIMENTS)
     async def get_experiments(
         self,
         project: str,
@@ -454,7 +453,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_EXPERIMENTS)
+    @put_method(Route.EXPERIMENTS)
     async def put_experiments(self, obj, project: str, /, *args, **kwargs):
         """Stores a list of experiments for a project to the db.
 
@@ -476,7 +475,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_CONFIG)
+    @get_method(Route.CONFIG)
     async def get_config(
         self,
         project: str,
@@ -503,7 +502,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_CONFIG)
+    @put_method(Route.CONFIG)
     async def put_config(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores a configuration to the db.
 
@@ -515,7 +514,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_MENU)
+    @get_method(Route.MENU)
     async def get_menu(
         self,
         project: str,
@@ -542,7 +541,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_MENU)
+    @put_method(Route.MENU)
     async def put_menu(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores a menu configuration in the db.
 
@@ -553,7 +552,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_STATISTICS)
+    @get_method(Route.STATISTICS)
     async def get_statistics(
         self,
         project: str,
@@ -580,7 +579,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_STATISTICS)
+    @put_method(Route.STATISTICS)
     async def put_statistics(
         self, obj, project: str, experiment: str, /, *args, **kwargs
     ):
@@ -593,7 +592,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_RANGES)
+    @get_method(Route.RANGES)
     async def get_ranges(
         self,
         project: str,
@@ -620,7 +619,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_RANGES)
+    @put_method(Route.RANGES)
     async def put_ranges(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores ranges in db.
 
@@ -631,7 +630,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_REGIONS)
+    @get_method(Route.REGIONS)
     async def get_regions(
         self,
         project: str,
@@ -658,7 +657,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_REGIONS)
+    @put_method(Route.REGIONS)
     async def put_regions(self, obj, project: str, experiment: str, /, *args, **kwargs):
         """Stores regions in db.
 
@@ -669,7 +668,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_MODELS_STYLE)
+    @get_method(Route.MODELS_STYLE)
     async def get_models_style(
         self,
         project: str,
@@ -696,7 +695,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_MODELS_STYLE)
+    @put_method(Route.MODELS_STYLE)
     async def put_models_style(
         self, obj, project: str, /, experiment: str | None = None, *args, **kwargs
     ):
@@ -709,7 +708,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_MAP)
+    @get_method(Route.MAP)
     async def get_map(
         self,
         project: str,
@@ -756,7 +755,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_MAP)
+    @put_method(Route.MAP)
     async def put_map(
         self,
         obj,
@@ -791,8 +790,6 @@ class AerovalDB(abc.ABC):
         self,
         project: str,
         experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
     ) -> list[str]:
         """Lists all map files for a given project / experiment combination.
 
@@ -804,7 +801,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_SCATTER)
+    @get_method(Route.SCATTER)
     async def get_scatter(
         self,
         project: str,
@@ -843,7 +840,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_SCATTER)
+    @put_method(Route.SCATTER)
     async def put_scatter(
         self,
         obj,
@@ -874,7 +871,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_PROFILES)
+    @get_method(Route.PROFILES)
     async def get_profiles(
         self,
         project: str,
@@ -907,7 +904,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_PROFILES)
+    @put_method(Route.PROFILES)
     async def put_profiles(
         self,
         obj,
@@ -932,7 +929,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_HEATMAP_TIMESERIES)
+    @get_method(Route.HEATMAP_TIMESERIES)
     async def get_heatmap_timeseries(
         self,
         project: str,
@@ -967,7 +964,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_HEATMAP_TIMESERIES)
+    @put_method(Route.HEATMAP_TIMESERIES)
     async def put_heatmap_timeseries(
         self,
         obj,
@@ -994,7 +991,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_FORECAST)
+    @get_method(Route.FORECAST)
     async def get_forecast(
         self,
         project: str,
@@ -1029,7 +1026,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_FORECAST)
+    @put_method(Route.FORECAST)
     async def put_forecast(
         self,
         obj,
@@ -1056,7 +1053,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_GRIDDED_MAP)
+    @get_method(Route.GRIDDED_MAP)
     async def get_gridded_map(
         self,
         project: str,
@@ -1087,7 +1084,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_GRIDDED_MAP)
+    @put_method(Route.GRIDDED_MAP)
     async def put_gridded_map(
         self,
         obj,
@@ -1110,7 +1107,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_REPORT)
+    @get_method(Route.REPORT)
     async def get_report(
         self,
         project: str,
@@ -1139,7 +1136,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_REPORT)
+    @put_method(Route.REPORT)
     async def put_report(
         self, obj, project: str, experiment: str, title: str, /, *args, **kwargs
     ):
@@ -1155,7 +1152,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     async def get_by_uri(
         self,
-        uri: str,
+        uri: str | QueryEntry,
         /,
         access_type: str | AccessType,
         cache: bool = False,
@@ -1181,7 +1178,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    async def put_by_uri(self, obj, uri: str):
+    async def put_by_uri(self, obj, uri: str | QueryEntry):
         """Replaces a stored object by uri with a new object.
 
         :param obj: The object to be stored. Either a json str, or a
@@ -1246,7 +1243,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_REPORT_IMAGE)
+    @get_method(Route.REPORT_IMAGE)
     async def get_report_image(
         self,
         project: str,
@@ -1267,7 +1264,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_REPORT_IMAGE)
+    @put_method(Route.REPORT_IMAGE)
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
         """
         Putter for static images that are referenced from the report json files.
@@ -1282,7 +1279,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(ROUTE_MAP_OVERLAY)
+    @get_method(Route.MAP_OVERLAY)
     async def get_map_overlay(
         self,
         project: str,
@@ -1303,7 +1300,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(ROUTE_MAP_OVERLAY)
+    @put_method(Route.MAP_OVERLAY)
     async def put_map_overlay(
         self,
         obj,
@@ -1334,3 +1331,46 @@ class AerovalDB(abc.ABC):
         """
         uri = await self.get_config(project, experiment, access_type=AccessType.URI)
         return await self.get_by_uri(uri, access_type=AccessType.MTIME)
+
+    @async_and_sync
+    async def query(
+        self, asset_type: Route | Iterable[Route] | None = None, **kwargs
+    ) -> list[QueryEntry]:
+        """Query function for getting information about assets
+        stored in the db.
+
+        :param asset_type: Enum of the type of asset to query (Can be an iterable of multiple types). By default,
+        all asset types will be included.
+        :param kwargs: Optional additional filter arguments. Will be matched against QueryEntry.meta.
+        All provided keys must match. For possible keys see function signature of the getter for which
+        you want to match. For instance :meth:`aerovaldb.AerovalDB.get_experiments()` can be filtered on
+        the project key.
+
+        :return: A list of QueryEntry objects that contains the URI and information about
+        the queried files.
+
+        Example:
+        >>> import tempfile
+        >>> import aerovaldb
+        >>>
+        >>> with tempfile.TemporaryDirectory() as dir:
+        ...     with aerovaldb.open(f"json_files:{dir}") as db:
+        ...         db.put_experiments({}, "project1")
+        ...         db.put_experiments({}, "project2")
+        ...         db.query(aerovaldb.Route.EXPERIMENTS, project="project1")[0].uri
+        ...         db.query(aerovaldb.Route.EXPERIMENTS, project="project1")[0].meta
+        '/v0/experiments/project1?version=0.0.1'
+        {'project': 'project1'}
+        """
+        raise NotImplementedError
+
+    @async_and_sync
+    async def rm_by_uri(self, uri: str):
+        """Removes the asset associated with the provided uri. The provided
+        uri must match a whole file (ie. uris corresponding to filtered uris
+        will not work and will raise an UnsupporedOperationError).
+
+        :param uri: URI to remove.
+        :raises UnsupporedOperation: If URI corresponds to a filtered endpoint.
+        """
+        raise NotImplementedError

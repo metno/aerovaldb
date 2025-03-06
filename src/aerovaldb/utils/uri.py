@@ -1,44 +1,32 @@
 import re
 import urllib
 
-from ..routes import ALL_ROUTES
+from aerovaldb.utils.query import QueryEntry
 
-encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
+from ..routes import Route
+from .encode import decode_str, encode_str
+
+# Note: Order matters for correct encoding, and % should always be the last entry in this dict.
+encode_chars = {"/": "%1", "%": "%0"}
 
 
 def encode_arg(string: str):
-    ls: list[str] = []
-    prev = 0
-    i = 0
-    while i < len(string):
-        if string[i] in encode_chars:
-            ls.append(string[prev:i] + encode_chars.get(string[i]))  # type: ignore
-            prev = i + 1
-        i += 1
+    """Encodes a string to work in an aerovaldb URI.
 
-    ls.append(string[prev:])
-
-    return "".join(ls)
+    :param string: The string to be encoded.
+    :return: Encoded string.
+    """
+    return encode_str(string, encode_chars=encode_chars)
 
 
 def decode_arg(string: str):
-    ls: list[str] = []
-    prev = 0
-    i = 0
-    while i < len(string):
-        if string[i] != "%":
-            i += 1
-            continue
+    """Decodes an encoded string to work in an aerovaldb URI. Inverse of
+    encode_arg
 
-        for k, v in encode_chars.items():
-            if string[i : (i + 2)] == v:
-                ls.append(string[prev:i] + k)
-                i += 2
-                prev = i
-                break
-    ls.append(string[prev:])
-
-    return "".join(ls)
+    :param string: The string to be decoded.
+    :return: Decoded string.
+    """
+    return decode_str(string, encode_chars=encode_chars)
 
 
 def extract_substitutions(template: str):
@@ -138,7 +126,7 @@ def parse_formatted_string(
     return result
 
 
-def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
+def parse_uri(uri: str | QueryEntry) -> tuple[Route, dict[str, str], dict[str, str]]:
     """
     Parses an uri returning a tuple consisting of
     - The route against which it was matched.
@@ -154,11 +142,13 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     -------
     >>> from aerovaldb.utils.uri import parse_uri
     >>> parse_uri('/v0/experiments/project')
-    ('/v0/experiments/{project}', {'project': 'project'}, {})
+    (<Route.EXPERIMENTS: '/v0/experiments/{project}'>, {'project': 'project'}, {})
     """
+    uri = str(uri)
+
     split = uri.split("?")
 
-    for template in ALL_ROUTES:
+    for template in [x.value for x in Route]:
         if len(split) == 1:
             try:
                 route_args = parse_formatted_string(template, split[0])
@@ -166,8 +156,8 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
                 continue
             else:
                 for k, v in route_args.items():
-                    route_args[k] = v.replace(":", "/")
-                return (template, route_args, dict())
+                    route_args[k] = decode_arg(v)
+                return (Route(template), route_args, dict())
 
         elif len(split) == 2:
             try:
@@ -182,17 +172,17 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
                 route_args[k] = decode_arg(v)
             for k, v in kwargs.items():
                 kwargs[k] = decode_arg(v)
-            return (template, route_args, kwargs)
+            return (Route(template), route_args, kwargs)
 
     raise ValueError(f"URI {uri} is not a valid URI.")
 
 
-def build_uri(route: str, route_args: dict, kwargs: dict = {}) -> str:
+def build_uri(route: Route, route_args: dict, kwargs: dict = {}) -> str:
     for k, v in route_args.items():
         route_args[k] = encode_arg(v)
     for k, v in kwargs.items():
         kwargs[k] = encode_arg(v)
-    uri = route.format(**route_args)
+    uri = route.value.format(**route_args)
     if kwargs:
         queries = "&".join([f"{k}={v}" for k, v in kwargs.items()])
         uri = f"{uri}?{queries}"

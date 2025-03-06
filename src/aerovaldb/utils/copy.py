@@ -33,6 +33,7 @@ async def copy_db_contents(source: str | AerovalDB, dest: str | AerovalDB):
         ValueError("Destination database is not empty.")
 
     for i, uri in enumerate(await source.list_all()):
+        uri = str(uri)
         logger.info(f"Processing item {i} of {len(await source.list_all())}")
         access = AccessType.JSON_STR
         if uri.startswith("/v0/report-image/") or uri.startswith("/v0/map-overlay/"):
@@ -43,7 +44,6 @@ async def copy_db_contents(source: str | AerovalDB, dest: str | AerovalDB):
 
     dst_len = len(await dest.list_all())
     src_len = len(await source.list_all())
-    missing = sorted(set(await source.list_all()) - set(await dest.list_all()))
     if dst_len != src_len:
         raise IOError(
             f"Unexpected number of items in destination after copy. Expected {src_len}, got {dst_len}"

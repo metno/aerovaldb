@@ -9,7 +9,9 @@ def test_jsonfiledb__get_uri_for_file(tmp_path):
     with aerovaldb.open(f"json_files:{str(tmp_path)}") as db:
         db: AerovalJsonFileDB
         assert (
-            db._get_uri_for_file(str(tmp_path / "project/experiments.json"))
+            str(
+                db._get_query_entry_for_file(str(tmp_path / "project/experiments.json"))
+            )
             == "/v0/experiments/project?version=0.0.1"
         )
 
@@ -49,7 +51,7 @@ async def mock_version_provider(self, project: str, experiment: str):
     "uri,meta",
     (
         (
-            "/v0/hm_ts/project/experiment?region=some%2region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0",
+            "/v0/hm_ts/project/experiment?region=some_region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0",
             {
                 "project": "project",
                 "experiment": "experiment",
@@ -60,7 +62,7 @@ async def mock_version_provider(self, project: str, experiment: str):
             },
         ),
         (
-            "/v0/ts/project/experiment/Amsterdam%2Island/AERONET-Sun/od550aer/Column?version=0.25.0",
+            "/v0/ts/project/experiment/Amsterdam_Island/AERONET-Sun/od550aer/Column?version=0.25.0",
             {
                 "project": "project",
                 "experiment": "experiment",
@@ -90,4 +92,4 @@ def test_backwards_compatibility_uri(tmp_path, mocker, uri: str, meta: dict[str,
     with aerovaldb.open(f"json_files:{tmp_path}") as db:
         db.put_by_uri({}, uri)
 
-        assert db.list_all()[0] == uri
+        assert str(db.list_all()[0]) == uri
