@@ -1357,7 +1357,7 @@ class AerovalDB(abc.ABC):
         ...     with aerovaldb.open(f"json_files:{dir}") as db:
         ...         db.put_experiments({}, "project1")
         ...         db.put_experiments({}, "project2")
-        ...         str(db.query(aerovaldb.Route.EXPERIMENTS, project="project1"))
+        ...         db.query(aerovaldb.Route.EXPERIMENTS, project="project1").uri
         ...         db.query(aerovaldb.Route.EXPERIMENTS, project="project1")[0].meta
         ['/v0/experiments/project1?version=0.0.1']
         {'project': 'project1'}
