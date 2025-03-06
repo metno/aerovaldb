@@ -49,7 +49,7 @@ async def mock_version_provider(self, project: str, experiment: str):
     "uri,meta",
     (
         (
-            "/v0/hm_ts/project/experiment?region=some%2region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0",
+            "/v0/hm_ts/project/experiment?region=some_region&network=some-network&obsvar=obsvar&layer=layer&version=0.25.0",
             {
                 "project": "project",
                 "experiment": "experiment",
@@ -60,7 +60,7 @@ async def mock_version_provider(self, project: str, experiment: str):
             },
         ),
         (
-            "/v0/ts/project/experiment/Amsterdam%2Island/AERONET-Sun/od550aer/Column?version=0.25.0",
+            "/v0/ts/project/experiment/Amsterdam_Island/AERONET-Sun/od550aer/Column?version=0.25.0",
             {
                 "project": "project",
                 "experiment": "experiment",

@@ -60,7 +60,8 @@ class _LiteralArg(str):
 
 class AerovalJsonFileDB(AerovalDB):
     # Character mapping used for encoding and decoding string values in file names.
-    FNAME_ENCODE_CHARS = {"%": "%0", "/": "%1", "_": "%2"}
+    # Note: Order matters for correct encoding, and % should always be the last entry in this dict.
+    FNAME_ENCODE_CHARS = {"/": "%1", "_": "%2", "%": "%0"}
 
     def __init__(self, basedir: str | Path):
         """

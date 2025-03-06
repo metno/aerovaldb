@@ -4,7 +4,8 @@ import urllib
 from ..routes import Route
 from .encode import decode_str, encode_str
 
-encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
+# Note: Order matters for correct encoding, and % should always be the last entry in this dict.
+encode_chars = {"/": "%1", "%": "%0"}
 
 
 def encode_arg(string: str):
