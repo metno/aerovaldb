@@ -47,6 +47,10 @@ else:
 logger = logging.getLogger(__name__)
 
 
+def _column_titles_from_route(route: Route):
+    return extract_substitutions(route.value)
+
+
 class AerovalSqliteDB(AerovalDB):
     """
     Allows reading and writing from sqlite3 database files.
@@ -55,17 +59,17 @@ class AerovalSqliteDB(AerovalDB):
     SQLITE_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     TABLE_COLUMN_NAMES = {
-        "glob_stats": extract_substitutions(Route.GLOB_STATS.value),
-        "contour": extract_substitutions(Route.CONTOUR.value),
+        "glob_stats": _column_titles_from_route(Route.GLOB_STATS),
+        "contour": _column_titles_from_route(Route.CONTOUR),
         "contour1": ["project", "experiment", "obsvar", "model", "timestep"],
-        "timeseries": extract_substitutions(Route.TIMESERIES.value),
-        "timeseries_weekly": extract_substitutions(Route.TIMESERIES_WEEKLY.value),
-        "experiments": extract_substitutions(Route.EXPERIMENTS.value),
-        "config": extract_substitutions(Route.CONFIG.value),
-        "menu": extract_substitutions(Route.MENU.value),
-        "statistics": extract_substitutions(Route.STATISTICS.value),
-        "ranges": extract_substitutions(Route.RANGES.value),
-        "regions": extract_substitutions(Route.REGIONS.value),
+        "timeseries": _column_titles_from_route(Route.TIMESERIES),
+        "timeseries_weekly": _column_titles_from_route(Route.TIMESERIES_WEEKLY),
+        "experiments": _column_titles_from_route(Route.EXPERIMENTS),
+        "config": _column_titles_from_route(Route.CONFIG),
+        "menu": _column_titles_from_route(Route.MENU),
+        "statistics": _column_titles_from_route(Route.STATISTICS),
+        "ranges": _column_titles_from_route(Route.RANGES),
+        "regions": _column_titles_from_route(Route.REGIONS),
         "models_style0": ["project", "experiment"],
         "models_style1": ["project"],
         "map0": [
@@ -106,7 +110,7 @@ class AerovalSqliteDB(AerovalDB):
             "model",
             "modvar",
         ],
-        "profiles": extract_substitutions(Route.PROFILES.value),
+        "profiles": _column_titles_from_route(Route.PROFILES),
         "heatmap_timeseries0": [
             "project",
             "experiment",
@@ -120,11 +124,11 @@ class AerovalSqliteDB(AerovalDB):
             "project",
             "experiment",
         ],
-        "forecast": extract_substitutions(Route.FORECAST.value),
-        "gridded_map": extract_substitutions(Route.GRIDDED_MAP.value),
-        "report": extract_substitutions(Route.REPORT.value),
-        "reportimages": extract_substitutions(Route.REPORT_IMAGE.value),
-        "mapoverlay": extract_substitutions(Route.MAP_OVERLAY.value),
+        "forecast": _column_titles_from_route(Route.FORECAST),
+        "gridded_map": _column_titles_from_route(Route.GRIDDED_MAP),
+        "report": _column_titles_from_route(Route.REPORT),
+        "reportimages": _column_titles_from_route(Route.REPORT_IMAGE),
+        "mapoverlay": _column_titles_from_route(Route.MAP_OVERLAY),
     }
 
     TABLE_NAME_TO_ROUTE = {
@@ -603,7 +607,7 @@ class AerovalSqliteDB(AerovalDB):
             fetched = cur.fetchall()
 
             for r in fetched:
-                arg_names = extract_substitutions(route.value)
+                arg_names = _column_titles_from_route(route)
 
                 route_args = {}
                 kwargs = {}
@@ -660,7 +664,7 @@ class AerovalSqliteDB(AerovalDB):
         route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["glob_stats"]
         result = []
         for r in fetched:
-            arg_names = extract_substitutions(route.value)
+            arg_names = _column_titles_from_route(route)
             route_args = {}
             kwargs = {}
             for k in r.keys():
@@ -704,7 +708,7 @@ class AerovalSqliteDB(AerovalDB):
         route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["timeseries"]
         result = []
         for r in fetched:
-            arg_names = extract_substitutions(route.value)
+            arg_names = _column_titles_from_route(route)
             route_args = {}
             kwargs = {}
             for k in r.keys():
