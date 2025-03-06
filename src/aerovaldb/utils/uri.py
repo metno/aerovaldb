@@ -142,7 +142,7 @@ def parse_uri(uri: str | QueryEntry) -> tuple[Route, dict[str, str], dict[str, s
     -------
     >>> from aerovaldb.utils.uri import parse_uri
     >>> parse_uri('/v0/experiments/project')
-    ('/v0/experiments/{project}', {'project': 'project'}, {})
+    (<Route.EXPERIMENTS: '/v0/experiments/{project}'>, {'project': 'project'}, {})
     """
     uri = str(uri)
 
