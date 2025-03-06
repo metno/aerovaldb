@@ -22,7 +22,6 @@ from aerovaldb.types import AccessType
 from ..exceptions import UnsupportedOperation
 from ..lock import FakeLock, FileLock
 from ..routes import *
-from ..types import AssetType
 from ..utils import (
     async_and_sync,
     build_uri,
@@ -83,14 +82,14 @@ class AerovalJsonFileDB(AerovalDB):
 
         self.PATH_LOOKUP = StringMapper(
             {
-                ROUTE_GLOB_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                ROUTE_REG_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                ROUTE_HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                Route.GLOB_STATS.value: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                Route.REGIONAL_STATS.value: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
+                Route.HEATMAP.value: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
-                ROUTE_MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
-                ROUTE_CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
-                ROUTE_CONTOUR2: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
-                ROUTE_TIMESERIES_WEEKLY: [
+                Route.MAP_OVERLAY.value: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
+                Route.CONTOUR.value: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
+                Route.CONTOUR_TIMESPLIT.value: "./{project}/{experiment}/contour/{obsvar}_{model}/{obsvar}_{model}_{timestep}.geojson",
+                Route.TIMESERIES_WEEKLY.value: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
                         min_version="0.28.0.dev0",
@@ -100,7 +99,7 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.28.0.dev0",
                     ),
                 ],
-                ROUTE_TIMESERIES: [
+                Route.TIMESERIES.value: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
                         min_version="0.28.0.dev0",
@@ -110,17 +109,17 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.28.0.dev0",
                     ),
                 ],
-                ROUTE_EXPERIMENTS: "./{project}/experiments.json",
-                ROUTE_CONFIG: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
-                ROUTE_MENU: "./{project}/{experiment}/menu.json",
-                ROUTE_STATISTICS: "./{project}/{experiment}/statistics.json",
-                ROUTE_RANGES: "./{project}/{experiment}/ranges.json",
-                ROUTE_REGIONS: "./{project}/{experiment}/regions.json",
-                ROUTE_MODELS_STYLE: [
+                Route.EXPERIMENTS.value: "./{project}/experiments.json",
+                Route.CONFIG.value: "./{project}/{experiment}/cfg_{project}_{experiment}.json",
+                Route.MENU.value: "./{project}/{experiment}/menu.json",
+                Route.STATISTICS.value: "./{project}/{experiment}/statistics.json",
+                Route.RANGES.value: "./{project}/{experiment}/ranges.json",
+                Route.REGIONS.value: "./{project}/{experiment}/regions.json",
+                Route.MODELS_STYLE.value: [
                     "./{project}/{experiment}/models-style.json",
                     "./{project}/models-style.json",
                 ],
-                ROUTE_MAP: [
+                Route.MAP.value: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
                         min_version="0.28.0.dev0",
@@ -135,7 +134,7 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.13.2",
                     ),
                 ],
-                ROUTE_SCATTER: [
+                Route.SCATTER.value: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
                         min_version="0.28.0.dev0",
@@ -150,8 +149,8 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.13.2",
                     ),
                 ],
-                ROUTE_PROFILES: "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
-                ROUTE_HEATMAP_TIMESERIES: [
+                Route.PROFILES.value: "./{project}/{experiment}/profiles/{location}_{network}_{obsvar}.json",
+                Route.HEATMAP_TIMESERIES.value: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}_{network}_{obsvar}_{layer}.json",
                         min_version="0.28.0.dev0",
@@ -171,7 +170,7 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.12.2",
                     ),
                 ],
-                ROUTE_FORECAST: [
+                Route.FORECAST.value: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}_{obsvar}_{layer}.json",
                         min_version="0.28.0.dev0",
@@ -181,17 +180,17 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.28.0.dev0",
                     ),
                 ],
-                ROUTE_GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
-                ROUTE_REPORT: "./reports/{project}/{experiment}/{title}.json",
-                ROUTE_REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
+                Route.GRIDDED_MAP.value: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
+                Route.REPORT.value: "./reports/{project}/{experiment}/{title}.json",
+                Route.REPORT_IMAGE.value: "./reports/{project}/{experiment}/{path}",
             },
             version_provider=self._get_version,
         )
 
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
-            ROUTE_REG_STATS: filter_regional_stats,
-            ROUTE_HEATMAP: filter_heatmap,
-            ROUTE_MAP: filter_map,
+            Route.REGIONAL_STATS.value: filter_regional_stats,
+            Route.HEATMAP.value: filter_heatmap,
+            Route.MAP.value: filter_map,
         }
 
     def _load_json(
@@ -427,7 +426,7 @@ class AerovalJsonFileDB(AerovalDB):
         :param variable: Variable name.
         """
         return await self._get(
-            ROUTE_REG_STATS,
+            Route.REGIONAL_STATS.value,
             {"project": project, "experiment": experiment, "frequency": frequency},
             access_type=kwargs.get("access_type", AccessType.OBJ),
             network=network,
@@ -458,7 +457,7 @@ class AerovalJsonFileDB(AerovalDB):
         :param time: Time.
         """
         return await self._get(
-            ROUTE_HEATMAP,
+            Route.HEATMAP.value,
             {"project": project, "experiment": experiment, "frequency": frequency},
             access_type=kwargs.get("access_type", AccessType.OBJ),
             region=region,
@@ -491,7 +490,7 @@ class AerovalJsonFileDB(AerovalDB):
             experiment = split[2]
             path = "/".join(split[3:])
             uri = build_uri(
-                ROUTE_REPORT_IMAGE,
+                Route.REPORT_IMAGE.value,
                 {
                     "project": decode_str(
                         project, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
@@ -505,12 +504,12 @@ class AerovalJsonFileDB(AerovalDB):
             )
             return QueryEntry(
                 uri,
-                AssetType.REPORT_IMAGE,
+                Route.REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
             )
 
         for route in self.PATH_LOOKUP._lookuptable:
-            if not (route == ROUTE_MODELS_STYLE):
+            if not (route == Route.MODELS_STYLE.value):
                 if file_path.startswith("reports/"):
                     _str = "/".join(file_path.split("/")[1:3])
                     subs = parse_formatted_string("{project}/{experiment}", _str)
@@ -562,7 +561,7 @@ class AerovalJsonFileDB(AerovalDB):
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return QueryEntry(uri, AssetType(route), route_args | kwargs)
+                return QueryEntry(uri, Route(route), route_args | kwargs)
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
@@ -575,7 +574,7 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
         return await self.query(
-            AssetType.GLOB_STATS, project=project, experiment=experiment
+            Route.GLOB_STATS, project=project, experiment=experiment
         )
 
     @async_and_sync
@@ -587,7 +586,7 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
         return await self.query(
-            AssetType.TIMESERIES, project=project, experiment=experiment
+            Route.TIMESERIES, project=project, experiment=experiment
         )
 
     @async_and_sync
@@ -598,7 +597,7 @@ class AerovalJsonFileDB(AerovalDB):
         experiment: str,
     ):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
-        return await self.query(AssetType.MAP, project=project, experiment=experiment)
+        return await self.query(Route.MAP, project=project, experiment=experiment)
 
     @async_and_sync
     @override
@@ -685,18 +684,16 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     @override
     async def query(
-        self, asset_type: AssetType | Iterable[AssetType] | None = None, **kwargs
+        self, asset_type: Route | Iterable[Route] | None = None, **kwargs
     ) -> list[QueryEntry]:
         if asset_type is None:
-            asset_type = set(AssetType)
-        elif isinstance(asset_type, AssetType):
+            asset_type = set(Route)
+        elif isinstance(asset_type, Route):
             asset_type = set([asset_type])
         elif isinstance(asset_type, Iterable):
             asset_type = set(asset_type)
         else:
-            raise TypeError(
-                f"Expected AssetType | Iterable[AssetType]. Got {type(asset_type)}"
-            )
+            raise TypeError(f"Expected Route | Iterable[Route]. Got {type(asset_type)}")
 
         glb = glob.iglob(
             os.path.join(glob.escape(self._basedir), "./**"), recursive=True
@@ -745,7 +742,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         if access_type in (AccessType.MTIME, AccessType.CTIME):
             return await self._get(
-                route=ROUTE_REPORT_IMAGE,
+                route=Route.REPORT_IMAGE.value,
                 route_args={
                     "project": project,
                     "experiment": experiment,
@@ -754,7 +751,7 @@ class AerovalJsonFileDB(AerovalDB):
                 access_type=access_type,
             )
         file_path = await self._get(
-            route=ROUTE_REPORT_IMAGE,
+            route=Route.REPORT_IMAGE.value,
             route_args={
                 "project": project,
                 "experiment": experiment,
@@ -773,7 +770,7 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     @override
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
-        template = await self._get_template(ROUTE_REPORT_IMAGE, {})
+        template = await self._get_template(Route.REPORT_IMAGE.value, {})
 
         file_path = os.path.join(
             self._basedir,
@@ -808,7 +805,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         for ext in IMG_FILE_EXTS:
             file_path = await self._get(
-                route=ROUTE_MAP_OVERLAY,
+                route=Route.MAP_OVERLAY.value,
                 route_args={
                     "project": project,
                     "experiment": experiment,
@@ -861,7 +858,7 @@ class AerovalJsonFileDB(AerovalDB):
         :param variable : Variable name.
         :param date : Date.
         """
-        template = await self._get_template(ROUTE_MAP_OVERLAY, {})
+        template = await self._get_template(Route.MAP_OVERLAY.value, {})
 
         file_path = os.path.join(
             self._basedir,
@@ -905,7 +902,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         try:
             file_path = await self._get(
-                ROUTE_CONTOUR,
+                Route.CONTOUR.value,
                 {
                     "project": project,
                     "experiment": experiment,
@@ -925,7 +922,7 @@ class AerovalJsonFileDB(AerovalDB):
                 result = simplejson.loads(self._cache.get(key), allow_nan=True)
             except CacheMissError:
                 result = await self._get(
-                    ROUTE_CONTOUR,
+                    Route.CONTOUR.value,
                     {
                         "project": project,
                         "experiment": experiment,
@@ -951,7 +948,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         try:
             result = await self._get(
-                ROUTE_CONTOUR2,
+                Route.CONTOUR_TIMESPLIT.value,
                 {
                     "project": project,
                     "experiment": experiment,
@@ -993,7 +990,7 @@ class AerovalJsonFileDB(AerovalDB):
 
             await self._put(
                 obj,
-                ROUTE_CONTOUR,
+                Route.CONTOUR.value,
                 {
                     "project": project,
                     "experiment": experiment,
@@ -1005,7 +1002,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         await self._put(
             obj,
-            ROUTE_CONTOUR2,
+            Route.CONTOUR_TIMESPLIT.value,
             {
                 "project": project,
                 "experiment": experiment,

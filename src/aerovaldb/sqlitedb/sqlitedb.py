@@ -54,17 +54,17 @@ class AerovalSqliteDB(AerovalDB):
     SQLITE_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     TABLE_COLUMN_NAMES = {
-        "glob_stats": extract_substitutions(ROUTE_GLOB_STATS),
-        "contour": extract_substitutions(ROUTE_CONTOUR),
+        "glob_stats": extract_substitutions(Route.GLOB_STATS.value),
+        "contour": extract_substitutions(Route.CONTOUR.value),
         "contour1": ["project", "experiment", "obsvar", "model", "timestep"],
-        "timeseries": extract_substitutions(ROUTE_TIMESERIES),
-        "timeseries_weekly": extract_substitutions(ROUTE_TIMESERIES_WEEKLY),
-        "experiments": extract_substitutions(ROUTE_EXPERIMENTS),
-        "config": extract_substitutions(ROUTE_CONFIG),
-        "menu": extract_substitutions(ROUTE_MENU),
-        "statistics": extract_substitutions(ROUTE_STATISTICS),
-        "ranges": extract_substitutions(ROUTE_RANGES),
-        "regions": extract_substitutions(ROUTE_REGIONS),
+        "timeseries": extract_substitutions(Route.TIMESERIES.value),
+        "timeseries_weekly": extract_substitutions(Route.TIMESERIES_WEEKLY.value),
+        "experiments": extract_substitutions(Route.EXPERIMENTS.value),
+        "config": extract_substitutions(Route.CONFIG.value),
+        "menu": extract_substitutions(Route.MENU.value),
+        "statistics": extract_substitutions(Route.STATISTICS.value),
+        "ranges": extract_substitutions(Route.RANGES.value),
+        "regions": extract_substitutions(Route.REGIONS.value),
         "models_style0": ["project", "experiment"],
         "models_style1": ["project"],
         "map0": [
@@ -105,7 +105,7 @@ class AerovalSqliteDB(AerovalDB):
             "model",
             "modvar",
         ],
-        "profiles": extract_substitutions(ROUTE_PROFILES),
+        "profiles": extract_substitutions(Route.PROFILES.value),
         "heatmap_timeseries0": [
             "project",
             "experiment",
@@ -119,40 +119,40 @@ class AerovalSqliteDB(AerovalDB):
             "project",
             "experiment",
         ],
-        "forecast": extract_substitutions(ROUTE_FORECAST),
-        "gridded_map": extract_substitutions(ROUTE_GRIDDED_MAP),
-        "report": extract_substitutions(ROUTE_REPORT),
-        "reportimages": extract_substitutions(ROUTE_REPORT_IMAGE),
-        "mapoverlay": extract_substitutions(ROUTE_MAP_OVERLAY),
+        "forecast": extract_substitutions(Route.FORECAST.value),
+        "gridded_map": extract_substitutions(Route.GRIDDED_MAP.value),
+        "report": extract_substitutions(Route.REPORT.value),
+        "reportimages": extract_substitutions(Route.REPORT_IMAGE.value),
+        "mapoverlay": extract_substitutions(Route.MAP_OVERLAY.value),
     }
 
     TABLE_NAME_TO_ROUTE = {
-        "glob_stats": ROUTE_GLOB_STATS,
-        "contour": ROUTE_CONTOUR,
-        "contour1": ROUTE_CONTOUR2,
-        "timeseries": ROUTE_TIMESERIES,
-        "timeseries_weekly": ROUTE_TIMESERIES_WEEKLY,
-        "experiments": ROUTE_EXPERIMENTS,
-        "config": ROUTE_CONFIG,
-        "menu": ROUTE_MENU,
-        "statistics": ROUTE_STATISTICS,
-        "ranges": ROUTE_RANGES,
-        "regions": ROUTE_REGIONS,
-        "models_style0": ROUTE_MODELS_STYLE,
-        "models_style1": ROUTE_MODELS_STYLE,
-        "map0": ROUTE_MAP,
-        "map1": ROUTE_MAP,
-        "scatter0": ROUTE_SCATTER,
-        "scatter1": ROUTE_SCATTER,
-        "profiles": ROUTE_PROFILES,
-        "heatmap_timeseries0": ROUTE_HEATMAP_TIMESERIES,
-        "heatmap_timeseries1": ROUTE_HEATMAP_TIMESERIES,
-        "heatmap_timeseries2": ROUTE_HEATMAP_TIMESERIES,
-        "forecast": ROUTE_FORECAST,
-        "gridded_map": ROUTE_GRIDDED_MAP,
-        "report": ROUTE_REPORT,
-        "reportimages": ROUTE_REPORT_IMAGE,
-        "mapoverlay": ROUTE_MAP_OVERLAY,
+        "glob_stats": Route.GLOB_STATS.value,
+        "contour": Route.CONTOUR.value,
+        "contour1": Route.CONTOUR_TIMESPLIT.value,
+        "timeseries": Route.TIMESERIES.value,
+        "timeseries_weekly": Route.TIMESERIES_WEEKLY.value,
+        "experiments": Route.EXPERIMENTS.value,
+        "config": Route.CONFIG.value,
+        "menu": Route.MENU.value,
+        "statistics": Route.STATISTICS.value,
+        "ranges": Route.RANGES.value,
+        "regions": Route.REGIONS.value,
+        "models_style0": Route.MODELS_STYLE.value,
+        "models_style1": Route.MODELS_STYLE.value,
+        "map0": Route.MAP.value,
+        "map1": Route.MAP.value,
+        "scatter0": Route.SCATTER.value,
+        "scatter1": Route.SCATTER.value,
+        "profiles": Route.PROFILES.value,
+        "heatmap_timeseries0": Route.HEATMAP_TIMESERIES.value,
+        "heatmap_timeseries1": Route.HEATMAP_TIMESERIES.value,
+        "heatmap_timeseries2": Route.HEATMAP_TIMESERIES.value,
+        "forecast": Route.FORECAST.value,
+        "gridded_map": Route.GRIDDED_MAP.value,
+        "report": Route.REPORT.value,
+        "reportimages": Route.REPORT_IMAGE.value,
+        "mapoverlay": Route.MAP_OVERLAY.value,
     }
 
     def __init__(self, database: str, /, **kwargs):
@@ -176,26 +176,26 @@ class AerovalSqliteDB(AerovalDB):
 
         self.TABLE_NAME_LOOKUP = StringMapper(
             {
-                ROUTE_GLOB_STATS: "glob_stats",
-                ROUTE_REG_STATS: "glob_stats",
-                ROUTE_HEATMAP: "glob_stats",
-                ROUTE_CONTOUR: "contour",
-                ROUTE_CONTOUR2: "contour1",
-                ROUTE_TIMESERIES: "timeseries",
-                ROUTE_TIMESERIES_WEEKLY: "timeseries_weekly",
-                ROUTE_EXPERIMENTS: "experiments",
-                ROUTE_CONFIG: "config",
-                ROUTE_MENU: "menu",
-                ROUTE_STATISTICS: "statistics",
-                ROUTE_RANGES: "ranges",
-                ROUTE_REGIONS: "regions",
-                ROUTE_MODELS_STYLE: PriorityMapper(
+                Route.GLOB_STATS.value: "glob_stats",
+                Route.REGIONAL_STATS.value: "glob_stats",
+                Route.HEATMAP.value: "glob_stats",
+                Route.CONTOUR.value: "contour",
+                Route.CONTOUR_TIMESPLIT.value: "contour1",
+                Route.TIMESERIES.value: "timeseries",
+                Route.TIMESERIES_WEEKLY.value: "timeseries_weekly",
+                Route.EXPERIMENTS.value: "experiments",
+                Route.CONFIG.value: "config",
+                Route.MENU.value: "menu",
+                Route.STATISTICS.value: "statistics",
+                Route.RANGES.value: "ranges",
+                Route.REGIONS.value: "regions",
+                Route.MODELS_STYLE.value: PriorityMapper(
                     {
                         "models_style0": "{project}/{experiment}",
                         "models_style1": "{project}",
                     }
                 ),
-                ROUTE_MAP: [
+                Route.MAP.value: [
                     VersionConstraintMapper(
                         "map0",
                         min_version="0.13.2",
@@ -205,7 +205,7 @@ class AerovalSqliteDB(AerovalDB):
                         max_version="0.13.2",
                     ),
                 ],
-                ROUTE_SCATTER: [
+                Route.SCATTER.value: [
                     VersionConstraintMapper(
                         "scatter0",
                         min_version="0.13.2",
@@ -215,8 +215,8 @@ class AerovalSqliteDB(AerovalDB):
                         max_version="0.13.2",
                     ),
                 ],
-                ROUTE_PROFILES: "profiles",
-                ROUTE_HEATMAP_TIMESERIES: [
+                Route.PROFILES.value: "profiles",
+                Route.HEATMAP_TIMESERIES.value: [
                     VersionConstraintMapper(
                         "heatmap_timeseries0",
                         min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
@@ -231,20 +231,20 @@ class AerovalSqliteDB(AerovalDB):
                         max_version="0.12.2",
                     ),
                 ],
-                ROUTE_FORECAST: "forecast",
-                ROUTE_GRIDDED_MAP: "gridded_map",
-                ROUTE_REPORT: "report",
-                ROUTE_REPORT_IMAGE: "reportimages",
-                ROUTE_MAP_OVERLAY: "mapoverlay",
+                Route.FORECAST.value: "forecast",
+                Route.GRIDDED_MAP.value: "gridded_map",
+                Route.REPORT.value: "report",
+                Route.REPORT_IMAGE.value: "reportimages",
+                Route.MAP_OVERLAY: "mapoverlay",
             },
             version_provider=self._get_version,
         )
 
         self.FILTERS: dict[str, Callable[..., Awaitable[Any]]] = {
-            ROUTE_REG_STATS: filter_regional_stats,
-            ROUTE_HEATMAP: filter_heatmap,
-            ROUTE_CONTOUR: filter_contour,
-            ROUTE_MAP: filter_map,
+            Route.REGIONAL_STATS.value: filter_regional_stats,
+            Route.HEATMAP.value: filter_heatmap,
+            Route.CONTOUR.value: filter_contour,
+            Route.MAP.value: filter_map,
         }
 
     @async_and_sync
@@ -537,7 +537,7 @@ class AerovalSqliteDB(AerovalDB):
 
         route, route_args, kwargs = parse_uri(uri)
 
-        if route == ROUTE_REPORT_IMAGE:
+        if route == Route.REPORT_IMAGE.value:
             return await self.get_report_image(
                 route_args["project"],
                 route_args["experiment"],
@@ -545,7 +545,7 @@ class AerovalSqliteDB(AerovalDB):
                 access_type=access_type,
             )
 
-        if route == ROUTE_MAP_OVERLAY:
+        if route == Route.MAP_OVERLAY.value:
             return await self.get_map_overlay(
                 route_args["project"],
                 route_args["experiment"],
@@ -568,13 +568,13 @@ class AerovalSqliteDB(AerovalDB):
     @override
     async def put_by_uri(self, obj, uri: str):
         route, route_args, kwargs = parse_uri(uri)
-        if route == ROUTE_REPORT_IMAGE:
+        if route == Route.REPORT_IMAGE.value:
             await self.put_report_image(
                 obj, route_args["project"], route_args["experiment"], route_args["path"]
             )
             return
 
-        if route == ROUTE_MAP_OVERLAY:
+        if route == Route.MAP_OVERLAY.value:
             await self.put_map_overlay(
                 obj,
                 route_args["project"],
@@ -904,7 +904,7 @@ class AerovalSqliteDB(AerovalDB):
         access_type = self._normalize_access_type(access_type)
         try:
             result = await self._get(
-                ROUTE_CONTOUR,
+                Route.CONTOUR.value,
                 {
                     "project": project,
                     "experiment": experiment,
@@ -922,7 +922,7 @@ class AerovalSqliteDB(AerovalDB):
 
         try:
             result = await self._get(
-                ROUTE_CONTOUR2,
+                Route.CONTOUR_TIMESPLIT.value,
                 {
                     "project": project,
                     "experiment": experiment,
@@ -964,7 +964,7 @@ class AerovalSqliteDB(AerovalDB):
 
             await self._put(
                 obj,
-                ROUTE_CONTOUR,
+                Route.CONTOUR.value,
                 {
                     "project": project,
                     "experiment": experiment,
@@ -976,7 +976,7 @@ class AerovalSqliteDB(AerovalDB):
 
         await self._put(
             obj,
-            ROUTE_CONTOUR2,
+            Route.CONTOUR_TIMESPLIT.value,
             {
                 "project": project,
                 "experiment": experiment,

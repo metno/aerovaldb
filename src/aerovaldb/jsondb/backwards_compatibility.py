@@ -2,7 +2,7 @@ from packaging.version import Version
 
 # The motivation for doing this is explained here:
 # See this issue:
-from ..routes import *
+from ..routes import Route
 
 
 # The motivation for doing this is explained here:
@@ -13,19 +13,19 @@ from ..routes import *
 def post_process_args(
     route: str, args: dict[str, str], kwargs: dict[str, str], *, version: Version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if route == ROUTE_MAP:
+    if route == Route.MAP.value:
         args, kwargs = _post_process_maps_args_kwargs(args, kwargs)
-    elif route in [ROUTE_TIMESERIES, ROUTE_TIMESERIES_WEEKLY]:
+    elif route in [Route.TIMESERIES.value, Route.TIMESERIES_WEEKLY.value]:
         args, kwargs = _post_process_timeseries_args_kwargs(
             args, kwargs, version=version
         )
-    elif route == ROUTE_HEATMAP_TIMESERIES:
+    elif route == Route.HEATMAP_TIMESERIES.value:
         args, kwargs = _post_process_heatmap_ts_args_kwargs(
             args, kwargs, version=version
         )
-    elif route == ROUTE_FORECAST:
+    elif route == Route.FORECAST.value:
         args, kwargs = _post_process_forecast_args_kwargs(args, kwargs)
-    elif route == ROUTE_SCATTER:
+    elif route == Route.SCATTER.value:
         args, kwargs = _post_process_scatter_args_kwargs(args, kwargs)
     return args, kwargs
 

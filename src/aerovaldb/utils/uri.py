@@ -1,7 +1,7 @@
 import re
 import urllib
 
-from ..types import AssetType
+from ..routes import Route
 from .encode import decode_str, encode_str
 
 encode_chars = {"%": "%0", "/": "%1", "_": "%2"}
@@ -132,7 +132,7 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     """
     split = uri.split("?")
 
-    for template in [x.value for x in AssetType]:
+    for template in [x.value for x in Route]:
         if len(split) == 1:
             try:
                 route_args = parse_formatted_string(template, split[0])
