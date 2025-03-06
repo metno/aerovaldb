@@ -19,6 +19,7 @@ from aerovaldb.utils.filter import (
     filter_map,
     filter_regional_stats,
 )
+from aerovaldb.utils.query import QueryEntry
 from aerovaldb.utils.string_mapper import (
     PriorityMapper,
     StringMapper,
@@ -526,7 +527,7 @@ class AerovalSqliteDB(AerovalDB):
     @override
     async def get_by_uri(
         self,
-        uri: str,
+        uri: str | QueryEntry,
         /,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
@@ -566,7 +567,7 @@ class AerovalSqliteDB(AerovalDB):
 
     @async_and_sync
     @override
-    async def put_by_uri(self, obj, uri: str):
+    async def put_by_uri(self, obj, uri: str | QueryEntry):
         route, route_args, kwargs = parse_uri(uri)
         if route == Route.REPORT_IMAGE.value:
             await self.put_report_image(

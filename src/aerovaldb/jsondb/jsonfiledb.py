@@ -604,7 +604,7 @@ class AerovalJsonFileDB(AerovalDB):
     @override
     async def get_by_uri(
         self,
-        uri: str,
+        uri: str | QueryEntry,
         /,
         access_type: str | AccessType = AccessType.OBJ,
         cache: bool = False,
@@ -645,7 +645,7 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @override
-    async def put_by_uri(self, obj, uri: str):
+    async def put_by_uri(self, obj, uri: str | QueryEntry):
         route, route_args, kwargs = parse_uri(uri)
 
         if route.startswith("/v0/report-image/"):

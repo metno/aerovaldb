@@ -1,6 +1,8 @@
 import re
 import urllib
 
+from aerovaldb.utils.query import QueryEntry
+
 from ..routes import Route
 from .encode import decode_str, encode_str
 
@@ -124,7 +126,7 @@ def parse_formatted_string(
     return result
 
 
-def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
+def parse_uri(uri: str | QueryEntry) -> tuple[str, dict[str, str], dict[str, str]]:
     """
     Parses an uri returning a tuple consisting of
     - The route against which it was matched.
@@ -142,6 +144,8 @@ def parse_uri(uri: str) -> tuple[str, dict[str, str], dict[str, str]]:
     >>> parse_uri('/v0/experiments/project')
     ('/v0/experiments/{project}', {'project': 'project'}, {})
     """
+    uri = str(uri)
+
     split = uri.split("?")
 
     for template in [x.value for x in Route]:

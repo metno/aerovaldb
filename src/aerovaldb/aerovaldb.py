@@ -1152,7 +1152,7 @@ class AerovalDB(abc.ABC):
     @async_and_sync
     async def get_by_uri(
         self,
-        uri: str,
+        uri: str | QueryEntry,
         /,
         access_type: str | AccessType,
         cache: bool = False,
@@ -1178,7 +1178,7 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    async def put_by_uri(self, obj, uri: str):
+    async def put_by_uri(self, obj, uri: str | QueryEntry):
         """Replaces a stored object by uri with a new object.
 
         :param obj: The object to be stored. Either a json str, or a
