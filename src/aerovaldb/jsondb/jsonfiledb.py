@@ -67,6 +67,8 @@ class AerovalJsonFileDB(AerovalDB):
         """
         :param basedir The root directory where aerovaldb will look for files.
         """
+        self._uri_cache: dict[str, QueryEntry] = {}
+
         self._use_real_lock = str_to_bool(
             os.environ.get("AVDB_USE_LOCKING", ""), default=False
         )
@@ -477,6 +479,9 @@ class AerovalJsonFileDB(AerovalDB):
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
 
+        if file_path in self._uri_cache:
+            return self._uri_cache[file_path]
+
         _, ext = os.path.splitext(file_path)
 
         if "/overlay/" in file_path:
@@ -503,11 +508,13 @@ class AerovalJsonFileDB(AerovalDB):
                 },
                 {},
             )
-            return QueryEntry(
+            entry = QueryEntry(
                 uri,
                 Route.REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
             )
+            self._uri_cache[file_path] = entry
+            return entry
 
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == Route.MODELS_STYLE):
@@ -562,7 +569,9 @@ class AerovalJsonFileDB(AerovalDB):
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return QueryEntry(uri, Route(route), route_args | kwargs)
+                entry = QueryEntry(uri, Route(route), route_args | kwargs)
+                self._uri_cache[file_path] = entry
+                return entry
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
 
