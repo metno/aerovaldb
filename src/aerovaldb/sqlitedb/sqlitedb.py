@@ -638,49 +638,6 @@ class AerovalSqliteDB(AerovalDB):
 
         return FakeLock()
 
-    @override
-    def list_glob_stats(
-        self,
-        project: str,
-        experiment: str,
-        /,
-        access_type: str | AccessType = AccessType.URI,
-    ):
-        if access_type != AccessType.URI:
-            raise ValueError(
-                f"Invalid access_type. Got {access_type}, expected AccessType.URI"
-            )
-
-        cur = self._con.cursor()
-        cur.execute(
-            f"""
-            SELECT * FROM glob_stats
-            WHERE project=? AND experiment=?
-            """,
-            (project, experiment),
-        )
-        fetched = cur.fetchall()
-
-        route = AerovalSqliteDB.TABLE_NAME_TO_ROUTE["glob_stats"]
-        result = []
-        for r in fetched:
-            arg_names = _column_titles_from_route(route)
-            route_args = {}
-            kwargs = {}
-            for k in r.keys():
-                if k in ["json", "blob", "ctime", "mtime"]:
-                    continue
-
-                if k in arg_names:
-                    route_args[k] = r[k]
-                else:
-                    kwargs[k] = r[k]
-
-            uri = build_uri(route, route_args, kwargs)
-            result.append(uri)
-
-        return result
-
     @async_and_sync
     @override
     async def list_timeseries(

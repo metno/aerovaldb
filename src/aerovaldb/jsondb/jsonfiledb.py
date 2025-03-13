@@ -577,18 +577,6 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @override
-    async def list_glob_stats(
-        self,
-        project: str,
-        experiment: str,
-    ):
-        logger.warning("list_all is deprecated. Please consider using query() instead.")
-        return await self.query(
-            Route.GLOB_STATS, project=project, experiment=experiment
-        )
-
-    @async_and_sync
-    @override
     async def list_timeseries(
         self,
         project: str,

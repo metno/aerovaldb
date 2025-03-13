@@ -217,21 +217,6 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    async def list_glob_stats(
-        self,
-        project: str,
-        experiment: str,
-    ) -> list[QueryEntry]:
-        """Lists the URI for each glob_stats object.
-
-        :param project: str
-        :param experiment: str
-
-        :returns: List of URIs.
-        """
-        raise NotImplementedError
-
-    @async_and_sync
     @get_method(Route.CONTOUR)
     async def get_contour(
         self,
