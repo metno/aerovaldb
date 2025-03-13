@@ -95,21 +95,21 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.TIMESERIES_WEEKLY: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                 ],
                 Route.TIMESERIES: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                 ],
                 Route.EXPERIMENTS: "./{project}/experiments.json",
@@ -125,12 +125,12 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.MAP: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -140,12 +140,12 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.SCATTER: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -156,12 +156,12 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.HEATMAP_TIMESERIES: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                         min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
@@ -176,11 +176,11 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.FORECAST: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                 ],
                 Route.GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
