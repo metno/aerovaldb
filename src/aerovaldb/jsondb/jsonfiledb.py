@@ -85,9 +85,9 @@ class AerovalJsonFileDB(AerovalDB):
 
         self.PATH_LOOKUP = StringMapper(
             {
+                Route.HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 Route.GLOB_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 Route.REGIONAL_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                Route.HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
                 Route.MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 Route.CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
