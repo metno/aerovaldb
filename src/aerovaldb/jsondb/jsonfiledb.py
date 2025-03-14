@@ -12,7 +12,6 @@ from typing import Any, Awaitable, Callable, Iterable
 
 import filetype  # type: ignore
 import simplejson  # type: ignore
-from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
@@ -69,8 +68,6 @@ class AerovalJsonFileDB(AerovalDB):
         """
         :param basedir The root directory where aerovaldb will look for files.
         """
-        self._uri_cache: dict[str, QueryEntry] = {}
-
         self._use_real_lock = str_to_bool(
             os.environ.get("AVDB_USE_LOCKING", ""), default=False
         )
@@ -513,7 +510,6 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
             )
-            self._uri_cache[file_path] = entry
             return entry
 
         for route in self.PATH_LOOKUP._lookuptable:
@@ -570,7 +566,6 @@ class AerovalJsonFileDB(AerovalDB):
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
                 entry = QueryEntry(uri, Route(route), route_args | kwargs)
-                self._uri_cache[file_path] = entry
                 return entry
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
