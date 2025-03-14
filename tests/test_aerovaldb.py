@@ -480,14 +480,6 @@ def test_version2(testdb):
         assert str(db._get_version("project", "experiment-old")) == "0.0.5"
 
 
-@TESTDB_PARAMETRIZATION
-def test_list_glob_stats(testdb):
-    with aerovaldb.open(testdb) as db:
-        glob_stats = db.list_glob_stats("project", "experiment")
-
-        assert len(glob_stats) == 1
-
-
 @pytest.mark.dependency(scope="session", name="test_list_all")
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):

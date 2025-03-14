@@ -1,6 +1,6 @@
 import pytest
 
-from aerovaldb.routes import *
+from aerovaldb import Route
 from aerovaldb.utils import (
     decode_arg,
     encode_arg,

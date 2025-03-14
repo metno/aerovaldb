@@ -1,7 +1,5 @@
 from packaging.version import Version
 
-# The motivation for doing this is explained here:
-# See this issue:
 from ..routes import Route
 
 
@@ -51,7 +49,7 @@ def _post_process_maps_args_kwargs(
 def _post_process_timeseries_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if version >= Version("0.26.0"):
+    if version >= Version("0.29.0.dev1"):
         return args, kwargs
 
     if "-" in args["obsvar"]:
@@ -84,7 +82,7 @@ def _post_process_scatter_args_kwargs(
 def _post_process_heatmap_ts_args_kwargs(
     args: dict[str, str], kwargs: dict[str, str], *, version
 ) -> tuple[dict[str, str], dict[str, str]]:
-    if version >= Version("0.26.0"):
+    if version >= Version("0.29.0.dev1"):
         return args, kwargs
     if version <= Version("0.12.2"):
         return args, kwargs

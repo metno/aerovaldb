@@ -12,7 +12,6 @@ from typing import Any, Awaitable, Callable, Iterable
 
 import filetype  # type: ignore
 import simplejson  # type: ignore
-from async_lru import alru_cache
 from packaging.version import Version
 
 from aerovaldb.aerovaldb import AerovalDB
@@ -39,6 +38,8 @@ if sys.version_info >= (3, 12):
     from typing import override
 else:
     from typing_extensions import override
+
+from async_lru import alru_cache
 
 from ..utils.encode import decode_str, encode_str
 from ..utils.query import QueryEntry
@@ -83,9 +84,9 @@ class AerovalJsonFileDB(AerovalDB):
 
         self.PATH_LOOKUP = StringMapper(
             {
+                Route.HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 Route.GLOB_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 Route.REGIONAL_STATS: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
-                Route.HEATMAP: "./{project}/{experiment}/hm/glob_stats_{frequency}.json",
                 # For MAP_OVERLAY, extension is excluded but it will be appended after the fact.
                 Route.MAP_OVERLAY: "./{project}/{experiment}/overlay/{variable}_{source}/{variable}_{source}_{date}",
                 Route.CONTOUR: "./{project}/{experiment}/contour/{obsvar}_{model}.geojson",
@@ -93,21 +94,21 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.TIMESERIES_WEEKLY: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/diurnal/{location}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                 ],
                 Route.TIMESERIES: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/ts/{location}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                 ],
                 Route.EXPERIMENTS: "./{project}/experiments.json",
@@ -123,12 +124,12 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.MAP: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/map/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -138,12 +139,12 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.SCATTER: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}_{obsvar}_{layer}_{model}_{modvar}_{time}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}_{time}.json",
                         min_version="0.13.2",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/scat/{network}-{obsvar}_{layer}_{model}-{modvar}.json",
@@ -154,12 +155,12 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.HEATMAP_TIMESERIES: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{region}-{network}-{obsvar}-{layer}.json",
                         min_version="0.13.2",  # https://github.com/metno/pyaerocom/blob/4478b4eafb96f0ca9fd722be378c9711ae10c1f6/setup.cfg
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/hm/ts/{network}-{obsvar}-{layer}.json",
@@ -174,11 +175,11 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.FORECAST: [
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}_{obsvar}_{layer}.json",
-                        min_version="0.28.0.dev0",
+                        min_version="0.29.0.dev1",
                     ),
                     VersionConstraintMapper(
                         "./{project}/{experiment}/forecast/{region}_{network}-{obsvar}_{layer}.json",
-                        max_version="0.28.0.dev0",
+                        max_version="0.29.0.dev1",
                     ),
                 ],
                 Route.GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
@@ -467,6 +468,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
+    @alru_cache(maxsize=1000)
     async def _get_query_entry_for_file(self, file_path: str) -> QueryEntry:
         """
         For the provided data file path, returns the corresponding
@@ -503,11 +505,12 @@ class AerovalJsonFileDB(AerovalDB):
                 },
                 {},
             )
-            return QueryEntry(
+            entry = QueryEntry(
                 uri,
                 Route.REPORT_IMAGE,
                 {"project": project, "experiment": experiment, "path": path},
             )
+            return entry
 
         for route in self.PATH_LOOKUP._lookuptable:
             if not (route == Route.MODELS_STYLE):
@@ -562,21 +565,10 @@ class AerovalJsonFileDB(AerovalDB):
                 continue
             else:
                 uri = build_uri(route, route_args, kwargs | {"version": str(version)})
-                return QueryEntry(uri, Route(route), route_args | kwargs)
+                entry = QueryEntry(uri, Route(route), route_args | kwargs)
+                return entry
 
         raise ValueError(f"Unable to build URI for file path {file_path}")
-
-    @async_and_sync
-    @override
-    async def list_glob_stats(
-        self,
-        project: str,
-        experiment: str,
-    ):
-        logger.warning("list_all is deprecated. Please consider using query() instead.")
-        return await self.query(
-            Route.GLOB_STATS, project=project, experiment=experiment
-        )
 
     @async_and_sync
     @override
