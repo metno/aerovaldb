@@ -468,7 +468,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
-    @alru_cache
+    @alru_cache(maxsize=1000)
     async def _get_query_entry_for_file(self, file_path: str) -> QueryEntry:
         """
         For the provided data file path, returns the corresponding
