@@ -40,6 +40,8 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import override
 
+from async_lru import alru_cache
+
 from ..utils.encode import decode_str, encode_str
 from ..utils.query import QueryEntry
 from .backwards_compatibility import post_process_args
@@ -469,6 +471,7 @@ class AerovalJsonFileDB(AerovalDB):
         )
 
     @async_and_sync
+    @alru_cache
     async def _get_query_entry_for_file(self, file_path: str) -> QueryEntry:
         """
         For the provided data file path, returns the corresponding
@@ -478,9 +481,6 @@ class AerovalJsonFileDB(AerovalDB):
         """
         file_path = os.path.join(self._basedir, file_path)
         file_path = os.path.relpath(file_path, start=self._basedir)
-
-        if file_path in self._uri_cache:
-            return self._uri_cache[file_path]
 
         _, ext = os.path.splitext(file_path)
 
