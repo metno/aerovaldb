@@ -1009,6 +1009,41 @@ class AerovalDB(abc.ABC):
         :returns: The fetched data.
         """
         raise NotImplementedError
+    
+    @async_and_sync
+    @get_method(Route.FAIRMODE)
+    async def get_fairmode(
+        self,
+        project: str,
+        experiment: str,
+        region: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        """Fetch fairmode.
+
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param region: Region ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
+
+        :param access_type: How the data is to be retrieved (See AccessType for details)
+        :param cache: Whether to use cache for this read.
+        :param default: Default value that will be returned instead of raising FileNotFoundError
+            if not data was found (Will be returned as is and not converted to match access_type).
+
+        :returns: The fetched data.
+        """
+        raise NotImplementedError
 
     @async_and_sync
     @put_method(Route.FORECAST)
@@ -1026,6 +1061,33 @@ class AerovalDB(abc.ABC):
         **kwargs,
     ):
         """Store forecast.
+
+        :param obj: The Object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param region: Region ID.
+        :param network: Observation Network.
+        :param obsvar: Observation variable.
+        :param layer: Layer.
+        """
+        raise NotImplementedError
+    
+    @async_and_sync
+    @put_method(Route.FAIRMODE)
+    async def put_fairmode(
+        self,
+        obj,
+        project: str,
+        experiment: str,
+        region: str,
+        network: str,
+        obsvar: str,
+        layer: str,
+        /,
+        *args,
+        **kwargs,
+    ):
+        """Store fairmode.
 
         :param obj: The Object to be stored.
         :param project: Project ID.
