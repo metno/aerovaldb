@@ -41,7 +41,7 @@ else:
 
 from async_lru import alru_cache
 
-from ..utils.encode import decode_str, encode_str
+from ..utils.encode import DecodedStr, EncodedStr, decode_str, encode_str
 from ..utils.query import QueryEntry
 from .backwards_compatibility import post_process_args
 
@@ -222,7 +222,9 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @alru_cache(maxsize=2048)
-    async def _get_version(self, project: str, experiment: str) -> Version:
+    async def _get_version(
+        self, project: DecodedStr, experiment: DecodedStr
+    ) -> Version:
         """
         Returns the version of pyaerocom used to generate the files for a given project
         and experiment.
@@ -232,10 +234,6 @@ class AerovalJsonFileDB(AerovalDB):
 
         :return : A Version object.
         """
-        project = decode_str(project, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
-        experiment = decode_str(
-            experiment, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
-        )
         try:
             config = await self.get_config(project, experiment)
         except FileNotFoundError:
@@ -291,6 +289,8 @@ class AerovalJsonFileDB(AerovalDB):
             k: v
             if isinstance(v, _LiteralArg)
             else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+            if not isinstance(v, EncodedStr)
+            else v
             for k, v in (route_args | kwargs).items()
         }
 
@@ -375,6 +375,8 @@ class AerovalJsonFileDB(AerovalDB):
             k: v
             if isinstance(v, _LiteralArg)
             else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+            if not isinstance(v, EncodedStr)
+            else v
             for k, v in (route_args | kwargs).items()
         }
 
@@ -537,6 +539,10 @@ class AerovalJsonFileDB(AerovalDB):
                     except:
                         continue
 
+            subs = {
+                k: decode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+                for k, v in subs.items()
+            }
             template = await self._get_template(route, subs)
 
             if "experiment" in subs:

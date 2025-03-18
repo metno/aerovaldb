@@ -1,4 +1,12 @@
-def encode_str(string: str, *, encode_chars: dict[str, str]) -> str:
+class EncodedStr(str):
+    pass
+
+
+class DecodedStr(str):
+    pass
+
+
+def encode_str(string: str, *, encode_chars: dict[str, str]) -> EncodedStr:
     """Encodes a string by replacing characters by en encoded
     character sequence.
 
@@ -8,11 +16,14 @@ def encode_str(string: str, *, encode_chars: dict[str, str]) -> str:
 
     :return: Encoded string.
     """
+    if isinstance(string, EncodedStr):
+        raise TypeError(f"String '{string}' is already encoded.")
+
     mapping = str.maketrans(encode_chars)
-    return string.translate(mapping)
+    return EncodedStr(string.translate(mapping))
 
 
-def decode_str(string: str, *, encode_chars: dict[str, str]) -> str:
+def decode_str(string: str, *, encode_chars: dict[str, str]) -> DecodedStr:
     """Decodes a string previously encoded using encode_str.
 
     :param string: String to be decoded.
@@ -20,6 +31,9 @@ def decode_str(string: str, *, encode_chars: dict[str, str]) -> str:
     used during the original encode operation.
     :return: Decoded string.
     """
+    if isinstance(string, DecodedStr):
+        raise TypeError(f"String '{string}' is already decoded.")
+
     for k, v in encode_chars.items():
         string = string.replace(v, k)
-    return string
+    return DecodedStr(string)
