@@ -232,6 +232,10 @@ class AerovalJsonFileDB(AerovalDB):
 
         :return : A Version object.
         """
+        project = decode_str(project, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+        experiment = decode_str(
+            experiment, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
+        )
         try:
             config = await self.get_config(project, experiment)
         except FileNotFoundError:
