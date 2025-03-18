@@ -229,8 +229,8 @@ class AerovalJsonFileDB(AerovalDB):
         Returns the version of pyaerocom used to generate the files for a given project
         and experiment.
 
-        :param project : Encoded Project ID.
-        :param experiment : Encoded Experiment ID.
+        :param project : Project ID.
+        :param experiment : Experiment ID.
 
         :return : A Version object.
         """
@@ -278,6 +278,21 @@ class AerovalJsonFileDB(AerovalDB):
         # assert all([isinstance(v, DecodedStr) for v in substitutions.values()])
         return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
+    def _prepare_substitutions(self, subs: dict[str, _LiteralArg | DecodedStr]) -> dict:
+        """Prepares template substitutions for inclusion in file path. This mainly
+        entails file name encoding.
+
+        :param subs: Dict of subs to be prepared.
+
+        :return: Dict with same keys with the prepared values.
+        """
+        return {
+            k: v
+            if isinstance(v, _LiteralArg)
+            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+            for k, v in subs.items()
+        }
+
     @override
     async def _get(
         self,
@@ -296,12 +311,7 @@ class AerovalJsonFileDB(AerovalDB):
         assert all(
             isinstance(v, DecodedStr | str) for v in (route_args | kwargs).values()
         )
-        substitutions = {
-            k: v
-            if isinstance(v, _LiteralArg)
-            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
-            for k, v in (route_args | kwargs).items()
-        }
+        substitutions = self._prepare_substitutions(route_args | kwargs)
 
         logger.debug(f"Fetching data for {route}.")
 
@@ -382,14 +392,7 @@ class AerovalJsonFileDB(AerovalDB):
         assert all(
             isinstance(v, DecodedStr | str) for v in (route_args | kwargs).values()
         )
-        substitutions = {
-            k: v
-            if isinstance(v, _LiteralArg)
-            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
-            if not isinstance(v, EncodedStr)
-            else v
-            for k, v in (route_args | kwargs).items()
-        }
+        substitutions = self._prepare_substitutions(route_args | kwargs)
 
         relative_path = path_template.format(**substitutions)
 
