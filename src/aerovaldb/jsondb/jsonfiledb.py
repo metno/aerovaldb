@@ -234,6 +234,8 @@ class AerovalJsonFileDB(AerovalDB):
 
         :return : A Version object.
         """
+        # assert isinstance(project, DecodedStr)
+        # assert isinstance(experiment, DecodedStr)
         try:
             config = await self.get_config(project, experiment)
         except FileNotFoundError:
@@ -273,6 +275,7 @@ class AerovalJsonFileDB(AerovalDB):
         :raises TemplateNotFound :
             If no valid template was found.
         """
+        # assert all([isinstance(v, DecodedStr) for v in substitutions.values()])
         return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
     @override

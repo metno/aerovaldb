@@ -9,6 +9,7 @@ from aerovaldb.utils.query import QueryEntry
 from .routes import Route
 from .types import AccessType
 from .utils import async_and_sync
+from .utils.encode import DecodedStr
 
 
 def get_method(route):
@@ -38,7 +39,11 @@ def get_method(route):
                         )
             if len(args) > 0:
                 raise IndexError(f"{len(args)} superfluous positional args provided.")
-            return await self._get(route, route_args, *args, **kwargs)
+            return await self._get(
+                route,
+                route_args,
+                **kwargs,
+            )
 
         return wrapper
 
@@ -72,7 +77,12 @@ def put_method(route):
                         )
             if len(args) > 0:
                 raise IndexError(f"{len(args)} superfluous positional args provided.")
-            return await self._put(obj, route, route_args, **kwargs)
+            return await self._put(
+                obj,
+                route,
+                route_args,
+                **kwargs,
+            )
 
         return wrapper
 
