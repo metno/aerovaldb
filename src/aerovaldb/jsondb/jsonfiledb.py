@@ -305,9 +305,6 @@ class AerovalJsonFileDB(AerovalDB):
         path_template = await self._get_template(route, (route_args | kwargs))
         logger.debug(f"Using template string {path_template}")
 
-        assert all(
-            isinstance(v, DecodedStr | str) for v in (route_args | kwargs).values()
-        )
         substitutions = self._prepare_substitutions(route_args | kwargs)
 
         logger.debug(f"Fetching data for {route}.")
