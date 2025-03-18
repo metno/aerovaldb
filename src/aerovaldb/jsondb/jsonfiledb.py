@@ -227,8 +227,8 @@ class AerovalJsonFileDB(AerovalDB):
         Returns the version of pyaerocom used to generate the files for a given project
         and experiment.
 
-        :param project : Project ID.
-        :param experiment : Experiment ID.
+        :param project : Encoded Project ID.
+        :param experiment : Encoded Experiment ID.
 
         :return : A Version object.
         """
