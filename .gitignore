@@ -165,3 +165,5 @@ tests/test-db/tmp
 XX~/
 
 playground/
+mypy.ini
+.python-version
