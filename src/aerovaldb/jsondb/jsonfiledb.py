@@ -41,7 +41,7 @@ else:
 
 from async_lru import alru_cache
 
-from ..utils.encode import decode_str, encode_str
+from ..utils.encode import DecodedStr, EncodedStr, decode_str, encode_str
 from ..utils.query import QueryEntry
 from .backwards_compatibility import post_process_args
 
@@ -223,7 +223,9 @@ class AerovalJsonFileDB(AerovalDB):
 
     @async_and_sync
     @alru_cache(maxsize=2048)
-    async def _get_version(self, project: str, experiment: str) -> Version:
+    async def _get_version(
+        self, project: DecodedStr, experiment: DecodedStr
+    ) -> Version:
         """
         Returns the version of pyaerocom used to generate the files for a given project
         and experiment.
@@ -256,7 +258,9 @@ class AerovalJsonFileDB(AerovalDB):
         return version
 
     @async_and_sync
-    async def _get_template(self, route: Route, substitutions: dict) -> str:
+    async def _get_template(
+        self, route: Route, substitutions: dict[str, DecodedStr]
+    ) -> str:
         """
         Loops through each instance of TemplateMapper finding the
         appropriate template to use give an route, and a dictionary
@@ -272,6 +276,21 @@ class AerovalJsonFileDB(AerovalDB):
         """
         return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
+    def _prepare_substitutions(self, subs: dict[str, _LiteralArg | DecodedStr]) -> dict:
+        """Prepares template substitutions for inclusion in file path. This mainly
+        entails file name encoding.
+
+        :param subs: Dict of subs to be prepared.
+
+        :return: Dict with same keys with the prepared values.
+        """
+        return {
+            k: v
+            if isinstance(v, _LiteralArg)
+            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+            for k, v in subs.items()
+        }
+
     @override
     async def _get(
         self,
@@ -284,17 +303,12 @@ class AerovalJsonFileDB(AerovalDB):
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
-        substitutions = {
-            k: v
-            if isinstance(v, _LiteralArg)
-            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
-            for k, v in (route_args | kwargs).items()
-        }
+        path_template = await self._get_template(route, (route_args | kwargs))
+        logger.debug(f"Using template string {path_template}")
+
+        substitutions = self._prepare_substitutions(route_args | kwargs)
 
         logger.debug(f"Fetching data for {route}.")
-
-        path_template = await self._get_template(route, substitutions)
-        logger.debug(f"Using template string {path_template}")
 
         relative_path = path_template.format(**substitutions)
 
@@ -368,14 +382,13 @@ class AerovalJsonFileDB(AerovalDB):
         If obj is string, it is assumed to be a wellformatted json string.
         Otherwise it is assumed to be a serializable python object.
         """
-        substitutions = {
-            k: v
-            if isinstance(v, _LiteralArg)
-            else encode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
-            for k, v in (route_args | kwargs).items()
-        }
+        path_template = await self._get_template(route, route_args | kwargs)
 
-        path_template = await self._get_template(route, substitutions)
+        assert all(
+            isinstance(v, DecodedStr | str) for v in (route_args | kwargs).values()
+        )
+        substitutions = self._prepare_substitutions(route_args | kwargs)
+
         relative_path = path_template.format(**substitutions)
 
         file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
@@ -534,6 +547,10 @@ class AerovalJsonFileDB(AerovalDB):
                     except:
                         continue
 
+            subs = {
+                k: decode_str(v, encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS)
+                for k, v in subs.items()
+            }
             template = await self._get_template(route, subs)
 
             if "experiment" in subs:
