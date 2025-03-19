@@ -192,6 +192,12 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             "./project/experiment/forecast/",
         ),
         (
+            "get_fairmode",
+            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            None,
+            "./project/experiment/fairmode/",
+        ),
+        (
             "get_gridded_map",
             ["project", "experiment", "obsvar", "model"],
             None,
@@ -296,6 +302,11 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
         ),
         (
             "forecast",
+            ["project", "experiment", "station", "network", "obsvar", "layer"],
+            None,
+        ),
+        (
+            "fairmode",
             ["project", "experiment", "station", "network", "obsvar", "layer"],
             None,
         ),
@@ -484,7 +495,7 @@ def test_version2(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 49
+        assert len(db.list_all()) == 50
 
 
 @TESTDB_PARAMETRIZATION
