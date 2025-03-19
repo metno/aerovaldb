@@ -347,6 +347,23 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
+    async def list_glob_stats(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ) -> list[str]:
+        """Lists the URI for each glob_stats object.
+
+        :param project: str
+        :param experiment: str
+
+        :returns: List of URIs.
+        """
+        raise NotImplementedError
+
+    @async_and_sync
     async def list_timeseries(
         self,
         project: str,
@@ -1019,7 +1036,7 @@ class AerovalDB(abc.ABC):
         :returns: The fetched data.
         """
         raise NotImplementedError
-    
+
     @async_and_sync
     @get_method(Route.FAIRMODE)
     async def get_fairmode(
@@ -1081,7 +1098,7 @@ class AerovalDB(abc.ABC):
         :param layer: Layer.
         """
         raise NotImplementedError
-    
+
     @async_and_sync
     @put_method(Route.FAIRMODE)
     async def put_fairmode(

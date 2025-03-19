@@ -596,9 +596,12 @@ class AerovalJsonFileDB(AerovalDB):
         experiment: str,
     ):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
-        return await self.query(
-            Route.TIMESERIES, project=project, experiment=experiment
-        )
+        return [
+            uri.uri
+            for uri in await self.query(
+                Route.TIMESERIES, project=project, experiment=experiment
+            )
+        ]
 
     @async_and_sync
     @override
@@ -608,7 +611,12 @@ class AerovalJsonFileDB(AerovalDB):
         experiment: str,
     ):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
-        return await self.query(Route.MAP, project=project, experiment=experiment)
+        return [
+            uri.uri
+            for uri in await self.query(
+                Route.MAP, project=project, experiment=experiment
+            )
+        ]
 
     @async_and_sync
     @override
@@ -728,7 +736,7 @@ class AerovalJsonFileDB(AerovalDB):
     @override
     async def list_all(self):
         logger.warning("list_all is deprecated. Please consider using query() instead.")
-        return await self.query()
+        return [uri.uri for uri in await self.query()]
 
     @async_and_sync
     @override
@@ -1031,3 +1039,24 @@ class AerovalJsonFileDB(AerovalDB):
 
         if os.path.exists(file_path):
             os.remove(file_path)
+
+    @async_and_sync
+    @override
+    async def list_glob_stats(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        access_type: str | AccessType = AccessType.URI,
+    ) -> list[str]:
+        logger.warning("list_glob_stats() is deprecated. Please use query instead.")
+
+        # Route.HEATMAP below is intentional, as this maintains old behaviour for compatibility.
+        # Will be removed in future since the name is misleading (it returns heatmap while being
+        # named list_glob_stats).
+        return [
+            uri.uri
+            for uri in await self.query(
+                Route.HEATMAP, project=project, experiment=experiment
+            )
+        ]

@@ -669,3 +669,11 @@ def test_get_map_filtering(testdb):
     assert not "excluded_frequency" in data[0]
     assert "season" in data[0]["frequency"]
     assert not "excluded_season" in data[0]["frequency"]
+
+
+@TESTDB_PARAMETRIZATION
+def test_list_glob_stats(testdb):
+    with aerovaldb.open(testdb) as db:
+        glob_stats = db.list_glob_stats("project", "experiment")
+
+        assert len(glob_stats) == 1
