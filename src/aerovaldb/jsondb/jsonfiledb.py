@@ -1060,3 +1060,29 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.HEATMAP, project=project, experiment=experiment
             )
         ]
+
+    @async_and_sync
+    @override
+    async def get_report(
+        self,
+        project: str,
+        experiment: str,
+        title: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        return await self._get(
+            Route.REPORT,
+            {
+                "project": project,
+                "experiment": experiment,
+                "title": _LiteralArg(title),
+            },
+            access_type=access_type,
+            cache=cache,
+            default=default,
+        )
