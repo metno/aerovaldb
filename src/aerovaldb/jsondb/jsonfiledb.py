@@ -1078,11 +1078,34 @@ class AerovalJsonFileDB(AerovalDB):
         return await self._get(
             Route.REPORT,
             {
-                "project": project,
-                "experiment": experiment,
+                "project": _LiteralArg(project),
+                "experiment": _LiteralArg(experiment),
                 "title": _LiteralArg(title),
             },
             access_type=access_type,
             cache=cache,
             default=default,
+        )
+
+    @async_and_sync
+    @override
+    async def put_report(
+        self, obj, project: str, experiment: str, title: str, /, *args, **kwargs
+    ):
+        """Store report.
+
+        :param obj: The object to be stored.
+        :param project: Project ID.
+        :param experiment: Experiment ID.
+        :param title: Report title (ie. filename without extension).
+        """
+        await self._put(
+            obj,
+            Route.REPORT,
+            {
+                "project": _LiteralArg(project),
+                "experiment": _LiteralArg(experiment),
+                "title": _LiteralArg(title),
+            },
+            **kwargs,
         )
