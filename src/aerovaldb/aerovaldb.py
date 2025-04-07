@@ -498,7 +498,7 @@ class AerovalDB(abc.ABC):
         cache: bool = False,
         default=None,
         **kwargs,
-    ) -> int:
+    ):
         """Fetches a configuration from the db.
 
         :param project: Project ID.

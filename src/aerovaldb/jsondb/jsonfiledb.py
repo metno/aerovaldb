@@ -1109,3 +1109,56 @@ class AerovalJsonFileDB(AerovalDB):
             },
             **kwargs,
         )
+
+    @async_and_sync
+    @override
+    async def get_config(
+        self,
+        project: str,
+        experiment: str,
+        /,
+        *args,
+        access_type: str | AccessType = AccessType.OBJ,
+        cache: bool = False,
+        default=None,
+        **kwargs,
+    ):
+        data = None
+        try:
+            data = await self._get(
+                Route.CONFIG,
+                {
+                    "project": _LiteralArg(project),
+                    "experiment": _LiteralArg(experiment),
+                },
+                access_type=access_type,
+                cache=cache,
+            )
+        except FileNotFoundError:
+            data = await self._get(
+                Route.CONFIG,
+                {"project": project, "experiment": experiment},
+                access_type=access_type,
+                cache=cache,
+            )
+
+        if data is None and default is not None:
+            data = default
+
+        if data is not None:
+            return data
+
+        raise FileNotFoundError
+
+    @async_and_sync
+    @override
+    async def put_config(self, obj, project: str, experiment: str, /, *args, **kwargs):
+        await self._put(
+            obj,
+            Route.CONFIG,
+            {
+                "project": _LiteralArg(project),
+                "experiment": _LiteralArg(experiment),
+            },
+            **kwargs,
+        )
