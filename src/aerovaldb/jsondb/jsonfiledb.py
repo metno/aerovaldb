@@ -313,6 +313,12 @@ class AerovalJsonFileDB(AerovalDB):
         relative_path = path_template.format(**substitutions)
 
         file_path = os.path.join(self._basedir, relative_path)
+
+        if not os.path.exists(file_path):
+            file_path = os.path.join(
+                self._basedir, path_template.format(**(route_args | kwargs))
+            )
+
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
         filter_func = self.FILTERS.get(route, None)
