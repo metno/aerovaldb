@@ -879,15 +879,18 @@ class AerovalJsonFileDB(AerovalDB):
         """
         template = await self._get_template(Route.MAP_OVERLAY, {})
 
+        subs = self._prepare_substitutions(
+            {
+                "project": DecodedStr(project),
+                "experiment": DecodedStr(experiment),
+                "source": DecodedStr(source),
+                "variable": DecodedStr(variable),
+                "date": DecodedStr(date),
+            }
+        )
         file_path = os.path.join(
             self._basedir,
-            template.format(
-                project=project,
-                experiment=experiment,
-                source=source,
-                variable=variable,
-                date=date,
-            ),
+            template.format(**subs),
         )
 
         ext = filetype.guess_extension(obj)
