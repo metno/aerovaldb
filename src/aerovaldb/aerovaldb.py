@@ -9,7 +9,6 @@ from aerovaldb.utils.query import QueryEntry
 from .routes import Route
 from .types import AccessType
 from .utils import async_and_sync
-from .utils.encode import DecodedStr
 
 
 def get_method(route):
