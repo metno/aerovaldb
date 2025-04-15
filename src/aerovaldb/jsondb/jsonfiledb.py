@@ -276,7 +276,7 @@ class AerovalJsonFileDB(AerovalDB):
         """
         return await self.PATH_LOOKUP.lookup(route, **substitutions)
 
-    def _prepare_substitutions(self, subs: dict[str, _LiteralArg | DecodedStr]) -> dict:
+    def _prepare_substitutions(self, subs: dict[str, _LiteralArg | str]) -> dict:
         """Prepares template substitutions for inclusion in file path. This mainly
         entails file name encoding.
 
@@ -879,15 +879,18 @@ class AerovalJsonFileDB(AerovalDB):
         """
         template = await self._get_template(Route.MAP_OVERLAY, {})
 
+        subs = self._prepare_substitutions(
+            {
+                "project": project,
+                "experiment": experiment,
+                "source": source,
+                "variable": variable,
+                "date": date,
+            }
+        )
         file_path = os.path.join(
             self._basedir,
-            template.format(
-                project=project,
-                experiment=experiment,
-                source=source,
-                variable=variable,
-                date=date,
-            ),
+            template.format(**subs),
         )
 
         ext = filetype.guess_extension(obj)

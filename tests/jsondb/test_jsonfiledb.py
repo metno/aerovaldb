@@ -1,8 +1,11 @@
+import pathlib
+
 import pytest
 from packaging.version import Version
 
 import aerovaldb
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
+from tests.test_aerovaldb import TEST_IMAGES
 
 
 def test_jsonfiledb__get_uri_for_file(tmp_path):
@@ -93,3 +96,16 @@ def test_backwards_compatibility_uri(tmp_path, mocker, uri: str, meta: dict[str,
         db.put_by_uri({}, uri)
 
         assert str(db.list_all()[0]) == uri
+
+
+def test_overlays_encoding(tmp_path):
+    dat = open(TEST_IMAGES[".png"], "rb").read()
+    with aerovaldb.open(f"json_files:{tmp_path}") as db:
+        db.put_map_overlay(dat, "FFire", "FFire2022_eea", "source", "variable", "date")
+
+        assert (
+            pathlib.Path(tmp_path)
+            / "FFire/FFire2022%2eea/overlay/variable_source/variable_source_date.png"
+        ).exists()
+
+        db.get_map_overlay("FFire", "FFire2022_eea", "source", "variable", "date")
