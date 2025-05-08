@@ -41,7 +41,7 @@ else:
 
 from async_lru import alru_cache
 
-from ..utils.encode import DecodedStr, EncodedStr, decode_str, encode_str
+from ..utils.encode import DecodedStr, decode_str, encode_str
 from ..utils.query import QueryEntry
 from .backwards_compatibility import post_process_args
 
@@ -714,9 +714,31 @@ class AerovalJsonFileDB(AerovalDB):
         else:
             raise TypeError(f"Expected Route | Iterable[Route]. Got {type(asset_type)}")
 
-        glb = glob.iglob(
-            os.path.join(glob.escape(self._basedir), "./**"), recursive=True
-        )
+        # NOTE: This is a bit of a hacky hard coded way to minimize the number of files that need to
+        # be iterated over.
+        if "project" in kwargs and "experiment" in kwargs:
+            p = encode_str(
+                kwargs["project"], encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
+            )
+            e = encode_str(
+                kwargs["experiment"], encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
+            )
+            glb = glob.iglob(
+                os.path.join(glob.escape(f"{self._basedir}/{p}/{e}"), "./**"),
+                recursive=True,
+            )
+        elif "project" in kwargs:
+            p = encode_str(
+                kwargs["project"], encode_chars=AerovalJsonFileDB.FNAME_ENCODE_CHARS
+            )
+            glb = glob.iglob(
+                os.path.join(glob.escape(f"{self._basedir}/{p}"), "./**"),
+                recursive=True,
+            )
+        else:
+            glb = glob.iglob(
+                os.path.join(glob.escape(self._basedir), "./**"), recursive=True
+            )
 
         result = []
         for f in glb:
