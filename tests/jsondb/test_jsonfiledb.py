@@ -108,4 +108,4 @@ def test_overlays_encoding(tmp_path):
             / "FFire/FFire2022%2eea/overlay/variable_source/variable_source_date.png"
         ).exists()
 
-        db.get_map_overlay("FFire", "FFire2022_eea", "source", "variable", "date")
+        db.get_map_overlay("FFire", "FFire2022%2eea", "source", "variable", "date")
