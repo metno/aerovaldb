@@ -64,6 +64,7 @@ def filter_map(data, frequency: str | None = None, season: str | None = None):
             "longitude",
             "altitude",
             "region",
+            "station_display_name",
             frequency,
         }
         for item in data:
