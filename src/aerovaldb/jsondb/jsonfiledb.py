@@ -300,6 +300,8 @@ class AerovalJsonFileDB(AerovalDB):
     ):
         use_caching = kwargs.pop("cache", False)
         default = kwargs.pop("default", None)
+
+        _try_unencoded = kwargs.pop("_try_unencoded", True)
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
@@ -314,7 +316,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         file_path = os.path.join(self._basedir, relative_path)
 
-        if not os.path.exists(file_path):
+        if _try_unencoded and not os.path.exists(file_path):
             file_path = os.path.join(
                 self._basedir, path_template.format(**(route_args | kwargs))
             )
@@ -861,6 +863,7 @@ class AerovalJsonFileDB(AerovalDB):
                     "date": date,
                 },
                 _raise_file_not_found_error=False,
+                _try_unencoded=False,
                 access_type=AccessType.FILE_PATH,
             )
 
