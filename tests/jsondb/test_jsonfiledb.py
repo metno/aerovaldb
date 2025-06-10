@@ -1,6 +1,11 @@
+import inspect
 import pathlib
+import random
+import tempfile
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from packaging.version import Version
 
 import aerovaldb
@@ -109,3 +114,94 @@ def test_overlays_encoding(tmp_path):
         ).exists()
 
         db.get_map_overlay("FFire", "FFire2022_eea", "source", "variable", "date")
+
+
+@pytest.mark.parametrize(
+    "asset",
+    (
+        pytest.param(
+            "config",
+        ),
+        pytest.param(
+            "glob_stats",
+        ),
+        pytest.param(
+            "timeseries",
+        ),
+        pytest.param(
+            "timeseries_weekly",
+        ),
+        pytest.param(
+            "contour",
+        ),
+        pytest.param(
+            "menu",
+        ),
+        pytest.param(
+            "statistics",
+        ),
+        pytest.param(
+            "ranges",
+        ),
+        pytest.param(
+            "regions",
+        ),
+        pytest.param(
+            "models_style",
+        ),
+        pytest.param(
+            "scatter",
+        ),
+        pytest.param(
+            "profiles",
+        ),
+        pytest.param(
+            "forecast",
+        ),
+        pytest.param(
+            "fairmode",
+        ),
+        pytest.param(
+            "gridded_map",
+        ),
+        pytest.param(
+            "report",
+        ),
+        pytest.param(
+            "map_overlay",
+            marks=pytest.mark.xfail(
+                reason="Input is not valid image data, so extension guessing fails."
+            ),
+        ),
+        pytest.param(
+            "report_image",
+            marks=pytest.mark.xfail(
+                reason="Input is not valid image data, so extension guessing fails."
+            ),
+        ),
+    ),
+)
+@given(st.text(alphabet="abcd1234_%/", min_size=1, max_size=30))
+def test_examples(asset: str, string: str):
+    with aerovaldb.open(f"json_files:{tempfile.mkdtemp()}") as db:
+        get = getattr(db, f"get_{asset}")
+        put = getattr(db, f"put_{asset}")
+
+        data = [random.randint(0, 10**6)]
+
+        sig = inspect.signature(get)
+        args = [
+            string
+            for v in sig.parameters.values()
+            if v.kind in [inspect.Parameter.POSITIONAL_ONLY]
+        ]
+        kwargs = {
+            v.name: string
+            for v in sig.parameters.values()
+            if v.kind
+            in [inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD]
+            and v.name not in ("cache", "default", "access_type")
+        }
+
+        put(data, *args, **kwargs)
+        assert data[0] == get(*args, **kwargs)[0]
