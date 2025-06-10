@@ -1,15 +1,17 @@
+import inspect
 import pathlib
+import random
+import tempfile
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 from packaging.version import Version
 
 import aerovaldb
 from aerovaldb.jsondb.jsonfiledb import AerovalJsonFileDB
 from tests.test_aerovaldb import TEST_IMAGES
 
-import inspect
-
-import random
 
 def test_jsonfiledb__get_uri_for_file(tmp_path):
     with aerovaldb.open(f"json_files:{str(tmp_path)}") as db:
@@ -113,6 +115,7 @@ def test_overlays_encoding(tmp_path):
 
         db.get_map_overlay("FFire", "FFire2022_eea", "source", "variable", "date")
 
+
 @pytest.mark.parametrize(
     "asset",
     (
@@ -166,30 +169,39 @@ def test_overlays_encoding(tmp_path):
         ),
         pytest.param(
             "map_overlay",
+            marks=pytest.mark.xfail(
+                reason="Input is not valid image data, so extension guessing fails."
+            ),
         ),
         pytest.param(
             "report_image",
-        )
-
-    )
+            marks=pytest.mark.xfail(
+                reason="Input is not valid image data, so extension guessing fails."
+            ),
+        ),
+    ),
 )
-def test_wip(tmp_path, asset: str):
-    def test_helper():
-        return ''.join(random.choices("abcd1234_/%", k=10))
-
-    with aerovaldb.open(f"json_files:{tmp_path}") as db:
+@given(st.text(alphabet="abcd1234_%/", min_size=1, max_size=30))
+def test_examples(asset: str, string: str):
+    with aerovaldb.open(f"json_files:{tempfile.mkdtemp()}") as db:
         get = getattr(db, f"get_{asset}")
         put = getattr(db, f"put_{asset}")
-        
-        data = [random.randint(0, 10**6)]
-        sig = inspect.signature(get)
 
-        args = [test_helper() for v in sig.parameters.values() if v.kind in [inspect.Parameter.POSITIONAL_ONLY]]
-        args.extend([test_helper() for v in sig.parameters.values() if v.kind in [inspect.Parameter.POSITIONAL_OR_KEYWORD] and v.name not in ("cache", "default", "access_type")])
-        kwargs = {v.name: test_helper() for v in sig.parameters.values() if v.kind == inspect.Parameter.KEYWORD_ONLY and v.name not in ("cache", "default", "access_type")}
+        data = [random.randint(0, 10**6)]
+
+        sig = inspect.signature(get)
+        args = [
+            string
+            for v in sig.parameters.values()
+            if v.kind in [inspect.Parameter.POSITIONAL_ONLY]
+        ]
+        kwargs = {
+            v.name: string
+            for v in sig.parameters.values()
+            if v.kind
+            in [inspect.Parameter.KEYWORD_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD]
+            and v.name not in ("cache", "default", "access_type")
+        }
 
         put(data, *args, **kwargs)
-
-        read_data = get(*args, **kwargs)
-
-        assert data[0] == read_data[0]
+        assert data[0] == get(*args, **kwargs)[0]
