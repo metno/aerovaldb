@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import inspect
 from typing import Callable, ParamSpec, TypeVar
 
 # Workaround to ensure function signature of the decorated function is shown correctly
@@ -31,10 +32,19 @@ def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
 
     @functools.wraps(function)
     def async_and_sync_wrap(*args, **kwargs):
-        if has_async_loop():
-            return function(*args, **kwargs)
-        else:
-            return asyncio.run(function(*args, **kwargs))
+        result = function(*args, **kwargs)
+        if not inspect.iscoroutine(result):
+            return result
+
+        if not has_async_loop():
+            return asyncio.run(result)
+
+        if inspect.getcoroutinestate(result) == inspect.CORO_CREATED:
+            # Coroutine not awaited. This can happen if pyaerocom calls aerovaldb synchronously
+            # from a context that has an asyncio event loop such as a jupyter notebook.
+            result.__await__()
+
+        return result
 
     return async_and_sync_wrap
 
