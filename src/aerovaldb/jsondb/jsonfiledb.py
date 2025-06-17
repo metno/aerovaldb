@@ -221,6 +221,20 @@ class AerovalJsonFileDB(AerovalDB):
 
         raise UnsupportedOperation(f"{access_type}")
 
+    async def _build_file_path_default(
+        self,
+        route,
+        route_args,
+        **kwargs,
+    ) -> str:
+        path_template = await self._get_template(route, (route_args | kwargs))
+        logger.debug(f"Using template string {path_template}")
+        substitutions = self._prepare_substitutions(route_args | kwargs)
+        logger.debug(f"Fetching data for {route}.")
+        relative_path = path_template.format(**substitutions)
+        file_path = os.path.join(self._basedir, relative_path)
+        return file_path
+
     @async_and_sync
     @alru_cache(maxsize=2048)
     async def _get_version(
@@ -296,6 +310,8 @@ class AerovalJsonFileDB(AerovalDB):
         self,
         route,
         route_args,
+        *,
+        file_path_builder=None,
         **kwargs,
     ):
         use_caching = kwargs.pop("cache", False)
@@ -305,21 +321,10 @@ class AerovalJsonFileDB(AerovalDB):
         _raise_file_not_found_error = kwargs.pop("_raise_file_not_found_error", True)
         access_type = self._normalize_access_type(kwargs.pop("access_type", None))
 
-        path_template = await self._get_template(route, (route_args | kwargs))
-        logger.debug(f"Using template string {path_template}")
+        if file_path_builder is None:
+            file_path_builder = self._build_file_path_default
 
-        substitutions = self._prepare_substitutions(route_args | kwargs)
-
-        logger.debug(f"Fetching data for {route}.")
-
-        relative_path = path_template.format(**substitutions)
-
-        file_path = os.path.join(self._basedir, relative_path)
-
-        if _try_unencoded and not os.path.exists(file_path):
-            file_path = os.path.join(
-                self._basedir, path_template.format(**(route_args | kwargs))
-            )
+        file_path = await file_path_builder(route, route_args, **kwargs)
 
         logger.debug(f"Fetching file {file_path} as {access_type}-")
 
@@ -799,14 +804,13 @@ class AerovalJsonFileDB(AerovalDB):
                 },
                 access_type=access_type,
             )
-        file_path = await self._get(
-            route=Route.REPORT_IMAGE,
+        file_path = await self._build_file_path_default(
+            Route.REPORT_IMAGE,
             route_args={
                 "project": project,
                 "experiment": experiment,
                 "path": _LiteralArg(path),
             },
-            access_type=AccessType.FILE_PATH,
         )
         logger.debug(f"Fetching image with path '{file_path}'")
 
@@ -819,11 +823,9 @@ class AerovalJsonFileDB(AerovalDB):
     @async_and_sync
     @override
     async def put_report_image(self, obj, project: str, experiment: str, path: str):
-        template = await self._get_template(Route.REPORT_IMAGE, {})
-
-        file_path = os.path.join(
-            self._basedir,
-            template.format(project=project, experiment=experiment, path=path),
+        file_path = await self._build_file_path_default(
+            Route.REPORT_IMAGE,
+            {"project": project, "experiment": experiment, "path": path},
         )
         os.makedirs(Path(file_path).parent, exist_ok=True)
         with open(file_path, "wb") as f:
@@ -853,20 +855,16 @@ class AerovalJsonFileDB(AerovalDB):
             )
 
         for ext in IMG_FILE_EXTS:
-            file_path = await self._get(
-                route=Route.MAP_OVERLAY,
-                route_args={
+            file_path = await self._build_file_path_default(
+                Route.MAP_OVERLAY,
+                {
                     "project": project,
                     "experiment": experiment,
                     "source": source,
                     "variable": variable,
                     "date": date,
                 },
-                _raise_file_not_found_error=False,
-                _try_unencoded=False,
-                access_type=AccessType.FILE_PATH,
             )
-
             file_path += ext
             if os.path.exists(file_path):
                 break
@@ -908,20 +906,15 @@ class AerovalJsonFileDB(AerovalDB):
         :param variable : Variable name.
         :param date : Date.
         """
-        template = await self._get_template(Route.MAP_OVERLAY, {})
-
-        subs = self._prepare_substitutions(
+        file_path = await self._build_file_path_default(
+            Route.MAP_OVERLAY,
             {
                 "project": project,
                 "experiment": experiment,
                 "source": source,
                 "variable": variable,
                 "date": date,
-            }
-        )
-        file_path = os.path.join(
-            self._basedir,
-            template.format(**subs),
+            },
         )
 
         ext = filetype.guess_extension(obj)
