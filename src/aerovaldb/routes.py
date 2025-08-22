@@ -50,7 +50,7 @@ _ROUTE_FORECAST = (
 )
 
 _ROUTE_FAIRMODE = (
-    "/v0/fairmode/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}"
+    "/v0/fairmode/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}/{model}"
 )
 
 _ROUTE_GRIDDED_MAP = "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}"
