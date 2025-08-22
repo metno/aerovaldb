@@ -193,7 +193,7 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
         ),
         (
             "get_fairmode",
-            ["project", "experiment", "region", "network", "obsvar", "layer"],
+            ["project", "experiment", "region", "network", "obsvar", "layer", "model"],
             None,
             "./project/experiment/fairmode/",
         ),
@@ -307,7 +307,7 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
         ),
         (
             "fairmode",
-            ["project", "experiment", "station", "network", "obsvar", "layer"],
+            ["project", "experiment", "station", "network", "obsvar", "layer", "model"],
             None,
         ),
         ("gridded_map", ["project", "experiment", "obsvar", "model"], None),

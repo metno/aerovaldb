@@ -182,16 +182,7 @@ class AerovalJsonFileDB(AerovalDB):
                         max_version="0.29.0.dev1",
                     ),
                 ],
-                Route.FAIRMODE: [
-                    VersionConstraintMapper(
-                        "./{project}/{experiment}/fairmode/{region}_{network}_{obsvar}_{layer}.json",
-                        max_version="0.33.0",
-                    ),
-                    VersionConstraintMapper(
-                        "./{project}/{experiment}/fairmode/{region}_{network}_{obsvar}_{layer}_{model}.json",
-                        min_version="0.34.dev0"
-                    ),
-                ],
+                Route.FAIRMODE: "./{project}/{experiment}/fairmode/{region}_{network}_{obsvar}_{layer}_{model}.json",
                 Route.GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 Route.REPORT: "./reports/{project}/{experiment}/{title}.json",
                 Route.REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
