@@ -12,7 +12,7 @@ import pytest
 
 import aerovaldb
 from aerovaldb.utils.asyncio import has_async_loop
-from .fixtures_aerovaldb import (
+from tests.fixtures_aerovaldb import (
     GET_PARAMETRIZATION,
     IMPLEMENTATION_PARAMETRIZATION,
     PUT_PARAMETRIZATION,
