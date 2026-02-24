@@ -334,7 +334,7 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
 )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 @TESTDB_PARAMETRIZATION
 @GET_PARAMETRIZATION
 async def test_getter(testdb: str, fun: str, args: list, kwargs: dict, expected):
@@ -381,7 +381,7 @@ def test_getter_json_str(testdb: str, fun: str, args: list, kwargs: dict, expect
         assert data["path"] == expected
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 @IMPLEMENTATION_PARAMETRIZATION
 @PUT_PARAMETRIZATION
 async def test_setters(dbtype: str, fun: str, args: list, kwargs: dict, tmpdb):
@@ -464,7 +464,7 @@ def test_write_and_read_of_nan(tmpdb):
         assert read["value"] is None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="module")
 @TESTDB_PARAMETRIZATION
 async def test_file_does_not_exist(testdb):
     with aerovaldb.open(testdb) as db:
