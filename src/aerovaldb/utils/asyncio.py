@@ -19,6 +19,14 @@ def has_async_loop():
         is_async = False
     return is_async
 
+@functools.lru_cache(maxsize=1)
+def _get_event_loop():
+    """Get a single cached event loop for synchronous execution.
+
+    :return: Event loop instance.
+    """
+    loop = asyncio.new_event_loop()
+    return loop
 
 def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
     """Wrap an async method to a sync method.
@@ -37,7 +45,7 @@ def async_and_sync(function: Callable[P, T]) -> Callable[P, T]:
             return result
 
         if not has_async_loop():
-            return asyncio.run(result)
+            return _get_event_loop().run_until_complete(result)
 
         if inspect.getcoroutinestate(result) == inspect.CORO_CREATED:
             # Coroutine not awaited. This can happen if pyaerocom calls aerovaldb synchronously
