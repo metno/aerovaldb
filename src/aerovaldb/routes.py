@@ -51,6 +51,8 @@ _ROUTE_FORECAST = (
 
 _ROUTE_FAIRMODE = "/v0/fairmode/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}/{model}/{time}"
 
+_ROUTE_RADARPLOT = "/v0/radarplot/{project}/{experiment}/{region}/{network}/{obsvar}/{layer}/{model}/{time}"
+
 _ROUTE_GRIDDED_MAP = "/v0/gridded_map/{project}/{experiment}/{obsvar}/{model}"
 
 _ROUTE_REPORT = "/v0/report/{project}/{experiment}/{title}"
@@ -81,6 +83,7 @@ class Route(Enum):
     HEATMAP_TIMESERIES = _ROUTE_HEATMAP_TIMESERIES
     FORECAST = _ROUTE_FORECAST
     FAIRMODE = _ROUTE_FAIRMODE
+    RADARPLOT = _ROUTE_RADARPLOT
     GRIDDED_MAP = _ROUTE_GRIDDED_MAP
     REPORT = _ROUTE_REPORT
     REPORT_IMAGE = _ROUTE_REPORT_IMAGE

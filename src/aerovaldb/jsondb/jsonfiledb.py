@@ -183,6 +183,7 @@ class AerovalJsonFileDB(AerovalDB):
                     ),
                 ],
                 Route.FAIRMODE: "./{project}/{experiment}/fairmode/{region}_{network}_{obsvar}_{layer}_{model}_{time}.json",
+                Route.RADARPLOT: "./{project}/{experiment}/radarplot/{region}_{network}_{obsvar}_{layer}_{model}_{time}.json",
                 Route.GRIDDED_MAP: "./{project}/{experiment}/contour/{obsvar}_{model}.json",
                 Route.REPORT: "./reports/{project}/{experiment}/{title}.json",
                 Route.REPORT_IMAGE: "./reports/{project}/{experiment}/{path}",
@@ -401,7 +402,7 @@ class AerovalJsonFileDB(AerovalDB):
 
         file_path = str(Path(os.path.join(self._basedir, relative_path)).resolve())
 
-        logger.debug(f"Mapped route {route} / { route_args} to file {file_path}.")
+        logger.debug(f"Mapped route {route} / {route_args} to file {file_path}.")
 
         if not os.path.exists(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
