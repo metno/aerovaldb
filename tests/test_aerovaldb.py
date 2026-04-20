@@ -192,6 +192,21 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
             "./project/experiment/forecast/",
         ),
         (
+            "get_radarplot",
+            [
+                "project",
+                "experiment",
+                "region",
+                "network",
+                "obsvar",
+                "layer",
+                "model",
+                "time",
+            ],
+            None,
+            "./project/experiment/radarplot/",
+        ),
+        (
             "get_fairmode",
             [
                 "project",
@@ -513,7 +528,7 @@ def test_version2(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 50
+        assert len(db.list_all()) == 51
 
 
 @TESTDB_PARAMETRIZATION
