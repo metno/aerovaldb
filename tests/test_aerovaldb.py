@@ -21,7 +21,7 @@ from .fixtures_aerovaldb import (
     IMPLEMENTATION_PARAMETRIZATION,
     PUT_PARAMETRIZATION,
     TESTDB_PARAMETRIZATION,
-    tmpdb
+    tmpdb,
 )
 
 
@@ -150,7 +150,7 @@ def test_version2(testdb):
 @TESTDB_PARAMETRIZATION
 def test_list_all(testdb):
     with aerovaldb.open(testdb) as db:
-        assert len(db.list_all()) == 50
+        assert len(db.list_all()) == 51
 
 
 @TESTDB_PARAMETRIZATION
