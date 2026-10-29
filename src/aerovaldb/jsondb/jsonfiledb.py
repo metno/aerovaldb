@@ -117,9 +117,9 @@ class AerovalJsonFileDB(AerovalDB):
                 Route.STATISTICS: "./{project}/{experiment}/statistics.json",
                 Route.RANGES: "./{project}/{experiment}/ranges.json",
                 Route.REGIONS: "./{project}/{experiment}/regions.json",
-                Route.MODELS_STYLE: [
-                    "./{project}/{experiment}/models-style.json",
-                    "./{project}/models-style.json",
+                Route.DEFAULTS: [
+                    "./{project}/{experiment}/defaults.json",
+                    "./{project}/defaults.json",
                 ],
                 Route.MAP: [
                     VersionConstraintMapper(
@@ -536,7 +536,7 @@ class AerovalJsonFileDB(AerovalDB):
             return entry
 
         for route in self.PATH_LOOKUP._lookuptable:
-            if not (route == Route.MODELS_STYLE):
+            if not (route == Route.DEFAULTS):
                 if file_path.startswith("reports/"):
                     _str = "/".join(file_path.split("/")[1:3])
                     subs = parse_formatted_string("{project}/{experiment}", _str)
@@ -546,12 +546,12 @@ class AerovalJsonFileDB(AerovalDB):
             else:
                 try:
                     subs = parse_formatted_string(
-                        "{project}/{experiment}/models-style.json", file_path
+                        "{project}/{experiment}/defaults.json", file_path
                     )
                 except Exception:
                     try:
                         subs = parse_formatted_string(
-                            "{project}/models-style.json", file_path
+                            "{project}/defaults.json", file_path
                         )
                     except:
                         continue
@@ -566,7 +566,7 @@ class AerovalJsonFileDB(AerovalDB):
                 version = await self._get_version(subs["project"], subs["experiment"])
             else:
                 # Project level models style does not have a version because version is defined
-                # per experiment. version doesn't matter for models-style because it is priority
+                # per experiment. Version does not matter for defaults because it is priority
                 # based, so we set a dummy value to simplify.
                 version = Version("0.0.1")
             route_arg_names = extract_substitutions(route.value)
