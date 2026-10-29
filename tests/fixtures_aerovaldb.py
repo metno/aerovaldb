@@ -83,10 +83,10 @@ GET_PARAMETRIZATION = pytest.mark.parametrize(
         ("get_statistics", ["project", "experiment"], None, "./project/experiment/"),
         ("get_ranges", ["project", "experiment"], None, "./project/experiment/"),
         ("get_regions", ["project", "experiment"], None, "./project/experiment/"),
-        ("get_models_style", ["project"], None, "./project/"),
+        ("get_defaults", ["project"], None, "./project/"),
         ("get_experiments", ["project"], None, "./project/"),
         (
-            "get_models_style",
+            "get_defaults",
             ["project"],
             {"experiment": "experiment"},
             "./project/experiment/",
@@ -230,8 +230,8 @@ PUT_PARAMETRIZATION = pytest.mark.parametrize(
         ("statistics", ["project", "experiment"], None),
         ("ranges", ["project", "experiment"], None),
         ("regions", ["project", "experiment"], None),
-        ("models_style", ["project"], None),
-        ("models_style", ["project"], {"experiment": "experiment"}),
+        ("defaults", ["project"], None),
+        ("defaults", ["project"], {"experiment": "experiment"}),
         (
             "map",
             [

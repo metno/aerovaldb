@@ -70,8 +70,8 @@ class AerovalSqliteDB(AerovalDB):
         "statistics": _column_titles_from_route(Route.STATISTICS),
         "ranges": _column_titles_from_route(Route.RANGES),
         "regions": _column_titles_from_route(Route.REGIONS),
-        "models_style0": ["project", "experiment"],
-        "models_style1": ["project"],
+        "defaults0": ["project", "experiment"],
+        "defaults1": ["project"],
         "map0": [
             "project",
             "experiment",
@@ -145,8 +145,8 @@ class AerovalSqliteDB(AerovalDB):
         "statistics": Route.STATISTICS,
         "ranges": Route.RANGES,
         "regions": Route.REGIONS,
-        "models_style0": Route.MODELS_STYLE,
-        "models_style1": Route.MODELS_STYLE,
+        "defaults0": Route.DEFAULTS,
+        "defaults1": Route.DEFAULTS,
         "map0": Route.MAP,
         "map1": Route.MAP,
         "scatter0": Route.SCATTER,
@@ -180,6 +180,7 @@ class AerovalSqliteDB(AerovalDB):
             self._con = sqlite3.connect(database)
             if not self._get_metadata_by_key("created_by") == "aerovaldb":
                 ValueError(f"Database {database} is not a valid aerovaldb database.")
+            self._migrate_legacy_defaults_tables()
 
         self._con.row_factory = sqlite3.Row
 
@@ -198,10 +199,10 @@ class AerovalSqliteDB(AerovalDB):
                 Route.STATISTICS: "statistics",
                 Route.RANGES: "ranges",
                 Route.REGIONS: "regions",
-                Route.MODELS_STYLE: PriorityMapper(
+                Route.DEFAULTS: PriorityMapper(
                     {
-                        "models_style0": "{project}/{experiment}",
-                        "models_style1": "{project}",
+                        "defaults0": "{project}/{experiment}",
+                        "defaults1": "{project}",
                     }
                 ),
                 Route.MAP: [
@@ -380,6 +381,23 @@ class AerovalSqliteDB(AerovalDB):
                 """
             )
 
+        self._con.commit()
+
+    def _migrate_legacy_defaults_tables(self):
+        """Rename legacy model-style tables without losing stored defaults."""
+        cur = self._con.cursor()
+        existing_tables = {
+            row[0]
+            for row in cur.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            )
+        }
+        for old_name, new_name in (
+            ("models_style0", "defaults0"),
+            ("models_style1", "defaults1"),
+        ):
+            if old_name in existing_tables and new_name not in existing_tables:
+                cur.execute(f"ALTER TABLE {old_name} RENAME TO {new_name}")
         self._con.commit()
 
     def _get_column_list_and_substitution_list(self, kwargs: dict) -> tuple[str, str]:
@@ -701,7 +719,7 @@ class AerovalSqliteDB(AerovalDB):
             "statistics",
             "ranges",
             "regions",
-            "models_style0",
+            "defaults0",
             "map0",
             "map1",
             "scatter0",

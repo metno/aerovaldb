@@ -82,7 +82,7 @@ with aerovaldb.open('json_files:path/to/data/') as db:
 | statistics         | db.get_statistics()         | db.put_statistics()         |
 | ranges             | db.get_ranges()             | db.put_ranges()             |
 | regions            | db.get_regions()            | db.put_regions()            |
-| models_style       | db.get_models_style()       | db.put_models_style()       |
+| defaults           | db.get_defaults()           | db.put_defaults()           |
 | map                | db.get_map()                | db.put_map()                |
 | time series        | db.get_timeseries()         | db.put_timeseries()         |
 | time series weekly | db.get_timeseries_weekly()  | db.put_timeseries_weekly()  |
@@ -115,4 +115,3 @@ Lesser General Public License for more details.
 
 You should have received a copy of the GNU General Public
 License along with this library; if not, see https://www.gnu.org/licenses/
-

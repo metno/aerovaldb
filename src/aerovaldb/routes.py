@@ -31,7 +31,7 @@ _ROUTE_RANGES = "/v0/ranges/{project}/{experiment}"
 
 _ROUTE_REGIONS = "/v0/regions/{project}/{experiment}"
 
-_ROUTE_MODELS_STYLE = "/v0/model_style/{project}"
+_ROUTE_DEFAULTS = "/v0/defaults/{project}"
 
 _ROUTE_MAP = (
     "/v0/map/{project}/{experiment}/{network}/{obsvar}/{layer}/{model}/{modvar}"
@@ -76,7 +76,7 @@ class Route(Enum):
     STATISTICS = _ROUTE_STATISTICS
     RANGES = _ROUTE_RANGES
     REGIONS = _ROUTE_REGIONS
-    MODELS_STYLE = _ROUTE_MODELS_STYLE
+    DEFAULTS = _ROUTE_DEFAULTS
     MAP = _ROUTE_MAP
     SCATTER = _ROUTE_SCATTER
     PROFILES = _ROUTE_PROFILES

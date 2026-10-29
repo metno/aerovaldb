@@ -679,8 +679,8 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @get_method(Route.MODELS_STYLE)
-    async def get_models_style(
+    @get_method(Route.DEFAULTS)
+    async def get_defaults(
         self,
         project: str,
         /,
@@ -691,7 +691,7 @@ class AerovalDB(abc.ABC):
         default=None,
         **kwargs,
     ):
-        """Fetches model styles from db.
+        """Fetches defaults from db.
 
         :param project: Project ID.
         :param experiment (Optional): Experiment ID.
@@ -706,11 +706,11 @@ class AerovalDB(abc.ABC):
         raise NotImplementedError
 
     @async_and_sync
-    @put_method(Route.MODELS_STYLE)
-    async def put_models_style(
+    @put_method(Route.DEFAULTS)
+    async def put_defaults(
         self, obj, project: str, /, experiment: str | None = None, *args, **kwargs
     ):
-        """Stores model styles config in db.
+        """Stores defaults in db.
 
         :param obj: Object to be stored.
         :param project: Project ID.
